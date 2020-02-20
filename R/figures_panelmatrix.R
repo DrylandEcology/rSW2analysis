@@ -296,17 +296,6 @@ plot_matrix_of_panels <- function(n_panels,
         fexp_axis = fexp_axis,
         pborders = pborders)
 
-      # Add map legend
-      if (add_legend[k1, k2]) {
-        add_legend_to_GISSM_map(rdata, dbox,
-          col_desc = ctemp,
-          label = label_title_matrix[k1, k2][[1]],
-          is_plotmath = is_plotmath_matrix[k1, k2],
-          label_str = label_title_str_matrix[k1, k2][[1]],
-          add_title = use_labels == "legend_title",
-          fexp_legend = fexp_legend)
-      }
-
     } else if (isTRUE(is_smoothScatter[k1, k2])) {
       draw_smoothScatter_panel(x = x[, 1], y = x[, 2],
         asp = dots[["asp"]],
@@ -330,6 +319,17 @@ plot_matrix_of_panels <- function(n_panels,
       } else {
         eval(addfun_matrix[k1, k2][[1]])
       }
+    }
+
+    # Add map legend
+    if (isTRUE(is_map[k1, k2]) && add_legend[k1, k2]) {
+      add_legend_to_GISSM_map(rdata, dbox,
+        col_desc = ctemp,
+        label = label_title_matrix[k1, k2][[1]],
+        is_plotmath = is_plotmath_matrix[k1, k2],
+        label_str = label_title_str_matrix[k1, k2][[1]],
+        add_title = use_labels == "legend_title",
+        fexp_legend = fexp_legend)
     }
 
     # Add panel identifier
