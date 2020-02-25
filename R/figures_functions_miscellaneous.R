@@ -290,3 +290,65 @@ add_panel_identifier <- function(i, add_label = FALSE, label = "",
     text = txt
   )
 }
+
+
+
+#' Determine location for a legend based on lowest density of points
+#'
+#' @inheritParams grDevices::xy.coords
+#' @param xlim A numeric vector of lenght two. The \var{x-axis} limits;
+#'   derived from data if missing.
+#' @param ylim A numeric vector of lenght two. The \var{y-axis} limits;
+#'   derived from data if missing.
+#'
+#' @seealso \code{\link[graphics]{legend}}, \code{\link[grDevices]{xy.coords}}
+#' @return A (character vector) keyword indicating suitable legend location.
+#'
+#' @examples
+#' xy <- data.frame(
+#'   x = c(rep(1:3, times = 1:3), rep(1:3, times = 3 + 1:3)),
+#'   y = rep(1:2, times = c(6, 15))
+#' )
+#'
+#' legend_location(xy)
+#' legend_location(xy, xlim = c(0, 5))
+#' pos <- legend_location(xy, xlim = c(0, 4), ylim = c(1, 4))
+#'
+#' graphics::smoothScatter(xy, xlim = c(0, 4), ylim = c(1, 4))
+#' graphics::legend(pos, legend = pos, fill = "black")
+#'
+#' @export
+legend_location <- function(x, y = NULL, xlim = NULL, ylim = NULL) {
+  xy <- grDevices::xy.coords(x, y)
+
+  xns <- c("left", "center", "right")
+  yns <- c("bottom", "top")
+
+  dxy <- expand.grid(yns, xns)
+  dxy[, "pos"] <- apply(dxy, 1, paste, collapse = "")
+  dxy[, "n"] <- 0
+
+  xlim <- if (is.null(xlim)) c(min(xy[[1]]), max(xy[[1]])) else xlim
+  ipsx <- findInterval(
+    x = xy[[1]],
+    vec = xlim[1] + 0:3 / 3 * (xlim[2] - xlim[1]),
+    all.inside = TRUE
+  )
+  ipsx <- xns[ipsx]
+
+  ylim <- if (is.null(ylim)) c(min(xy[[2]]), max(xy[[2]])) else ylim
+  ipsy <- findInterval(
+    x = xy[[2]],
+    vec = ylim[1] + 0:2 / 2 * (ylim[2] - ylim[1]),
+    all.inside = TRUE
+  )
+  ipsy <- yns[ipsy]
+
+  ips <- paste0(ipsy, ipsx)
+  fips <- table(ips)
+
+  ids <- match(dxy[, "pos"], names(fips), nomatch = 0)
+  dxy[ids > 0, "n"] <- fips[ids]
+
+  sub("center", "", dxy[which.min(dxy[, "n"]), "pos"])
+}
