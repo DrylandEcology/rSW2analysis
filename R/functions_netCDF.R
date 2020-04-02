@@ -1,44 +1,3 @@
-
-#' Write raster where a third dimension represents time to a netCDF file
-#'
-#' @param x A Raster* object
-#' @export
-create_netCDF_from_raster_with_time <- function(x, file, ...) {
-  stopifnot(requireNamespace("ncdf4"))
-
-  xname <- "longitude"
-  yname <- "latitude"
-  zname <- "time"
-  nl <- raster::nlayers(x)
-  varnames <- names(x)
-
-  # create netCDF file
-    raster::writeRaster(x,
-      filename = file, format = "CDF", xname = xname, yname = yname,
-      varname = , zname = zname)
-
-  # add info to netCDF file
-  rnc <- ncdf4::nc_open(file, write = TRUE)
-  on.exit(ncdf4::nc_close(rnc))
-
-  # additional dimension attributes
-  ncdf4::ncatt_put(rnc, xname, "axis", "X")
-  ncdf4::ncatt_put(rnc, yname, "axis", "Y")
-  ncdf4::ncatt_put(rnc, zname, "axis", "T")
-
-  # add global attributes
-  ns_att_glob <- c("title", "institution", "source", "references")
-  dots <- list(...)
-  ns_dots <- names(dots)
-
-  for (natt in ns_dots) {
-    if (natt %in% ns_att_glob) {
-      ncdf4::ncatt_put(rnc, 0, natt, dots[[natt]])
-    }
-  }
-}
-
-
 #' Convert raster where variables are organized in the third dimension to a
 #' \var{netCDF} file
 #'
@@ -591,4 +550,3 @@ calculate_nominal_resolution <- function(grid, sites, cell_areas_km2) {
                           ifelse(mean_resolution_km < 7200, "5000 km",
                             "10000 km")))))))))))))
 }
-
