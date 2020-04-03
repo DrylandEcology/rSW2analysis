@@ -320,7 +320,11 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
 
   # Depth info  ---------------------------------------------------------------------------
   if(has_Z_verticalAxis) {
-    
+    if(has_T_timeAxis) { # if time and depth are both TRUE , the third dimension
+      z_chunksize <- dim(data)[3]
+    } else { # no time, then we can assume that the depth dimension is the 2d
+      z_chunksize <- nl
+    }
   } 
   
   # Variable info  ------------------------------------------------------------------------
@@ -492,14 +496,14 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
     } else {
       try(ncdf4::ncvar_put(nc, varid = "time_bnds",
                            vals = time_bounds, 
-                           start = c(1, 1), count = c(2L, var_chunksizes[3])))
+                           start = c(1, 1), count = c(2L, t_chunksize))) # beginning and end of each TP
     }
   }
 
   if(has_Z_verticalAxis) {
     try(ncdf4::ncvar_put(nc, varid = "depth_bnds",
-                         vals = vertical_attributes[['vals']],
-                         start = c(1, 1), count = c(2L, var_chunksizes[4]))) # top and bottom of each soil layer
+                         vals = vert_bounds,
+                         start = c(1, 1), count = c(2L, z_chunksize))) # top and bottom of each soil layer
   }
 
   #--- add attributes -----------------------------------------------------------------
@@ -515,6 +519,11 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
     ncdf4::ncatt_put(nc, "time", "bounds", "time_bnds")
   }
 
+  if (has_Z_timeAxis) {
+    ncdf4::ncatt_put(nc, "depth", "axis", "Z")
+    ncdf4::ncatt_put(nc, "depth", "bounds", "depth_bnds")
+  }
+  
   # add global attributes
   ncdf4::ncatt_put(nc, varid = 0, attname = "Conventions", attval = "CF-1.4")
   ncdf4::ncatt_put(nc, varid = 0, attname = "created_by",
