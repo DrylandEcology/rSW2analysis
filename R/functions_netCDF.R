@@ -230,11 +230,14 @@ create_netCDF_from_raster_with_variables <- function(x, time_bounds,
 #' @describeIn create_netCDF_from_raster_with_variables Convert array where
 #'   variables are organized in the third dimension to a \var{netCDF} file
 #' @export
-create_empty_netCDF_file <- function(x, locations, grid = NULL, crs = NULL,
-  time_bounds, var_attributes, global_attributes, file, force_v4 = TRUE,
+create_empty_netCDF_file <- function(data, grid = NULL, locations, 
+  crs, time_bounds, var_attributes, global_attributes, file, force_v4 = TRUE,
   overwrite = FALSE) {
 
- # set up ------------------------------------------------------------
+  # ---------------------------------------------------------------------
+  # Set up and checks ---------------------------------------------------
+  # ---------------------------------------------------------------------
+  
   stopifnot(requireNamespace("ncdf4"))
   if (force_v4) {
     # avoid "_FillValue" error in older versions of `raster` package
@@ -249,30 +252,46 @@ create_empty_netCDF_file <- function(x, locations, grid = NULL, crs = NULL,
     }
   }
 
-  nl <- NCOL(x)
+  nl <- NCOL(data)
   if (nl == 1 && is.null(dim(x))) {
     x <- matrix(x, ncol = 1, dimnames = list(NULL, names(x)))
   }
 
-  var_names <- var_longnames <- colnames(x)
+  ncdf4_datatype <- raster:::.getNetCDFDType(get_raster_datatype(data))
+  
+  NAflag <- switch(ncdf4_datatype,
+                   char = NULL, byte = NULL, short = -128L, integer = -2147483647L,
+                   float = -3.4e+38, double = -1.7e+308)
+  
+  var_names <- var_longnames <- colnames(data)
   var_units <- rep("", nl)
-
-  if (inherits(locations, "Spatial")) {
-    locations <- sp::coordinates(locations)
+  
+  # location and spatial info  -------------------------------------------------------------
+  if(!missing(locations)) {
+    if (inherits(locations, "Spatial")) {
+      loc <- locations #sp::coordinates(locations) 
+      gridded(loc) = TRUE
+    } else {
+      loc <- SpatialPoints(locations)
+      proj4string(loc) <- CRS(crs)
+     # locations <- sp::coordinates(locations)
+      gridded(loc) = TRUE # But what if data isn't on some sort of grid ...
+    }
+  }
+  
+  # Note: xvals should be organized from west to east, yvals from north to south
+  if(!is.null(grid)){
+    xvals <- raster::xFromCol(grid, seq_len(raster::ncol(grid)))
+    yvals <- raster::yFromRow(grid, seq_len(raster::nrow(grid)))
+    grid_halfres <- raster::res(grid) / 2
+  } else {
+    xvals <- sort(unique(loc@coords[,1]))
+    yvals <- sort(unique(loc@coords[,2]), decreasing = TRUE) 
+    grid_halfres <- loc@grid@cellsize / 2
   }
 
-  ncdf4_datatype <- raster:::.getNetCDFDType(get_raster_datatype(x))
-
-  # values: \code{\link[raster]{dataType}} and \code{`raster:::dataType<-`}
-  NAflag <- switch(ncdf4_datatype,
-    char = NULL, byte = NULL, short = -128L, integer = -2147483647L,
-    float = -3.4e+38, double = -1.7e+308)
-
-  # Note: raster files are organized starting from NE corner
-  xvals <- raster::xFromCol(grid, seq_len(raster::ncol(grid)))
-  yvals <- raster::yFromRow(grid, seq_len(raster::nrow(grid)))
-  grid_halfres <- raster::res(grid) / 2
-
+  # Time dimension setup & info ----------------------------------------------------------------
+  
   has_time_central <- !missing(time_bounds)
   if (has_time_central) {
     stopifnot(length(time_bounds) == 2L)
@@ -306,7 +325,12 @@ create_empty_netCDF_file <- function(x, locations, grid = NULL, crs = NULL,
 
 
   #--- setup of netCDF file
-  var_chunksizes <- c(raster::ncol(grid), raster::nrow(grid))
+  if(is.null(grid)) {
+    var_chunksizes <- c(length(xvals), length(yvals))
+  } else {
+    var_chunksizes <- c(raster::ncol(grid), raster::nrow(grid))
+  }
+  
   var_start <- c(1, 1)
 
   if (has_time_central) {
@@ -423,14 +447,21 @@ create_empty_netCDF_file <- function(x, locations, grid = NULL, crs = NULL,
       attval = "No temporal dimensions ... fixed field")
   }
 
-  # add coordinate system attributes
-  prj <- raster::crs(grid)
+  # add coordinate system attributes -------------------------------
+  if(is.null(grid)){
+    prj <- raster::crs(grid)
+  } else {
+    prj <- CRS(crs)
+  }
+  
   if (!is.na(prj)) {
     ncdf4::ncatt_put(nc, varid = "crs", attname = "proj4",
       attval = as.character(prj))
   }
+  
   invisible(TRUE)
 }
+
 
 populate_netcdf_from_array <- function(file, grid, var_attributes) {
 
