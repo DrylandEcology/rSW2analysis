@@ -230,20 +230,34 @@ create_netCDF_from_raster_with_variables <- function(x, time_bounds,
 #' @describeIn create_netCDF_from_raster_with_variables Convert array where
 #'   variables are organized in the third dimension to a \var{netCDF} file
 #' @export
+#' 
+
+# new argument - is it a grid? TRUE or FALSE....
+# should be able to take 3 atypes grid, locs on grid, locs not on grid ..
+# global attribute - is it point data?
+# time bands as a separate argument ...
+# 
+
 create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
-  has_Z_verticalAxis = FALSE, var_attributes, time_attributes, vertical_attributes,
-  global_attributes, grid = NULL, locations, crs, file, force_v4 = TRUE,
-  overwrite = FALSE) {
+  has_Z_verticalAxis = FALSE, time_bounds, vert_bounds, var_attributes, 
+  time_attributes, vertical_attributes, global_attributes, 
+  isGridded = TRUE, grid = NULL, locations, crs, file, 
+  force_v4 = TRUE, overwrite = FALSE) {
 
   # ---------------------------------------------------------------------
   # Set up and checks ---------------------------------------------------
   # ---------------------------------------------------------------------
-  
   stopifnot(requireNamespace("ncdf4"))
   if (force_v4) {
     # avoid "_FillValue" error in older versions of `raster` package
     stopifnot(utils::packageVersion("raster") >= "2.9.1")
   }
+  
+  if(is.null(grid) && missing(locations)) {
+    stop('Error: Neither a grid or locations data present. Must supply one to function.')
+  }
+  
+  stopifnot(!missing(locations) && !missing(crs)) #If you are giving locations and not a grid, need to define the CRS.
 
   if (file.exists(file)) {
     if (overwrite) {
@@ -264,17 +278,15 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
                    char = NULL, byte = NULL, short = -128L, integer = -2147483647L,
                    float = -3.4e+38, double = -1.7e+308)
   
-  
   # location and spatial info  -------------------------------------------------------------
   if(!missing(locations)) {
     if (inherits(locations, "Spatial")) {
-      loc <- locations #sp::coordinates(locations) 
-      gridded(loc) = TRUE
+      loc <- locations #sp::coordinates(locations)
+      if(isGridded) gridded(loc) = TRUE
     } else {
       loc <- SpatialPoints(locations)
       proj4string(loc) <- CRS(crs)
-     # locations <- sp::coordinates(locations)
-      gridded(loc) = TRUE # But what if data isn't on some sort of grid ...
+      if(isGridded) gridded(loc) = TRUE 
     }
   }
   
@@ -290,33 +302,26 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
   }
 
   # Time dimension setup & info ----------------------------------------------------------------
-  if(has_T_timeAxis) {
-    
-    if ("time_bounds" %in% names(time_attributes) & 'vals' %!in%  names(time_attributes)) { # this needs to be better
-      has_time_central <- TRUE
-      t_chunksize <- 1L
-    }
-    
-    if ("vals" %in% names(time_attributes)) {
-      has_time_central <- FALSE
-      t_chunksize <- nl
-      if(length(time_attributes[["vals"]]) != nl) {
-        print('Value in time attributes list not equal to number of layers in raster object')
-      }
-    }
-    
-    if (has_time_central) {
-      stopifnot(length(time_bounds) == 2L)
-      time_central <- mean(time_attributes[['time_bounds']])
-    }
-    
-  } else {
+  has_time_central <- !missing(time_bounds)
+  
+  if(has_T_timeAxis & has_time_central) {
     
     has_time_central <- FALSE
+    t_chunksize <- nl
     
+    stopifnot(length(time_attributes[["vals"]]) == nl)
   }
+  
+  if (has_time_central & !has_T_timeAxis) {
+    stopifnot(length(time_bounds) == 2L)
+    time_central <- mean(time_bounds)
+    t_chunksize <- 1L
+  }
+
   # Depth info  ---------------------------------------------------------------------------
-  # to do
+  if(has_Z_verticalAxis) {
+    
+  } 
   
   # Variable info  ------------------------------------------------------------------------
   if (!missing(var_attributes)) {
@@ -482,12 +487,12 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
   if (has_T_timeAxis) {
     if(has_time_central){
       try(ncdf4::ncvar_put(nc, varid = "time_bnds",
-                           vals = time_attributes[['time_bounds']],
+                           vals = time_bounds,
                            start = c(1, 1), count = c(2L, 1L)))
     } else {
       try(ncdf4::ncvar_put(nc, varid = "time_bnds",
-                           vals = time_attributes[['time_bounds']], 
-                           start = c(1, 1), count = c(2L, var_chunksizes[3]))) ### use units days since 1900 list(c(Start,end),c(start,end))
+                           vals = time_bounds, 
+                           start = c(1, 1), count = c(2L, var_chunksizes[3])))
     }
   }
 
@@ -678,5 +683,3 @@ calculate_nominal_resolution <- function(grid, sites, cell_areas_km2) {
                           ifelse(mean_resolution_km < 7200, "5000 km",
                             "10000 km")))))))))))))
 }
-
-'%!in%' <- function(x,y)!('%in%'(x,y))
