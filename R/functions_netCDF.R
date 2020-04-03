@@ -230,10 +230,11 @@ create_netCDF_from_raster_with_variables <- function(x, time_bounds,
 #' @describeIn create_netCDF_from_raster_with_variables Convert array where
 #'   variables are organized in the third dimension to a \var{netCDF} file
 #' @export
-create_empty_netCDF_file <- function(x, locations, grid,
+create_empty_netCDF_file <- function(x, locations, grid = NULL, crs = NULL,
   time_bounds, var_attributes, global_attributes, file, force_v4 = TRUE,
   overwrite = FALSE) {
 
+ # set up ------------------------------------------------------------
   stopifnot(requireNamespace("ncdf4"))
   if (force_v4) {
     # avoid "_FillValue" error in older versions of `raster` package
@@ -428,7 +429,7 @@ create_empty_netCDF_file <- function(x, locations, grid,
     ncdf4::ncatt_put(nc, varid = "crs", attname = "proj4",
       attval = as.character(prj))
   }
-  invisible(TRUE) 
+  invisible(TRUE)
 }
 
 populate_netcdf_from_array <- function(file, grid, var_attributes) {
