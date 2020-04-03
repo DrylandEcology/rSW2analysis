@@ -119,7 +119,6 @@ create_raster_from_variables <- function(SFSW2_prj_meta = NULL, locations,
 
 
   # set datatype
-  raster::dataType(r) <- get_raster_datatype(data)
   #raster::dataType(r) <- get_raster_datatype(data)
 
   r
