@@ -413,9 +413,9 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
   
   # vertical dimension
   if(has_Z_verticalAxis) {
-    vdim <-  ncdf4::ncdim_def(name = vertical_attributes[['name']], 
+    zdim <-  ncdf4::ncdim_def(name = vertical_attributes[['name']], 
                               units = vertical_attributes[['units']],
-                              positive = vertical_attributes[['positive']],
+                              #positive = vertical_attributes[['positive']], # needs to be added later down the road
                               vals = vertical_attributes[['vals']])
   }
 
@@ -455,8 +455,8 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
                                 chunksizes = c(2L, 1L))
   }
   if (has_Z_verticalAxis) {
-    vertbnddef <- ncdf4::ncvar_def(name = "vert_bnds", units = "",
-                                   dim = list(bnddim, vdim), missval = NULL, 
+    vertbnddef <- ncdf4::ncvar_def(name = "depth_bnds", units = "",
+                                   dim = list(bnddim, zdim), missval = NULL, 
                                    chunksizes = c(2L, 1L))
   }
 
@@ -519,7 +519,7 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
     ncdf4::ncatt_put(nc, "time", "bounds", "time_bnds")
   }
 
-  if (has_Z_timeAxis) {
+  if (has_Z_verticalAxis) {
     ncdf4::ncatt_put(nc, "depth", "axis", "Z")
     ncdf4::ncatt_put(nc, "depth", "bounds", "depth_bnds")
   }
@@ -564,12 +564,15 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
     ncdf4::ncatt_put(nc, varid = "crs", attname = "proj4",
       attval = as.character(prj))
   }
+  print(paste("The file has", nc$nvars,"variables"))
+  print(paste("The file has", nc$ndim,"dimensions"))
   
   invisible(TRUE)
 }
 
 
 populate_netcdf_from_array <- function(file, grid, var_attributes) {
+  
 
   #--- prepare to put values to full grid format
   val_template <- rep(NA, raster::ncell(grid))

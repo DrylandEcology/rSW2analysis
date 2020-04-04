@@ -39,7 +39,6 @@ create_raster_from_variables <- function(SFSW2_prj_meta = NULL, locations,
   if(!missing(locations)) {
     loc <- SpatialPoints(locations)
     proj4string(loc) <- CRS(crs)
-    gridded(loc) = TRUE # do I need this?
   }
 
   ############################################################################
@@ -119,7 +118,7 @@ create_raster_from_variables <- function(SFSW2_prj_meta = NULL, locations,
 
 
   # set datatype
-  #raster::dataType(r) <- get_raster_datatype(data)
+  raster::dataType(r) <- get_raster_datatype(data)
 
   r
 }
