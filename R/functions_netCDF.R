@@ -254,7 +254,8 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
   }
   
   if(is.null(grid) && missing(locations)) {
-    stop('Error: Neither a grid or locations data present. Must supply one to function.')
+    stop('Error: Neither a grid or locations data present. Must supply one at least 
+         one of these arguments to the function.')
   }
   
   stopifnot(!missing(locations) && !missing(crs)) #If you are giving locations and not a grid, need to define the CRS.
@@ -327,6 +328,27 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
     }
   } 
   
+  if (!missing(vertical_attributes)) {
+    if ("name" %in% names(vertical_attributes)) {
+      vert_names <- vertical_attributes[["name"]]
+      vertical_attributes[["name"]] <- NULL
+    }
+    
+    if ("units" %in% names(vertical_attributes)) {
+      vert_units <- vertical_attributes[["units"]]
+      vertical_attributes[["units"]] <- NULL
+    }
+    
+    if ("vals" %in% names(vertical_attributes)) {
+      vert_vals <- vertical_attributes[["vals"]]
+      vertical_attributes[["vals"]] <- NULL
+    }
+    
+    ns_att_vert <- names(vertical_attributes)
+    
+  }
+  
+  
   # Variable info  ------------------------------------------------------------------------
   if (!missing(var_attributes)) {
     if ("name" %in% names(var_attributes)) {
@@ -366,6 +388,7 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
   # -- Setup info for netCDF file ---------------------------------------------------------
   # ---------------------------------------------------------------------------------------
   
+  # Starts and chunksizes -----------------------------------------------------------------
   if(is.null(grid)) {
     var_chunksizes <- c(length(xvals), length(yvals))
   } else {
@@ -413,10 +436,9 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
   
   # vertical dimension
   if(has_Z_verticalAxis) {
-    zdim <-  ncdf4::ncdim_def(name = vertical_attributes[['name']], 
-                              units = vertical_attributes[['units']],
-                              #positive = vertical_attributes[['positive']], # needs to be added later down the road
-                              vals = vertical_attributes[['vals']])
+    zdim <-  ncdf4::ncdim_def(name = vert_names, 
+                              units = vert_units,
+                              vals = vert_vals)
   }
 
   # define dimensionality of netcdf variables -------------------------------------------------
@@ -445,6 +467,7 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
   lonbnddef <- ncdf4::ncvar_def(name = "lon_bnds", units = "",
     dim = list(bnddim, xdim), missval = NULL,
     chunksizes = c(2L, var_chunksizes[1]))
+  
   latbnddef <- ncdf4::ncvar_def(name = "lat_bnds", units = "",
     dim = list(bnddim, ydim), missval = NULL,
     chunksizes = c(2L, var_chunksizes[2]))
@@ -468,7 +491,6 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
   if (has_Z_verticalAxis) {
     nc_dimvars <- c(nc_dimvars, list(vertbnddef))
   }
-
   # ---------------------------------------------------------------------------------------
   #--- create empty netCDF file -----------------------------------------------------------
   # ---------------------------------------------------------------------------------------
@@ -477,6 +499,7 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
   
   nc <- ncdf4::nc_create(filename = file,
     vars = c(nc_dimvars, list(crsdef), var_defs), force_v4 = force_v4)
+  
   on.exit(ncdf4::nc_close(nc))
 
  #--- write values of dimension bands -----------------------------------------------------
@@ -508,7 +531,7 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
 
   #--- add attributes -----------------------------------------------------------------
   
-  # add dimension attributes
+  # add dimension attributes --------------------------------
   ncdf4::ncatt_put(nc, "lon", "axis", "X")
   ncdf4::ncatt_put(nc, "lon", "bounds", "lon_bnds")
   ncdf4::ncatt_put(nc, "lat", "axis", "Y")
@@ -524,8 +547,34 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
     ncdf4::ncatt_put(nc, "depth", "bounds", "depth_bnds")
   }
   
-  # add global attributes
+  for (natt in ns_att_vert) {
+    ncdf4::ncatt_put(nc, varid = vert_names, attname = natt,
+                     attval = vertical_attributes[[ns_att_vert]][1])
+  }
+  
+  # add variable attributes  ---------------------------------------------------
+  for (k in seq_len(nn)) {
+    for (natt in ns_att_vars) {
+      ncdf4::ncatt_put(nc, varid = var_names[k], attname = natt,
+                       attval = var_attributes[[natt]][k])
+    }
+  }
+  
+  # add coordinate system attributes --------------------------------------------
+  if(is.null(grid)){
+    prj <- raster::crs(grid)
+  } else {
+    prj <- CRS(crs)
+  }
+  
+  if (!is.na(prj)) {
+    ncdf4::ncatt_put(nc, varid = "crs", attname = "proj4",
+                     attval = as.character(prj))
+  }
+  
+  # add global attributes --------------------------------------------------------s
   ncdf4::ncatt_put(nc, varid = 0, attname = "Conventions", attval = "CF-1.4")
+  
   ncdf4::ncatt_put(nc, varid = 0, attname = "created_by",
     attval = paste0(R.version[["version.string"]], ", R packages ",
       if (requireNamespace("rSFSW2")) {
@@ -534,6 +583,7 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
       "ncdf4 v", utils::packageVersion("ncdf4"),
       ", and ", system2("nc-config", "--version", stdout = TRUE, stderr = TRUE))
   )
+  
   ncdf4::ncatt_put(nc, varid = 0, attname = "creation_date",
     attval = format(Sys.time(), "%Y-%m-%d %H:%M:%S"))
 
@@ -553,53 +603,152 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
       attval = "No temporal dimensions ... fixed field")
   }
 
-  # add coordinate system attributes ---------------------------------------------------
-  if(is.null(grid)){
-    prj <- raster::crs(grid)
-  } else {
-    prj <- CRS(crs)
-  }
-  
-  if (!is.na(prj)) {
-    ncdf4::ncatt_put(nc, varid = "crs", attname = "proj4",
-      attval = as.character(prj))
-  }
-  print(paste("The file has", nc$nvars,"variables"))
-  print(paste("The file has", nc$ndim,"dimensions"))
+  # The end --------------------------------------------------------------
+
+  print(paste("The file has", nc$nvars, "variables and",  nc$ndim,"dimensions"))
   
   invisible(TRUE)
 }
 
 
-populate_netcdf_from_array <- function(file, grid, var_attributes) {
+populate_netcdf_from_array <- function(file, data, var_names = NULL,
+                                       has_T_timeAxis, has_Z_verticalAxis,
+                                       isGridded = TRUE, locations, crs,
+                                       force_v4 = TRUE) {
+
   
+  # ---------------------------------------------------------------------
+  # Set up and checks ---------------------------------------------------
+  # ---------------------------------------------------------------------
+  
+  stopifnot(requireNamespace("ncdf4"))
+  if (force_v4) {
+    # avoid "_FillValue" error in older versions of `raster` package
+    stopifnot(utils::packageVersion("raster") >= "2.9.1")
+  }
 
-  #--- prepare to put values to full grid format
-  val_template <- rep(NA, raster::ncell(grid))
-  val_ids <- raster::cellFromXY(grid, locations)
-
-  #--- add variables values
-  for (k in seq_len(nl)) {
-    # put values into full grid format
-    temp <- val_template
-    temp[val_ids] <- x[, k]
-    vals <- matrix(temp, ncol = var_chunksizes[2])
-
-    # write values to variable
-    try(ncdf4::ncvar_put(nc, varid = var_names[k], vals = vals,
-      start = var_start, count = var_chunksizes))
-
-    # add variable attributes
-    for (natt in ns_att_vars) {
-      ncdf4::ncatt_put(nc, varid = var_names[k], attname = natt,
-        attval = var_attributes[[natt]][k])
+  stopifnot(file.exists(file)) # file needs to exist
+  
+  if(!inherits(locations, "Spatial") & missing(crs)){
+    stop('Need CRS for locations data') # need crs if locations isn't spatially defined
+  }
+  
+  # open file, writeable --------------
+  nc <- ncdf4::nc_open(file, write = TRUE)
+  on.exit(ncdf4::nc_close(nc))
+  
+  # check  netcdf against data and inputs ---------------------------
+  nc_dims <-  attributes(nc$dim)$names #dims of netcdf
+  nn <- NCOL(data) # number of cols of data
+  data_dims <- length(dim(data)) # ndim of data
+  nvars <- length(var_names) #  vars names set by user
+  
+  if(has_T_timeAxis) stopifnot('time' %in% nc_dims)
+  if(has_Z_verticalAxis) stopifnot('depth' %in% nc_dims)
+  if(has_T_timeAxis & has_Z_verticalAxis) stopifnot(data_dims == 3) # if have both T and Z, data should be 3 dims
+  if(!has_T_timeAxis & !has_Z_verticalAxis) stopifnot(nvars == nn) # if org by vars names should be equal to nl
+  
+  #print(paste("The file has", nc$nvars, "variables and",  nc$ndim,"dimensions"))
+  #print(paste("The dimensions are", paste(nc_dims, collapse = ', ')))
+  
+  # ---------------------------------------------------------------------
+  #  Locations and spatial info  ----------------------------------------
+  # ---------------------------------------------------------------------
+  if(!missing(locations)) {
+    if(isGridded) {
+      if (inherits(locations, "Spatial")) {
+        loc <- locations #sp::coordinates(locations)
+      } else {
+        loc <- SpatialPoints(locations)
+        proj4string(loc) <- CRS(crs)
+      }
+      
+      # Create grid from location values ---------------------------------
+      gridded(loc) = TRUE
+      grid_template <- raster::raster(loc)
+      extent(grid_template) <- extent(loc)
     }
+  }
 
+  val_grid_ids <- raster::cellFromXY(grid_template, locations)
+  
+  # ---------------------------------------------------------------------
+  # Add data ------------------------------------------------------------
+  # ---------------------------------------------------------------------
+  
+  for(k in seq(nvars)) {
+    
+    stopifnot(var_names[k] %in% attributes(nc$var)$names)
+    
+    nc_var <- ncdf4::ncvar_get(nc, attributes(nc$var)$names[var_names[k]])
+    nc_var_dims <- dim(nc_var) # lon, lat, then #vars time or depth,  depth
+    
+    message(paste('The dimensionality of variable',var_names[k], 'is',
+                paste(nc_var_dims, collapse = ', ')))
+    
+    # more checks based on dim of var -----------------------------------
+    
+    if(has_T_timeAxis & !has_Z_verticalAxis) stopifnot(nc_var_dims[3] == nn) 
+    if(!has_T_timeAxis & has_Z_verticalAxis) stopifnot(nc_var_dims[3] == nn) 
+    
+    if(has_T_timeAxis) t_chunksize <- nn
+    
+    if(has_Z_verticalAxis) {
+      if(has_T_timeAxis) { # if time and depth are both TRUE , the third dimension
+        z_chunksize <- dim(data)[3]
+      } else { # no time, then we can assume that the depth dimension is the 2d
+        z_chunksize <- nn
+      }
+    }     
+    
+    # Set up chunksizes ----------------------------------------------------
+    var_chunksizes <- c(nc_var_dims[1], nc_var_dims[2]) # lon, lat
+
+    #  ---------------------------------------------------------------------
+    # add variable values ! ------------------------------------------------
+    # ----------------------------------------------------------------------
+    if(has_T_timeAxis & has_Z_verticalAxis) {
+      
+      val_grid <- rep(NA, c(nc_var_dims[1] * nc_var_dims[2]))
+      temp <- grid_template
+      
+      for(z in seq(z_chunksize)){ # by Z axis
+        message('Adding depth layer ', z)
+        for (t in seq_len(nn)) { # col by col - always time in this case
+          
+          temp[val_grid_ids] <- data[, t, z]
+          vals <- matrix(temp, ncol = var_chunksizes[2])
+          
+          try(ncdf4::ncvar_put(nc, varid = var_names[k], 
+                               vals = vals,
+                               start = c(1, 1, t, z), #x-y-t-z
+                               count = c(var_chunksizes, 1, 1)))
+        }
+      }
+      
+    } else {
+      # write values, row by row -- values can rep dif. variables, time, or depth
+      for (n in seq_len(nn)) {
+        
+        #message('Column ', n, ' is being added to netcdf')
+        
+        val_grid <- rep(NA, c(nc_var_dims[1] * nc_var_dims[2]))
+        temp <- grid_template
+        temp[val_grid_ids] <- data[, n]
+        vals <- matrix(temp, ncol = var_chunksizes[2])
+        
+        try(ncdf4::ncvar_put(nc, varid = var_names[k], 
+                             vals = vals,
+                             start = c(1, 1, n), 
+                             count = c(var_chunksizes, 1)))
+      }
+    }
+  
     # Flush this step to the file so we dont lose it
     # if there is a crash or other problem
     ncdf4::nc_sync(nc)
   }
-
+  
   invisible(TRUE)
 }
 
@@ -695,3 +844,4 @@ calculate_nominal_resolution <- function(grid, sites, cell_areas_km2) {
                           ifelse(mean_resolution_km < 7200, "5000 km",
                             "10000 km")))))))))))))
 }
+
