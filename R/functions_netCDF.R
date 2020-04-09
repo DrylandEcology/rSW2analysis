@@ -613,7 +613,7 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
 
 populate_netcdf_from_array <- function(file, data, var_names = NULL,
                                        has_T_timeAxis, has_Z_verticalAxis,
-                                       isGridded = TRUE, locations, crs,
+                                       isGridded = TRUE, grid = NULL, locations, crs,
                                        force_v4 = TRUE) {
 
   
@@ -627,7 +627,7 @@ populate_netcdf_from_array <- function(file, data, var_names = NULL,
     stopifnot(utils::packageVersion("raster") >= "2.9.1")
   }
 
-  stopifnot(file.exists(file)) # file needs to exist
+  stopifnot(file.exists(file) || !missing(locations)) # file and locations need to exist
   
   if(!inherits(locations, "Spatial") & missing(crs)){
     stop('Need CRS for locations data') # need crs if locations isn't spatially defined
@@ -654,21 +654,25 @@ populate_netcdf_from_array <- function(file, data, var_names = NULL,
   # ---------------------------------------------------------------------
   #  Locations and spatial info  ----------------------------------------
   # ---------------------------------------------------------------------
-  if(!missing(locations)) {
-    if(isGridded) {
-      if (inherits(locations, "Spatial")) {
-        loc <- locations #sp::coordinates(locations)
-      } else {
-        loc <- SpatialPoints(locations)
-        proj4string(loc) <- CRS(crs)
-      }
-      
-      # Create grid from location values ---------------------------------
-      gridded(loc) = TRUE
-      grid_template <- raster::raster(loc)
-      extent(grid_template) <- extent(loc)
+
+  if(isGridded) { 
+    if (inherits(locations, "Spatial")) {
+      loc <- locations #sp::coordinates(locations)
+    } else {
+      loc <- SpatialPoints(locations)
+      proj4string(loc) <- CRS(crs)
     }
+    # Create grid from location values ---------------------------------
+    gridded(loc) = TRUE
   }
+
+  if(is.null(grid)) {
+    grid_template <- raster::raster(loc)
+    extent(grid_template) <- extent(loc)
+  } else {
+    grid_template <- rep(NA, raster::ncell(grid))
+  }
+
 
   val_grid_ids <- raster::cellFromXY(grid_template, locations)
   
@@ -691,14 +695,10 @@ populate_netcdf_from_array <- function(file, data, var_names = NULL,
     if(has_T_timeAxis & !has_Z_verticalAxis) stopifnot(nc_var_dims[3] == nn) 
     if(!has_T_timeAxis & has_Z_verticalAxis) stopifnot(nc_var_dims[3] == nn) 
     
-    if(has_T_timeAxis) t_chunksize <- nn
-    
     if(has_Z_verticalAxis) {
       if(has_T_timeAxis) { # if time and depth are both TRUE , the third dimension
         z_chunksize <- dim(data)[3]
-      } else { # no time, then we can assume that the depth dimension is the 2d
-        z_chunksize <- nn
-      }
+      } 
     }     
     
     # Set up chunksizes ----------------------------------------------------
@@ -727,7 +727,7 @@ populate_netcdf_from_array <- function(file, data, var_names = NULL,
       }
       
     } else {
-      # write values, row by row -- values can rep dif. variables, time, or depth
+      # write values, col by col -- values can rep dif. variables, time, or depth
       for (n in seq_len(nn)) {
         
         #message('Column ', n, ' is being added to netcdf')
