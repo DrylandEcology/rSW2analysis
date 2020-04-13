@@ -231,36 +231,37 @@ create_netCDF_from_raster_with_variables <- function(x, time_bounds,
 #' Create a structured, empty netcdf file
 #'
 #'  This function creates a strucutured netCDF with metadata, but
-#'  without data. The user must specific spatial information, dimensionality, and
-#'  metadata of the netCDF. The dimensions of the netCDF always includes at least two dimensions,
+#'  without data. The user specifies spatial information, dimensionality, and
+#'  metadata of the netCDF.
+
+#' The dimensions of the netCDF always includes at least two dimensions,
 #'  Latitude and Longitude, with information about these dimensions gathered from
-#'  spatial data (i.e. \var(locations) or \var(grid)).
-#'  Additional dimensionalilty information is gathered through the use of the vars
-#'  \var(has_T_timeAxis) & \var(has_Z_verticalAxis). If both flags are set to
+#'  spatial data (i.e. \var{locations} or \var{grid}). Additional dimensionalilty information is gathered through the use of the vars
+#'  \var{has_T_timeAxis} & \var{has_Z_verticalAxis}. If both flags are set to
 #'  \code{FALSE} then the netCDF is two dimensions with one or more variables.
-#'  The number of variables is set in the \code(var_attributes) argument. If either
-#'  \var(has_T_timeAxis) \emph{or} \var(has_Z_verticalAxis) is set to \code{TRUE} then a
-#'  third dimension is added to the netCDF. If \emph{both} \var(has_T_timeAxis)
-#'  and \var(has_Z_verticalAxis) are set to TRUE, then the netCDF will have 4
+#'  The number of variables is set in the \var{var_attributes} argument. If either
+#'  \var{has_T_timeAxis} \emph{or} \var{has_Z_verticalAxis} is set to \code{TRUE} then a
+#'  third dimension is added to the netCDF. If \emph{both} \var{has_T_timeAxis}
+#'  and \var{has_Z_verticalAxis} are set to TRUE, then the netCDF will have 4
 #'  dimensions, with time as the third, and depth as the fourth. Information about
-#'  these dimensions is set in the respective \var(bounds) and \var(attributes).
-#'  \var(has_T_timeAxis) and/or \var(has_Z_verticalAxis) is set to \code{TRUE}
+#'  these dimensions is set in the respective \var{bounds} and \var{attributes}.
+#'  \var{has_T_timeAxis} and/or \var{has_Z_verticalAxis} is set to \code{TRUE}
 #'  the netCDF can \emph{only} have one variable.
 #'
 #' @param data A numeric array.
 #' @param has_T_timeAxis A logical value. Indicates that the netCDF created will
 #'     have a third, time dimension.
 #' @param has_Z_verticalAxis A logical value. Indicates that the netCDF created will
-#'     have a veritical (e.g. soil profile depths) dimension. If \var(has_T_timeAxis)
+#'     have a veritical (e.g. soil profile depths) dimension. If \var{has_T_timeAxis}
 #'     is set to \code{FALSE} then the Z axis will be the third dimension.
-#'     If \var(has_T_timeAxis) is set to \code{TRUE} then the Z axis will be the
+#'     If \var{has_T_timeAxis} is set to \code{TRUE} then the Z axis will be the
 #'     fourth dimension.
 #' @param time_bounds A numeric string that continuously lists the lower and upper
 #'    bounds of each time dimension value. In the absence of a time dimension,
 #'    this argument can be used to define the calculation period of the variable(s).
 #' @param vert_bounds A numeric string that continuously lists the lower and upper
 #'    bounds of each vertical dimension value.
-#' @param var_attributes A list of named character strings defining the variable(s)
+#' @param var_attributes A list of named character strings defining the variables
 #'   of the netCDF.
 #' @param time_attributes A list of named character strings defining the time
 #'   dimension of the netCDF.
@@ -679,19 +680,19 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
 #'   depth dimension \emph{or} equal to the number of columns in the array if
 #'   there is no time or depth dimension.
 #' @param has_T_timeAxis A logical value. Indicates that the netCDF has a time
-#'   dimension, and that the number of columns in the \var(data) represent time
+#'   dimension, and that the number of columns in the \var{data} represent time
 #'   intervals.
 #' @param has_Z_verticalAxis A logical value. Indicates that the netCDF has a Z
-#'   dimension, and that either, if \var(has_T_timeAxis) is \code{FALSE} the
-#'   number of columns in the \var(data) represent vertical intervals, or
-#'   if \var(has_T_timeAxis) is \code{TRUE} the length of the third dimension in
-#'   \var(data) is equal to the length of the vertical axis.
+#'   dimension, and that either, if \var{has_T_timeAxis} is \code{FALSE} the
+#'   number of columns in the \var{data} represent vertical intervals, or
+#'   if \var{has_T_timeAxis} is \code{TRUE} the length of the third dimension in
+#'   \var{data} is equal to the length of the vertical axis.
 #' @param isGridded. A logical value. Represents whether the location data is on
 #'   a regualr grid or not.
 #' @param grid filename (character). File containing the grid information
 #'   (i.e. resolution, extent) of the data. Supported file types are the 'native'
 #'   raster package format and those that can be read via rgdal.
-#' @param locations. A SpatialPoints object or a matrix or data.frame with two
+#' @param locations A SpatialPoints object or a matrix or data.frame with two
 #'   columns containing long and lat values. Data must be organized by long, lat.
 #' @param crs. character or object of class 'CRS'.
 #' @param force_v4 A logical value. Force version 4 of netCDF.

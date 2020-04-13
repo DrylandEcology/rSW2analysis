@@ -250,7 +250,8 @@ extract_dbOut_to_array <- function(meta, fname_dbOut = NULL,
 #'   \code{subprojects} are mutually exclusive.
 #'
 #' @seealso \code{\link{extract_dbOut_to_array}} for extraction from
-#'   \var{dbOut} database, \code{\link{create_netCDF_from_array_with_variables}}
+#'   \var{dbOut} database, \code{\link{create_empty_netCDF_file}} and
+#'   \code{\link{populate_netcdf_from_array}}
 #'   for writing/extracting from \var{netCDF} files
 #'
 #' @return The same structure as returned from
@@ -420,10 +421,8 @@ load_rSFSW2_data_for_analysis <- function(meta, path, path_tmp,
 
           if (!file.exists(fname_nc)) {
             # Write raster to netCDF file
-            create_netCDF_from_array_with_variables(
-              x = res[, , sc, exp],
-              locations = meta[["sim_space"]][["run_sites"]],
-              grid = meta[["sim_space"]][["sim_raster"]],
+            create_empty_netCDF_file(
+              data = res[, , sc, exp],
 
               time_bounds = time_bounds,
 
@@ -439,7 +438,17 @@ load_rSFSW2_data_for_analysis <- function(meta, path, path_tmp,
                 cell_measures = "data variables provided at cell centers"
               ),
 
+              isGridded = TRUE,
+              grid = meta[["sim_space"]][["sim_raster"]],
               file = fname_nc
+            )
+
+            populate_netcdf_from_array(
+              file = fname_nc,
+              data = res[, , sc, exp],
+              var_names = var_names,
+              isGridded = TRUE,
+              grid = meta[["sim_space"]][["sim_raster"]],
             )
           }
         }
@@ -449,4 +458,3 @@ load_rSFSW2_data_for_analysis <- function(meta, path, path_tmp,
 
   res
 }
-

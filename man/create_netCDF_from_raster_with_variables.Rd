@@ -2,24 +2,11 @@
 % Please edit documentation in R/functions_netCDF.R
 \name{create_netCDF_from_raster_with_variables}
 \alias{create_netCDF_from_raster_with_variables}
-\alias{create_netCDF_from_array_with_variables}
 \title{Convert raster where variables are organized in the third dimension to a
 \var{netCDF} file}
 \usage{
 create_netCDF_from_raster_with_variables(
   x,
-  time_bounds,
-  var_attributes,
-  global_attributes,
-  file,
-  force_v4 = TRUE,
-  overwrite = FALSE
-)
-
-create_netCDF_from_array_with_variables(
-  x,
-  locations,
-  grid,
   time_bounds,
   var_attributes,
   global_attributes,
@@ -52,9 +39,3 @@ created.}
 Convert raster where variables are organized in the third dimension to a
 \var{netCDF} file
 }
-\section{Functions}{
-\itemize{
-\item \code{create_netCDF_from_array_with_variables}: Convert array where
-variables are organized in the third dimension to a \var{netCDF} file
-}}
-
