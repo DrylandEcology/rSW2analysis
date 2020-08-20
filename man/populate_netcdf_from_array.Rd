@@ -2,8 +2,7 @@
 % Please edit documentation in R/functions_netCDF.R
 \name{populate_netcdf_from_array}
 \alias{populate_netcdf_from_array}
-\title{populate_netcdf_from_array
-Populate an empty netcdf with values}
+\title{Populate an empty netcdf with values stored in an array}
 \usage{
 populate_netcdf_from_array(
   file,
@@ -38,6 +37,9 @@ number of columns in the \var{data} represent vertical intervals, or
 if \var{has_T_timeAxis} is \code{TRUE} the length of the third dimension in
 \var{data} is equal to the length of the vertical axis.}
 
+\item{isGridded}{A logical value. Represents whether the location data is on
+a regualr grid or not.}
+
 \item{grid}{filename (character). File containing the grid information
 (i.e. resolution, extent) of the data. Supported file types are the 'native'
 raster package format and those that can be read via rgdal.}
@@ -45,17 +47,14 @@ raster package format and those that can be read via rgdal.}
 \item{locations}{A SpatialPoints object or a matrix or data.frame with two
 columns containing long and lat values. Data must be organized by long, lat.}
 
+\item{crs}{character or object of class 'CRS'.}
+
 \item{force_v4}{A logical value. Force version 4 of netCDF.}
 
 \item{var_name}{A character string equal to the length of the number of variables.
 The length of var_name should either be 1 if there is either a time and/or
 depth dimension \emph{or} equal to the number of columns in the array if
 there is no time or depth dimension.}
-
-\item{isGridded.}{A logical value. Represents whether the location data is on
-a regualr grid or not.}
-
-\item{crs.}{character or object of class 'CRS'.}
 }
 \value{
 This function is used for the side-effect of filling a file.

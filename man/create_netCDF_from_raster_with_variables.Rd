@@ -31,9 +31,10 @@ then the global attributes will be added to the \var{netCDF} file.}
 created.}
 
 \item{overwrite}{A logical value. If \code{TRUE}, file will be overwritten
-  if it exists.
-
- @return This function is used for the side-effect of creating a file.}
+if it exists.}
+}
+\value{
+This function is used for the side-effect of creating a file.
 }
 \description{
 Convert raster where variables are organized in the third dimension to a
