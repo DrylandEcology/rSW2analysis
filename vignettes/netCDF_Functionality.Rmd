@@ -1,0 +1,314 @@
+---
+title: "Demonstration of netCDF functionality in rSW2analysis"
+author: "Caitlin M. Andrews"
+date: "`r Sys.Date()`"
+output:
+  rmarkdown::html_vignette:
+    toc: true
+    toc_depth: 2
+#   toc_float: true
+#   collapsed: false
+#   smooth_scroll: false
+#   theme: united
+#   highlight: tango
+#   smart: false
+#   bookdown::pdf_document2:
+vignette: >
+  %\VignetteIndexEntry{Demonstration of netCDF functionality in rSW2analysis}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+# Overview
+
+This vignette is an overview of how to use the functions in the rSW2analysis package to 
+convert arrays of rSOILWAT2 and SOILWAT2 output data into netCDFs that adhere to 
+[CF conventions](http://cfconventions.org/Data/cf-conventions/cf-conventions-1.8/cf-conventions.html#_orthogonal_multidimensional_array_representation).
+
+Additionally, this document describes our standards and conventions in regards to naming, 
+metadata, and netCDF structure.
+
+# Input Data Format and Structure
+
+## Variable Data
+
+The netCDF functions in this package expect an array, in which each row represents 
+data for a site. Columns represent one of three things: 
+
+* multiple different variables for one site
+* one variable with multiple measurements (time series)
+* one variable with multiple depth measurements
+
+```{r, create1d}
+   # dummy data for 10 sites, 10 data points (could be 10 vars, 10 times, or 10 depths)
+   someData <- rnorm(100, 7, 30)
+   data1d <- array(someData, c(10, 10))
+   str(data1d)
+   is.array(data1d)
+```
+
+Additionally, it is possible to have data at multiple times *and* multiple depths.
+In this case, time should be organized by column, and multiple depths should be organized
+sequentially in third dimension, forming a 3d array.
+
+```{r, create3d, results = 'hide'}
+  # dummy data for 10 sites, 10 times, 3 depths.
+  data3d <- array(0, c(10, 10, 3))
+  data3d[,,1] <- someData
+  data3d[,,2] <- someData
+  data3d[,,3] <- someData
+```
+
+## Location Data
+
+Locations all need to be on the same coordinates reference system (CRS). Data can
+be either be organized on a regularly spaced grid (i.e. wall to wall simulations for
+a given area) or not (i.e. project data representing plot points in a park).
+
+If the former, the coordinates need to be in order. If the later,
+
+```{r, createlocs, results = 'hide'}
+  # points on a regular spaced grid in the WGS84 CRS
+  locationsGrid <- data.frame(X_WGS84 = c(rep(-124.5938, 5), rep(-124.5312, 5)),
+                        Y_WGS84 = rep(c(47.90625, 47.96875, 48.03125, 48.09375,
+                                     48.15625), 2))
+   
+  # irregularly spaced points in the WGS84 CRS
+  #locationsRandom
+```
+
+
+## Attribute Data
+
+Attribute data pertains to the metadata contained in the netCDFs. NetCDFs are
+self-documenting and require metadata attributes, providing information
+necessary for interpreting the data. 
+
+Different attribute types include variable attributes, time attributes, depth 
+attributes, and global attributes. The format of attributes is a named list. Each attribute list
+has a bare minimum of required fields. Endless other fields are optional and can
+be added by the user as they see fit.
+
+### Variable Attributes
+
+A named list describing the variable data. The *name* and *units* fields are required.
+
+```{r, VarAtt, results = 'hide'}
+var_attributes <- list(
+  name = 'WatYrWDD',
+  long_name = 'Water Year Wet Degree Days',
+  units = 'number of days'
+)
+```
+
+### Time Attributes
+
+A named list describing the time dimension. The *name*, *units*, *calender*, and *vals*
+fields are required.
+
+A common unit for netCDF is days since 1900. A full list of accepted time units can 
+be found [here](https://ncics.org/portfolio/other-resources/udunits2/).
+
+```{r, TimeAtt, results = 'hide'}
+time_attributes <- list(
+  name = 'time',
+  units = 'days since 1900-01-01',
+  calendar = 'standard',
+  unlim = TRUE,
+  vals = c(43554, 43920, 44285, 44650, 45015, 45381, 45746, 46111, 46476, 46842)# mid point of year
+  )
+```
+
+### Vertical (depth / Z) Attributes
+
+A named list describing the vertical (depth / Z) dimension. The *name*, *units*, 
+and *vals* fields are required.
+
+```{r, VertAtt, results = 'hide'}
+vertical_attributes <- list(
+  name = 'depth',
+  units = 'cm',
+  positive = 'down', # depth is down, height is up
+  vals = c(5,15,20)
+)
+```
+
+### Global Attributes
+
+A named list describing the global attributes of the netCDF. This is where you describe
+things like how the data was made, where the data was made, who the data was made by,
+what climate models were used to create the data, etc.
+
+The *title*, *institution*, *description*, *source_id*, *realm*, *product*, and
+*contact* fields are required.
+
+```{r, GlobalAtt, results = 'hide'}
+global_attributes <- list(
+    title = "Project Name Annual Wet Degree Days",
+    institution = 'Southwest Biological Science Center, U.S. Geological Survey',
+    description = 'methods on how this data was made',
+    source = paste(
+      "SOILWAT2 (v4.2.0);",
+      "rSOILWAT2 (v2.3.2);",
+      "rSFSW2 (v3.1.2)"
+    ),
+    source_id = "SOILWAT2",
+    realm = "land",
+    parent_mip_era = "CMIP5",
+    parent_experiment_id = "RCP45",
+    parent_source = "CanESM2",
+    parent_variant_label = "r1i1p1f1",
+    product = "model-output",
+    projection = 'Geographic',
+    grid = 'WGS84',
+    grid_label = "gn",
+    nominal_resolution = "10 km", # \code{\link{populate_netcdf_from_array}}
+    further_info_url = "https://github.com/DrylandEcology/",
+    contact = "you@email.com"
+    )
+```
+
+#### Nominal resolution
+
+If the data is calculated and reported on a grid, CF convention calls for the 
+field *nominal resolution* to be contained in the global attributes. The function
+*calculate_nominal_resolution* will calculate the nominal resolution of your gridded
+data for you. However, you need to provide a raster of the grid, the lat/long locations, and 
+the area that each cell in the grid represents.
+
+```{r, Nominal, results = 'hide'}
+ # grid <- 'RasterbySiteID_AllWesternUS.tif'
+#  sites <- MasterIM[,c(2:3)]
+#  cell_areas_km2 <- rep(7, 127443)
+ 
+ # calculate_nominal_resolution(grid, locations, cell_areas_km2)
+```
+
+# Output Files Structure Naming Conventions
+
+File structure should be organized by: variableName / allFilesPerVariable. Each file
+will contain variable output for one time period and/or climate model.
+
+The name for each file should be in the format as follows:
+**var_LorA_timestep_Project_SOILWAT2_GCM_RCP_variantLabel_gn_startT_endT.nc**
+
+where:
+
+* var – Shorthand name for variable that is contained in files (i.e. ppt for precipitation, WDD for wet degree days)
+* LorA – Land (L) or atmospheric (A) data
+* timestep – The time-step of the data contained (i.e. the units of the time dimension (i.e. year, month)).
+* Project – Project Name (i.e. SEUG or RangeResil, etc.)
+* SOILWAT2 – Keep as is. Denotes that SOILWAT2 was used to generate these results
+* GCM – Name of the GCM climate data used to drive the SOILWAT2 model (i.e. IPSL5, CCSM2-1)
+* RCP – Name of which GCM used to drive the GCM (RCP4.5, RCP8.5)
+* variantLabel –Variant of the GCM used (i.e. r1i1p1f1)
+* gn
+* startT – lower time bound or start of the time period contained. Units should be the date (YearMonthDay, XXXXYYZZ).  
+* endT – upper time bound or end of the time period contained. Units should be the date (YearMonthDay, XXXXYYZZ).  
+
+# Create netCDF Function and Examples
+
+The functions create_empty_netCDF_file and populate_netcdf_from_array will create and populate 
+a netCDF from an array. The user defines the dimensions, attribtues, and locations in the functions'
+arguments. 
+
+The two functions work in conjuction with one another. First, an empty netcdf is created. 
+Then, it is filled with data. 
+
+## Example 1 - Create a 3 dimension netCDF (lat, long, time) from gridded data
+```{r, 3dGridExample}
+    library(rSW2analysis)
+    library(sp)
+    library(raster)
+    
+    # additional arguments
+    
+    ## locations
+    crs <- '+init=epsg:4326' # the CRS
+    
+    ## time bounds
+    annual_time_bounds <- c(43737, 44102, 44103, 44467, 44468, 44832, 44833, 45197,
+                   45198, 45563, 45564, 45928, 45929, 46293, 46294, 46658,
+                  46659, 47024, 47025, 47389) # beginning and end of year days since 1900-01-01
+    
+    outFileName <- 'dummynetcdf.nc'
+    
+    # create
+    create_empty_netCDF_file(
+      data = data1d,
+      has_T_timeAxis = TRUE,
+      has_Z_verticalAxis = FALSE,
+      time_bounds = annual_time_bounds,
+      vert_bounds = NULL,
+      var_attributes = var_attributes,
+      time_attributes  = time_attributes,
+      vertical_attributes = NULL,
+      global_attributes = global_attributes,
+      isGridded = TRUE,
+      locations = locationsGrid,
+      crs = crs,
+      file = outFileName,
+      force_v4 = TRUE,
+      overwrite = TRUE
+    )
+    
+    # populate
+    populate_netcdf_from_array( 
+      file = outFileName, 
+      data = data1d,
+      var_names <- var_attributes$name,
+      has_T_timeAxis = TRUE,
+      has_Z_verticalAxis = FALSE,
+      isGridded = TRUE,
+      locations = locationsGrid,
+      crs = crs,
+      force_v4 = TRUE
+    )
+
+```
+
+## Create a 3 dimension netCDF (lat, long, time) from non-gridded data
+
+```{r, 3dNoGridExample, results = 'hide'}
+# to do
+```
+
+## Create a 4 dimension netCDF (lt, lomg, time, depth) from gridded data
+
+```{r, 4dGridExample}
+
+depth_bounds <- c(0, 5, 5, 10, 10, 15) # min and max of each depth 
+
+ create_empty_netCDF_file(
+      data = data3d,
+      has_T_timeAxis = TRUE,
+      has_Z_verticalAxis = TRUE,
+      time_bounds = annual_time_bounds,
+      vert_bounds = depth_bounds,
+      var_attributes = var_attributes,
+      time_attributes  = time_attributes,
+      vertical_attributes = vertical_attributes,
+      global_attributes = global_attributes,
+      isGridded = TRUE,
+      locations = locationsGrid,
+      crs = crs,
+      file = outFileName,
+      force_v4 = TRUE,
+      overwrite = TRUE
+    )
+ 
+     # populate
+    populate_netcdf_from_array( 
+      file = outFileName, 
+      data = data3d,
+      var_names <- var_attributes$name,
+      has_T_timeAxis = TRUE,
+      has_Z_verticalAxis = TRUE,
+      isGridded = TRUE,
+      locations = locationsGrid,
+      crs = crs,
+      force_v4 = TRUE
+    )
+```
+
+

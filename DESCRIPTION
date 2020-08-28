@@ -45,6 +45,9 @@ Suggests:
     viridisLite,
     lintr,
     MuMIn,
-    colorspace
+    colorspace,
+    knitr,
+    rmarkdwon
+VignetteBuilder: knitr
 Language: en-US
 RoxygenNote: 7.1.1

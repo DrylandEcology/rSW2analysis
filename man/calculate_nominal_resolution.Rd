@@ -6,6 +6,15 @@
 \usage{
 calculate_nominal_resolution(grid, sites, cell_areas_km2)
 }
+\arguments{
+\item{grid}{A raster object}
+
+\item{sites}{A raster object. A numeric array, matrix, or data.frame where each
+row is a site and the columns contain values for Longitude and Latitude.}
+
+\item{cell_areas_km2}{A string of numeric values. Equal in length to the length
+of sites. Area each cell represents in km2.}
+}
 \description{
 Calculate "nominal resolution" of grid
 }

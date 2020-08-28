@@ -112,18 +112,17 @@ The user provides an array and specifies spatial information, dimensionality,
 }
 \examples{
 #############################################################################
-# example 1 - create an empty netcdf with a third, time dimension
+# example - create an empty netcdf with a three dimensions (lat, long, time)
 #############################################################################
 
 # create dummy data ---------------------------------------------------------
 
-data <- matrix(nrow = 5, ncol = 10)
-data[1:5,1:10] <- rnorm(50, 7, 30)
-data <- data.matrix(data)
+someData <- rnorm(100, 7, 30)
+data <- array(someData, c(10, 10))
 
-locations <- data.frame(X_WGS84 = c(rep(-124.5938, 5)),
-                        Y_WGS84 = c(47.90625, 47.96875, 48.03125, 48.09375,
-                         48.15625))
+locations <- data.frame(X_WGS84 = c(rep(-124.5938, 5), rep(-124.5312, 5)),
+                        Y_WGS84 = rep(c(47.90625, 47.96875, 48.03125, 48.09375,
+                                   48.15625), 2))
 
 crs <- '+init=epsg:4326'
 
@@ -137,20 +136,20 @@ outFileName <- 'dummynetcdf.nc'
 
 # time attribute
 time_attributes <- list(
- name = 'time',
- units = 'days since 1900-01-01',
- calendar = 'standard',
- unlim = TRUE,
- vals = c(43554, 43920, 44285, 44650, 45015, 45381, 45746, 46111, 46476, 46842)# mid point of year
+   name = 'time',
+   units = 'days since 1900-01-01',
+   calendar = 'standard',
+   unlim = TRUE,
+   vals = c(43554, 43920, 44285, 44650, 45015, 45381, 45746, 46111, 46476, 46842)# mid point of year
    )
 
 # variable attributes
 var_attributes <- list(
- name = 'JulyTemp',
- long_name = 'Annual Mean July Temperature',
- units = 'Celsius',
- description = 'example data!'
-)
+   name = 'JulyTemp',
+   long_name = 'Annual Mean July Temperature',
+   units = 'Celsius',
+   description = 'example data!'
+   )
 
 # global attributes
 global_attributes <- list(
@@ -172,7 +171,7 @@ global_attributes <- list(
    projection = 'Geographic',
    grid = 'WGS84',
    grid_label = "gn",
-   nominal_resolution = "10 km", # \code{\link{populate_netcdf_from_array}}
+   nominal_resolution = "10 km", # \code{\link{calculate_nominal_resolution}}
    further_info_url = "https://github.com/DrylandEcology/",
    contact = "you@email.com"
    )
@@ -202,5 +201,5 @@ create_empty_netCDF_file(
 
 \url{http://cfconventions.org/cf-conventions/cf-conventions.html} # for defining attributes
 
-DrylandEcology nc conventions # for defining attributes
+Demonstration of netCDF functionality in rSW2analysis vignette
 }

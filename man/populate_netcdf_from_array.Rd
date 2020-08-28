@@ -20,25 +20,19 @@ populate_netcdf_from_array(
 \arguments{
 \item{file}{A character string. File path to a pre-created, empty netCDF.}
 
-\item{data}{A numeric array. Can be either two or three dimensions. If the data
-is two dimensions, The number of columns in the array represent either 1) the
-number of variables, 2) values of one variable at multiple time
-intervals, or 3) values of one variable at multiple vertical (depth)
-intervals. If the data contains values organized by time and depth, depth
-should be the third demsion in the array.}
+\item{data}{A numeric array.}
 
-\item{has_T_timeAxis}{A logical value. Indicates that the netCDF has a time
-dimension, and that the number of columns in the \var{data} represent time
-intervals.}
+\item{has_T_timeAxis}{A logical value. Indicates that the netCDF file
+has a third, time dimension.}
 
-\item{has_Z_verticalAxis}{A logical value. Indicates that the netCDF has a Z
-dimension, and that either, if \var{has_T_timeAxis} is \code{FALSE} the
-number of columns in the \var{data} represent vertical intervals, or
-if \var{has_T_timeAxis} is \code{TRUE} the length of the third dimension in
-\var{data} is equal to the length of the vertical axis.}
+\item{has_Z_verticalAxis}{A logical value. Indicates that the netCDF file
+has a veritical (e.g. soil profile depths) dimension. If \var{has_T_timeAxis}
+is set to \code{FALSE} then the Z axis will be the third dimension.
+If \var{has_T_timeAxis} is set to \code{TRUE} then the Z axis will be the
+fourth dimension.}
 
 \item{isGridded}{A logical value. Represents whether the location data is on
-a regualr grid or not.}
+a regular grid or not.}
 
 \item{grid}{filename (character). File containing the grid information
 (i.e. resolution, extent) of the data. Supported file types are the 'native'
@@ -60,9 +54,116 @@ there is no time or depth dimension.}
 This function is used for the side-effect of filling a file.
 }
 \description{
-This function add values to a strucutured netCDF. The empty netCDF would have
-been created and strucutred with the data in mind.
+This function add values to a structured netCDF created with the
+\code{\link[create_empty_netCDF_file]{create_empty_netCDF_file}} function. The data
+array provided as an argument to this function should be the same as that provided
+to the create_empty_netCDF_file function.
+One of \var{locations} or \var{grid} needs to be provided, but not both.
+If \var{locations} is a matrix or data.frame, \var{crs} needs to be provided.
 }
 \examples{
+#############################################################################
+# example - create an empty netcdf with a three dimensions (lat, long, time)
+#############################################################################
 
+# create dummy data ---------------------------------------------------------
+
+someData <- rnorm(100, 7, 30)
+data <- array(someData, c(10, 10))
+
+locations <- data.frame(X_WGS84 = c(rep(-124.5938, 5), rep(-124.5312, 5)),
+                        Y_WGS84 = rep(c(47.90625, 47.96875, 48.03125, 48.09375,
+                                   48.15625), 2))
+
+crs <- '+init=epsg:4326'
+
+annual_time_bounds <- c(43737, 44102, 44103, 44467, 44468, 44832, 44833, 45197,
+                        45198, 45563, 45564, 45928, 45929, 46293, 46294, 46658
+                        46659, 47024, 47025, 47389) # beginning and end of year days since 1900-01-01
+
+outFileName <- 'dummynetcdf.nc'
+
+# define attributes ---------------------------------------------------------
+
+# time attribute
+time_attributes <- list(
+   name = 'time',
+   units = 'days since 1900-01-01',
+   calendar = 'standard',
+   unlim = TRUE,
+   vals = c(43554, 43920, 44285, 44650, 45015, 45381, 45746, 46111, 46476, 46842)# mid point of year
+   )
+
+# variable attributes
+var_attributes <- list(
+   name = 'JulyTemp',
+   long_name = 'Annual Mean July Temperature',
+   units = 'Celsius',
+   description = 'example data!'
+   )
+
+# global attributes
+global_attributes <- list(
+   title = "",
+   institution = 'Southwest Biological Science Center, U.S. Geological Survey',
+   description = 'how this data was made',
+   source = paste(
+     "SOILWAT2 (v4.2.0);",
+     "rSOILWAT2 (v2.3.2);",
+     "rSFSW2 (v3.1.2)"
+   ),
+   source_id = "SOILWAT2",
+   realm = "land",
+   parent_mip_era = "CMIP5",
+   parent_experiment_id = "RCP45",
+   parent_source = "CanESM2",
+   parent_variant_label = "r1i1p1f1",
+   product = "model-output",
+   projection = 'Geographic',
+   grid = 'WGS84',
+   grid_label = "gn",
+   nominal_resolution = "10 km", # \code{\link{calculate_nominal_resolution}}
+   further_info_url = "https://github.com/DrylandEcology/",
+   contact = "you@email.com"
+   )
+
+# run create_empty_netCDF_file function --------------------------------------
+create_empty_netCDF_file(
+     data = data,
+     has_T_timeAxis = TRUE,
+     has_Z_verticalAxis = FALSE,
+     time_bounds = annual_time_bounds,
+     vert_bounds = NULL,
+     var_attributes = var_attributes,
+     time_attributes  = time_attributes,
+     vertical_attributes = NULL,
+     global_attributes = global_attributes,
+     isGridded = TRUE,
+     locations = locations,
+     crs = crs,
+     file = outFileName,
+     force_v4 = TRUE,
+     overwrite = TRUE
+   )
+
+# run function populate_netcdf_from_array
+populate_netcdf_from_array(
+     file = outFileName,
+     data = data,
+     var_names <- var_attributes$name,
+     has_T_timeAxis = TRUE,
+     has_Z_verticalAxis = FALSE,
+     isGridded = TRUE,
+     locations = locations,
+     crs = crs,
+     force_v4 = TRUE
+   )
+
+}
+\seealso{
+\code{\link{create_empty_netCDF_file}}
+
+\url{http://cfconventions.org/cf-conventions/cf-conventions.html} # for defining attributes
+
+Demonstration of netCDF functionality in rSW2analysis vignette
 }
