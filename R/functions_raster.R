@@ -8,8 +8,10 @@
 #' @param crs A CRS object.
 #' @param filename A character string. Passed to \code{\link[raster]{brick}}.
 #'
-#' @return A RasterLayer (if \code{data} is a vector) or RasterBrick (if
-#'   \code{data} is two-dimensional).
+#' @return A \code{\link[raster:RasterLayer-class]{raster::RasterLayer}}
+#'   (if \code{data} is a vector) or
+#'   \code{\link[raster:RasterBrick-class]{raster::RasterBrick}}
+#'   (if \code{data} is two-dimensional).
 #'
 #' @export
 create_raster_from_variables <- function(SFSW2_prj_meta = NULL, locations,
@@ -168,7 +170,7 @@ find_siteIDs <- function(meta, xy, proj4string = NULL) {
 #'
 #' @param x A numeric vector
 #' @param SFSW2_prj_meta An environment
-#' @param subset A logical vector of lenght equal to \code{x}
+#' @param subset A logical vector of length equal to \code{x}
 #' @param alpha A numeric value
 #'
 #' @return A \code{\link[sp]{SpatialPolygons}} object.

@@ -2,8 +2,9 @@
 % Please edit documentation in R/calculate_ensemble.R
 \name{calc_extentwise_ensemble}
 \alias{calc_extentwise_ensemble}
-\title{Assign to cells the `inverse-ecdf` quantiles from extent-wide (area-weighted)
-ranked, (equally-weighted) GCMs ensembles across `reqCSs`}
+\title{Assign to cells the \var{inverse-ecdf} quantiles from extent-wide
+(area-weighted) ranked, (equally-weighted) GCMs ensembles across
+\code{reqCSs}}
 \usage{
 calc_extentwise_ensemble(
   SFSW2_prj_meta,

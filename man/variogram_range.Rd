@@ -7,8 +7,8 @@
 variogram_range(x, project_to_utm = TRUE, sub_samplepoints_N = NULL)
 }
 \arguments{
-\item{x}{A RasterLayer in un-projected coordinates (i.e.,
-longitude/latitude)}
+\item{x}{A \code{\link[raster:RasterLayer-class]{raster::RasterLayer}}
+in \var{un}-projected coordinates (i.e., longitude/latitude)}
 }
 \description{
 Calculate range of variogram in kilometers

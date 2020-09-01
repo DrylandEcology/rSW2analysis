@@ -2,8 +2,8 @@
 % Please edit documentation in R/calculate_ensemble.R
 \name{calc_regionwise_ensemble}
 \alias{calc_regionwise_ensemble}
-\title{Assign to cells the `inverse-ecdf` quantiles from region-wide ranked GCMs
-ensembles across `reqCSs`}
+\title{Assign to cells the \var{inverse-ecdf} quantiles from region-wide ranked GCMs
+ensembles across \code{reqCSs}}
 \usage{
 calc_regionwise_ensemble(
   SFSW2_prj_meta,

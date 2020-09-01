@@ -2,7 +2,7 @@
 % Please edit documentation in R/figures_scatter.R
 \name{add_isoline_to_pointcloud}
 \alias{add_isoline_to_pointcloud}
-\title{Add isoline(s) to a xy-plot}
+\title{Add isoline(s) to a \var{xy}-plot}
 \usage{
 add_isoline_to_pointcloud(
   x,

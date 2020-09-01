@@ -30,7 +30,13 @@ Secondaries: G(12:34) = g12_34 = variation attributable to x1 or x2 but not to b
 }
 \examples{
 ## Test code to match up with cement example of Whittaker 1984
+\dontrun{
 if (requireNamespace("MuMIn")) {
+  if (packageVersion("bit") <= "4.0.4") {
+    # bit:::chunk.default fails, see #3
+    stopifnot(require("ff"))
+  }
+
   probs_cement <- whittaker_additive_elements(
     data = MuMIn::Cement,
     X1 = "X1", X2 = "X2", X3 = "X3", X4 = "X4"
@@ -49,5 +55,6 @@ if (requireNamespace("MuMIn")) {
 #                  9.1                -11.6                  0.2
 # Quartery_X1:X2:X3:X4
 #                 13.5
+}
 
 }

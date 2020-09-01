@@ -4,7 +4,7 @@
 \name{rSW2analysis}
 \alias{rSW2analysis}
 \alias{rSW2analysis-package}
-\title{\pkg{rSW2analysis}: Tools to extract and analyse output from simulation
+\title{\pkg{rSW2analysis}: Tools to extract and analyze output from simulation
  experiments that were carried out by \pkg{rSFSW2}}
 \description{
 Tools to support analysis and access of outputs of

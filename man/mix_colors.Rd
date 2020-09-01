@@ -20,8 +20,8 @@ formats supported by \code{\link[grDevices]{col2rgb}}.}
 }
 \value{
 A vector of the mixed colors. The format is \R's
-  hexadecimal color codes #rrggbb (see \code{\link[grDevices]{rgb}}), which
-  can be used as \code{col =} argument of graphics functions or in
+  hexadecimal color codes \var{#rrggbb} (see \code{\link[grDevices]{rgb}}),
+  which can be used as \code{col =} argument of graphics functions or in
   \code{\link[graphics]{par}}.
 }
 \description{

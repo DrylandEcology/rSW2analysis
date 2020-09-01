@@ -37,7 +37,8 @@ Create a raster from values and plot it to the current device
      \code{\link[raster]{image}} which calls \code{\link[graphics]{image}}.
    \item If \code{x} is a vector of hexadecimal color codes, then the
      values are plotted by the function \code{\link[graphics]{rasterImage}},
-     similar to how \code{\link[raster]{plotRGB}} plots multi-color rasters.
+     similar to how \code{\link[raster]{plotRGB}} plots multi-color raster
+     objects.
  }
 
 The following arguments in \code{...} are treated separately:

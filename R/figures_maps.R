@@ -6,11 +6,12 @@
 #'   printed.
 #' @param zextreme A numeric vector length two. The minimum and maximum z-value
 #'   of \code{grid}. If \code{zextreme[1] < zlim[1] || zextreme[2] > zlim[2]},
-#'   then the values in the ranges between each zextreme and zlim will be
-#'   highlighted as extreme areas in a different color.
+#'   then the values in the ranges between each \code{zextreme} and \code{zlim}
+#'    will be highlighted as extreme areas in a different color.
 #' @param col_desc A list with the color names. A returned object from a call to
 #'   the function \code{\link{prepare_colors}}.
-#' @param grid A RasterLayer object for which the legend is created.
+#' @param grid A \code{\link[raster:RasterLayer-class]{raster::RasterLayer}}
+#'   object for which the legend is created.
 #' @param box A numeric vector of length four. The SW (lower left) and NE (upper
 #'   right) corners of the color legend on the plotted \code{grid}.
 #' @param whitebox A logical value. If \code{TRUE}, then the area of the color
@@ -291,7 +292,8 @@ add_panel_map <- function(x, meta, subset, ...) {
 #'      \code{\link[raster]{image}} which calls \code{\link[graphics]{image}}.
 #'    \item If \code{x} is a vector of hexadecimal color codes, then the
 #'      values are plotted by the function \code{\link[graphics]{rasterImage}},
-#'      similar to how \code{\link[raster]{plotRGB}} plots multi-color rasters.
+#'      similar to how \code{\link[raster]{plotRGB}} plots multi-color raster
+#'      objects.
 #'  }
 #'
 #' @details The following arguments in \code{...} are treated separately:

@@ -13,10 +13,10 @@ legend_location(x, y = NULL, xlim = NULL, ylim = NULL)
 \item{y}{the x and y coordinates of a set of points.
     Alternatively, a single argument \code{x} can be provided.}
 
-\item{xlim}{A numeric vector of lenght two. The \var{x-axis} limits;
+\item{xlim}{A numeric vector of length two. The \var{x-axis} limits;
 derived from data if missing.}
 
-\item{ylim}{A numeric vector of lenght two. The \var{y-axis} limits;
+\item{ylim}{A numeric vector of length two. The \var{y-axis} limits;
 derived from data if missing.}
 }
 \value{
@@ -35,7 +35,11 @@ legend_location(xy)
 legend_location(xy, xlim = c(0, 5))
 pos <- legend_location(xy, xlim = c(0, 4), ylim = c(1, 4))
 
-graphics::smoothScatter(xy, xlim = c(0, 4), ylim = c(1, 4))
+if (requireNamespace("KernSmooth")) {
+  graphics::smoothScatter(xy, xlim = c(0, 4), ylim = c(1, 4))
+} else {
+  graphics::plot(xy, xlim = c(0, 4), ylim = c(1, 4))
+}
 graphics::legend(pos, legend = pos, fill = "black")
 
 }

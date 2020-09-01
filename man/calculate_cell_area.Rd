@@ -4,27 +4,42 @@
 \alias{calculate_cell_area}
 \title{Calculate areal extent of cells for each site}
 \usage{
-calculate_cell_area(sp_sites, sim_raster, tol = sqrt(.Machine$double.eps))
+calculate_cell_area(sites, grid, tol = sqrt(.Machine$double.eps))
 }
 \arguments{
-\item{sp_sites}{A \code{\link[sp:SpatialPoints-class]{sp::SpatialPoints}}
+\item{sites}{A \code{\link[sp:SpatialPoints-class]{sp::SpatialPoints}}
 object for which areal extent of cells will be computed.}
 
-\item{sim_raster}{A \code{\link[raster:Raster-class]{raster::Raster}}
-object used for coordinate system and cells. The coordinate system must
-use angular coordinates (longitude/latitude).}
+\item{grid}{A \code{\link[raster:Raster-class]{raster::Raster}}
+object used for coordinate system and cells.}
 
-\item{tol}{A numerical value to inform the site to cell matching.}
+\item{tol}{A numerical value to inform the site to gridcell matching.}
 }
 \value{
 A \code{data.frame} with four columns: \var{\dQuote{Longitude}},
   \var{\dQuote{Latitude}}, \var{\dQuote{km2}}, and \var{\dQuote{rel}};
-  and one row for each site of \code{sp_sites}.
-  Cell area on ellipsoid, based on \code{sim_raster}, in square-kilometer
+  and one row for each site of \code{sites}.
+  Cell area on ellipsoid, based on \code{grid}, in square-kilometer
   \code{km2} and as fraction of maximal cell area on the equator \code{rel}.
 }
 \description{
 Calculate areal extent of cells for each site
+}
+\examples{
+r <- raster::raster(
+  xmn = 0, xmx = 1,
+  ymn = -90, ymx = 90,
+  crs ="+init=epsg:4326",
+  resolution = c(1, 1)
+)
+n <- prod(dim(r))
+r[] <- seq_len(n)
+xy <- raster::sampleRegular(r, size = n, sp = TRUE)
+x <- calculate_cell_area(sites = xy, grid = r)
+
+# Visualize cell area by latitude
+with(x, graphics::plot(Latitude, km2, type = "l"))
+
 }
 \seealso{
 \code{\link[geosphere]{areaPolygon}}

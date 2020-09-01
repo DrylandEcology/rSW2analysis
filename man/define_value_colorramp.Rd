@@ -2,10 +2,10 @@
 % Please edit documentation in R/figures_functions_miscellaneous.R
 \name{define_value_colorramp}
 \alias{define_value_colorramp}
-\title{Define a colorramp from minimum to maximum}
+\title{Define a \var{colorramp} from minimum to maximum}
 \usage{
 define_value_colorramp(zlim, Nc = 255, cols = c("gray", "gold", "red"))
 }
 \description{
-Define a colorramp from minimum to maximum
+Define a \var{colorramp} from minimum to maximum
 }

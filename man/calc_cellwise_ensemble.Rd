@@ -2,7 +2,7 @@
 % Please edit documentation in R/calculate_ensemble.R
 \name{calc_cellwise_ensemble}
 \alias{calc_cellwise_ensemble}
-\title{Calculate cell-wise ensembles across `reqCSs`}
+\title{Calculate cell-wise ensembles across \code{reqCSs}}
 \usage{
 calc_cellwise_ensemble(
   data,
@@ -45,5 +45,5 @@ the ensembles are calculated. This has to be \code{3}.}
 for which ensembles are calculated across participating models.}
 }
 \description{
-Calculate cell-wise ensembles across `reqCSs`
+Calculate cell-wise ensembles across \code{reqCSs}
 }

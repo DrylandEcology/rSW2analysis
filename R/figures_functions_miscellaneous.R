@@ -13,8 +13,8 @@
 #'   formats supported by \code{\link[grDevices]{col2rgb}}.
 #'
 #' @return A vector of the mixed colors. The format is \R's
-#'   hexadecimal color codes #rrggbb (see \code{\link[grDevices]{rgb}}), which
-#'   can be used as \code{col =} argument of graphics functions or in
+#'   hexadecimal color codes \var{#rrggbb} (see \code{\link[grDevices]{rgb}}),
+#'   which can be used as \code{col =} argument of graphics functions or in
 #'   \code{\link[graphics]{par}}.
 #'
 #' @details Any \code{NA} value in a row of \code{x} will translate to a
@@ -134,7 +134,7 @@ mix_colors <- function(x, colors) {
 }
 
 
-#' Define a colorramp from minimum to maximum
+#' Define a \var{colorramp} from minimum to maximum
 #' @export
 define_value_colorramp <- function(zlim, Nc = 255,
   cols = c("gray", "gold", "red")) {
@@ -152,7 +152,7 @@ define_value_colorramp <- function(zlim, Nc = 255,
   )
 }
 
-#' Define a colorramp based one set of colors for the negative range and
+#' Define a \var{colorramp} based one set of colors for the negative range and
 #' another set of colors for the positive range
 #' @export
 define_delta_colorramp <- function(zlim, zlim_trim = NULL, Nc = 255,
@@ -296,9 +296,9 @@ add_panel_identifier <- function(i, add_label = FALSE, label = "",
 #' Determine location for a legend based on lowest density of points
 #'
 #' @inheritParams grDevices::xy.coords
-#' @param xlim A numeric vector of lenght two. The \var{x-axis} limits;
+#' @param xlim A numeric vector of length two. The \var{x-axis} limits;
 #'   derived from data if missing.
-#' @param ylim A numeric vector of lenght two. The \var{y-axis} limits;
+#' @param ylim A numeric vector of length two. The \var{y-axis} limits;
 #'   derived from data if missing.
 #'
 #' @seealso \code{\link[graphics]{legend}}, \code{\link[grDevices]{xy.coords}}
@@ -314,7 +314,11 @@ add_panel_identifier <- function(i, add_label = FALSE, label = "",
 #' legend_location(xy, xlim = c(0, 5))
 #' pos <- legend_location(xy, xlim = c(0, 4), ylim = c(1, 4))
 #'
-#' graphics::smoothScatter(xy, xlim = c(0, 4), ylim = c(1, 4))
+#' if (requireNamespace("KernSmooth")) {
+#'   graphics::smoothScatter(xy, xlim = c(0, 4), ylim = c(1, 4))
+#' } else {
+#'   graphics::plot(xy, xlim = c(0, 4), ylim = c(1, 4))
+#' }
 #' graphics::legend(pos, legend = pos, fill = "black")
 #'
 #' @export

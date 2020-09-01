@@ -162,7 +162,7 @@ calc_NT1 <- function(refdat, prodat) {
 #' similar. Values larger than one are indicative of novel combinations"
 #' (Mesgaran et al. 2014).
 #'
-#' Calculates the mahalanobis distance of each observation to the environmental
+#' Calculates the Mahalanobis distance of each observation to the environmental
 #' center of the reference set for both the reference and the projection data
 #' set and calculate the ratio between the two.
 #'
@@ -210,7 +210,13 @@ calc_NT2 <- function(refdat, prodat) {
 #'
 #' @examples
 #' ## Test code to match up with cement example of Whittaker 1984
+#' \dontrun{
 #' if (requireNamespace("MuMIn")) {
+#'   if (packageVersion("bit") <= "4.0.4") {
+#'     # bit:::chunk.default fails, see #3
+#'     stopifnot(require("ff"))
+#'   }
+#'
 #'   probs_cement <- whittaker_additive_elements(
 #'     data = MuMIn::Cement,
 #'     X1 = "X1", X2 = "X2", X3 = "X3", X4 = "X4"
@@ -229,6 +235,7 @@ calc_NT2 <- function(refdat, prodat) {
 #' #                  9.1                -11.6                  0.2
 #' # Quartery_X1:X2:X3:X4
 #' #                 13.5
+#' }
 #'
 #' @export
 whittaker_additive_elements <- function(data, y = "y", w = NULL,
