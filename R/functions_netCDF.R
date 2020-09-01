@@ -536,14 +536,34 @@ read_netCDF_to_raster <- function(x, ...) {
 
 
 #' Calculate "nominal resolution" of grid
-#' @references CMIP6 Global Attributes, DRS, Filenames, Directory Structure, and CV’s
+#' @references
+#'  \var{CMIP6 Global Attributes, DRS, Filenames, Directory Structure, and CV's}
 #'   10 September 2018 (v6.2.7)
 #'   Appendix 2: Algorithms for Defining the "nominal_resolution" Attribute
-#'   https://docs.google.com/document/d/1h0r8RZr_f3-8egBMMh7aqLwy3snpD6_MrDz1q8n5XUk/edit#bookmark=id.ibeh7ad2gpdi
+#'   \url{https://docs.google.com/document/d/1h0r8RZr_f3-8egBMMh7aqLwy3snpD6_MrDz1q8n5XUk/edit#bookmark=id.ibeh7ad2gpdi}
+#'
+#' @examples
+#' r <- raster::raster(
+#'   xmn = -120, xmx = -90,
+#'   ymn = 30, ymx = 50,
+#'   crs ="+init=epsg:4326",
+#'   resolution = c(0.5, 0.5)
+#' )
+#' r[] <- seq_len(prod(dim(r)))
+#' xy <- raster::sampleRandom(r, size = 50, sp = TRUE)
+#' grid_cell_area <- calculate_cell_area(sites = xy, grid = r)
+#'
+#' calculate_nominal_resolution(
+#'   grid = r,
+#'   sites = xy,
+#'   cell_areas_km2 = grid_cell_area[, "km2"]
+#' )
+#'
 #' @export
 calculate_nominal_resolution <- function(grid, sites, cell_areas_km2) {
   stopifnot(requireNamespace("geosphere"))
-  # For a land surface model calculated on its own grid, include all land grid cells
+  # For a land surface model calculated on its own grid,
+  # include all land grid cells
 
   # For each grid cell, calculate the distance (in km) between each pair of
   # cell vertices and select the maximum distance ("dmax").
@@ -564,8 +584,8 @@ calculate_nominal_resolution <- function(grid, sites, cell_areas_km2) {
     dmax_km <- 1e-3 *
       geosphere::distGeo(xy_lowerleft[id_use, ], xy_upperright[id_use, ])
 
-    # Calculate the mean over all cells of dmax, weighting each by the grid-cell's
-    # area (A)
+    # Calculate the mean over all cells of dmax, weighting each by the
+    # grid-cell's area (A)
     mean_resolution_km <- stats::weighted.mean(dmax_km, cell_areas_km2[id_use])
 
   } else {
