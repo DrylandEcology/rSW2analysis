@@ -305,6 +305,7 @@ compare_direction_2deltas <- function(dx, dy, vars = NULL, cl = NULL,
   res
 }
 
+#' Compare directions of change
 #' @param dx Reference data
 #'
 #' @export

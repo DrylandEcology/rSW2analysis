@@ -11,7 +11,7 @@ get_isoline_polygon(x, SFSW2_prj_meta, subset, alpha)
 
 \item{SFSW2_prj_meta}{An environment}
 
-\item{subset}{A logical vector of lenght equal to \code{x}}
+\item{subset}{A logical vector of length equal to \code{x}}
 
 \item{alpha}{A numeric value}
 }

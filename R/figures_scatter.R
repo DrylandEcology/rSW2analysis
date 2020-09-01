@@ -1,9 +1,9 @@
 
-#' Add contour line to a xy-plot that envelopes \code{alpha * 100}-percent
-#' of the xy-points
+#' Add contour line to a \var{xy}-plot that envelopes \code{alpha * 100}-percent
+#' of the \var{xy}-points
 #'
 #' @references Modified from code by Pascal Haenggi (2008)
-#'   https://stat.ethz.ch/pipermail/r-help/2008-June/166079.html
+#'   \url{https://stat.ethz.ch/pipermail/r-help/2008-June/166079.html}
 #' @export
 add_contour_to_pointcloud <- function(x, y, alpha = 0.95, col = "red",
   fill = FALSE, na.rm = FALSE, ...) {
@@ -68,7 +68,7 @@ add_contour_to_pointcloud <- function(x, y, alpha = 0.95, col = "red",
 }
 
 
-#' Add isoline(s) to a xy-plot
+#' Add isoline(s) to a \var{xy}-plot
 #'
 #' The isolines can either represent the \code{probs * 100}-percent
 #' quantile or represent fixed \code{levels} of the z-variable values

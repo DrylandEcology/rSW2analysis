@@ -2,7 +2,7 @@
 % Please edit documentation in R/figures_functions_miscellaneous.R
 \name{define_delta_colorramp}
 \alias{define_delta_colorramp}
-\title{Define a colorramp based one set of colors for the negative range and
+\title{Define a \var{colorramp} based one set of colors for the negative range and
 another set of colors for the positive range}
 \usage{
 define_delta_colorramp(
@@ -17,6 +17,6 @@ define_delta_colorramp(
 )
 }
 \description{
-Define a colorramp based one set of colors for the negative range and
+Define a \var{colorramp} based one set of colors for the negative range and
 another set of colors for the positive range
 }

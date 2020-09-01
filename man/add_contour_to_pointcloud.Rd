@@ -2,8 +2,8 @@
 % Please edit documentation in R/figures_scatter.R
 \name{add_contour_to_pointcloud}
 \alias{add_contour_to_pointcloud}
-\title{Add contour line to a xy-plot that envelopes \code{alpha * 100}-percent
-of the xy-points}
+\title{Add contour line to a \var{xy}-plot that envelopes \code{alpha * 100}-percent
+of the \var{xy}-points}
 \usage{
 add_contour_to_pointcloud(
   x,
@@ -16,10 +16,10 @@ add_contour_to_pointcloud(
 )
 }
 \description{
-Add contour line to a xy-plot that envelopes \code{alpha * 100}-percent
-of the xy-points
+Add contour line to a \var{xy}-plot that envelopes \code{alpha * 100}-percent
+of the \var{xy}-points
 }
 \references{
 Modified from code by Pascal Haenggi (2008)
-  https://stat.ethz.ch/pipermail/r-help/2008-June/166079.html
+  \url{https://stat.ethz.ch/pipermail/r-help/2008-June/166079.html}
 }

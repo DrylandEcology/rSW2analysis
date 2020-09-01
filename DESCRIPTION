@@ -16,7 +16,6 @@ Depends:
 Imports:
     rSFSW2 (>= 4.0.0),
     RSQLite (>= 2.1.1),
-    DBI (>= 1.0),
     raster (>= 2.5.8),
     sp (>= 1.2.3),
     methods,
@@ -30,6 +29,7 @@ Suggests:
     geosphere,
     gstat,
     Hmisc,
+    KernSmooth,
     landscapemetrics,
     maps,
     maptools,
@@ -47,4 +47,4 @@ Suggests:
     MuMIn,
     colorspace
 Language: en-US
-RoxygenNote: 7.0.2
+RoxygenNote: 7.1.1

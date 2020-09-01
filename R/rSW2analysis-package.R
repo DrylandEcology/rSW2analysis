@@ -1,4 +1,4 @@
-#' \pkg{rSW2analysis}: Tools to extract and analyse output from simulation
+#' \pkg{rSW2analysis}: Tools to extract and analyze output from simulation
 #'  experiments that were carried out by \pkg{rSFSW2}
 #'
 #' @section LICENSE:

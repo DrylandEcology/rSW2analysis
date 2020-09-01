@@ -10,5 +10,7 @@ get_UTM_Zone(longitude, latitude)
 Calculate the UTM zone based on geographic location
 }
 \references{
-Convert Latitude/Longitude to UTM [https://www.wavemetrics.com/code-snippet/convert-latitudelongitude-utm] (attributed to Chuck Gantz).
+Convert Latitude/Longitude to UTM
+  \url{https://www.wavemetrics.com/code-snippet/convert-latitudelongitude-utm}
+  (attributed to Chuck Gantz).
 }

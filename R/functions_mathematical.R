@@ -162,7 +162,7 @@ calc_NT1 <- function(refdat, prodat) {
 #' similar. Values larger than one are indicative of novel combinations"
 #' (Mesgaran et al. 2014).
 #'
-#' Calculates the mahalanobis distance of each observation to the environmental
+#' Calculates the Mahalanobis distance of each observation to the environmental
 #' center of the reference set for both the reference and the projection data
 #' set and calculate the ratio between the two.
 #'

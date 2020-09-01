@@ -14,8 +14,10 @@ create_raster_from_variables(SFSW2_prj_meta, data, filename = "")
 \item{filename}{A character string. Passed to \code{\link[raster]{brick}}.}
 }
 \value{
-A RasterLayer (if \code{data} is a vector) or RasterBrick (if
-  \code{data} is two-dimensional).
+A \code{\link[raster:RasterLayer-class]{raster::RasterLayer}}
+  (if \code{data} is a vector) or
+  \code{\link[raster:RasterBrick-class]{raster::RasterBrick}}
+  (if \code{data} is two-dimensional).
 }
 \description{
 Converts values into a Raster*

@@ -1,8 +1,9 @@
 
 #' Calculate range of variogram in kilometers
 #'
-#' @param x A RasterLayer in un-projected coordinates (i.e.,
-#'   longitude/latitude)
+#' @param x A \code{\link[raster:RasterLayer-class]{raster::RasterLayer}}
+#'   in \var{un}-projected coordinates (i.e., longitude/latitude)
+#'
 #' @export
 variogram_range <- function(x, project_to_utm = TRUE,
   sub_samplepoints_N = NULL) {
