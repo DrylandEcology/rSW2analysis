@@ -6,13 +6,6 @@ output:
   rmarkdown::html_vignette:
     toc: true
     toc_depth: 2
-#   toc_float: true
-#   collapsed: false
-#   smooth_scroll: false
-#   theme: united
-#   highlight: tango
-#   smart: false
-#   bookdown::pdf_document2:
 vignette: >
   %\VignetteIndexEntry{Demonstration of netCDF functionality in rSW2analysis}
   %\VignetteEngine{knitr::rmarkdown}
@@ -21,25 +14,25 @@ vignette: >
 
 # Overview
 
-This vignette is an overview of how to use the functions in the rSW2analysis package to 
-convert arrays of rSOILWAT2 and SOILWAT2 output data into netCDFs that adhere to 
+This vignette is an overview of how to use the functions in the rSW2analysis package to
+convert arrays of rSOILWAT2 and SOILWAT2 output data into netCDFs that adhere to
 [CF conventions](http://cfconventions.org/Data/cf-conventions/cf-conventions-1.8/cf-conventions.html#_orthogonal_multidimensional_array_representation).
 
-Additionally, this document describes our standards and conventions in regards to naming, 
-metadata, and netCDF structure.
+Additionally, this document describes the Dryland Ecology Lab's standards and
+conventions in regards to naming, metadata, and netCDF structure.
 
 # Input Data Format and Structure
 
 ## Variable Data
 
-The netCDF functions in this package expect an array, in which each row represents 
-data for a site. Columns represent one of three things: 
+The netCDF functions in this package expect an array, in which each row represents
+data for a site. Columns represent one of three things:
 
 * multiple different variables for one site
 * one variable with multiple measurements (time series)
 * one variable with multiple depth measurements
 
-```{r, create1d}
+```{r, create1d, results = 'hide'}
    # dummy data for 10 sites, 10 data points (could be 10 vars, 10 times, or 10 depths)
    someData <- rnorm(100, 7, 30)
    data1d <- array(someData, c(10, 10))
@@ -72,19 +65,70 @@ If the former, the coordinates need to be in order. If the later,
   locationsGrid <- data.frame(X_WGS84 = c(rep(-124.5938, 5), rep(-124.5312, 5)),
                         Y_WGS84 = rep(c(47.90625, 47.96875, 48.03125, 48.09375,
                                      48.15625), 2))
-   
+
   # irregularly spaced points in the WGS84 CRS
   #locationsRandom
 ```
 
+## Dimension Data
+
+NetCDFs are organized into dimensions. Dimensions have two key components: Bounds
+and values. The dimensions also have other information which is degined in the Attibute Data
+(see below).
+
+### Latitude (Y) and Longitude (X) Dimensions
+
+All NetCDFs will have at least two dimensions, latitude and longitude.
+
+The bounds and values of the latitude and longitude are determined from the location
+data within the *create_empty_netCDF_file* function.
+
+### Time (T) Dimension
+
+The user must define the bounds and values for the time dimension, as inputs to the
+*create_empty_netCDF_file*.
+
+The bounds of the time dimension are the start and end of each interval of the time dimension.
+
+The values refer to the midpoint of each interval of the time dimension.
+
+The bounds and values need to be in the same units.
+
+A common unit for netCDF is days since 1900. A full list of accepted time units can
+be found [here](https://ncics.org/portfolio/other-resources/udunits2/).
+
+```{r, timeD}
+
+    ## time vals
+    time_midpoints <- c(43920, 44285, 44650, 45015, 45381, 45746, 46111,
+                          46476, 46842, 47207)# mid point of year n days since 1900-01-01
+
+    ## time bounds
+    annual_time_bounds <- c(43737, 44102, 44102, 44467, 44467, 44832, 44833, 45197,
+                   45197, 45563, 45563, 45928, 45928, 46293, 46293, 46658,
+                  46658, 47024, 47024, 47389) # beginning and end of year in days since 1900-01-01
+```
+
+### Depth (Z) Dimension
+
+The user must define the bounds and values for the time dimension.
+
+```{r, depthD}
+
+    ## depth vals
+    depths_max <- c(5, 10, 15) # maximum depth of each layer of depth
+
+    ## depth bounds
+    depth_bounds <- c(0, 5, 5, 10, 10, 15) # min and max of each nlayer of depth depth
+```
 
 ## Attribute Data
 
 Attribute data pertains to the metadata contained in the netCDFs. NetCDFs are
 self-documenting and require metadata attributes, providing information
-necessary for interpreting the data. 
+necessary for interpreting the data.
 
-Different attribute types include variable attributes, time attributes, depth 
+Different attribute types include variable attributes, time attributes, depth
 attributes, and global attributes. The format of attributes is a named list. Each attribute list
 has a bare minimum of required fields. Endless other fields are optional and can
 be added by the user as they see fit.
@@ -104,9 +148,9 @@ var_attributes <- list(
 ### Time Attributes
 
 A named list describing the time dimension. The *name*, *units*, *calender*, and *vals*
-fields are required.
+fields are required here.
 
-A common unit for netCDF is days since 1900. A full list of accepted time units can 
+A common unit for netCDF is days since 1900. A full list of accepted time units can
 be found [here](https://ncics.org/portfolio/other-resources/udunits2/).
 
 ```{r, TimeAtt, results = 'hide'}
@@ -115,13 +159,13 @@ time_attributes <- list(
   units = 'days since 1900-01-01',
   calendar = 'standard',
   unlim = TRUE,
-  vals = c(43554, 43920, 44285, 44650, 45015, 45381, 45746, 46111, 46476, 46842)# mid point of year
+  vals = time_midpoints # mid point of year
   )
 ```
 
 ### Vertical (depth / Z) Attributes
 
-A named list describing the vertical (depth / Z) dimension. The *name*, *units*, 
+A named list describing the vertical (depth / Z) dimension. The *name*, *units*,
 and *vals* fields are required.
 
 ```{r, VertAtt, results = 'hide'}
@@ -129,7 +173,7 @@ vertical_attributes <- list(
   name = 'depth',
   units = 'cm',
   positive = 'down', # depth is down, height is up
-  vals = c(5,15,20)
+  vals = depths_max
 )
 ```
 
@@ -170,18 +214,28 @@ global_attributes <- list(
 
 #### Nominal resolution
 
-If the data is calculated and reported on a grid, CF convention calls for the 
+If the data is calculated and reported on a grid, CF convention calls for the
 field *nominal resolution* to be contained in the global attributes. The function
 *calculate_nominal_resolution* will calculate the nominal resolution of your gridded
-data for you. However, you need to provide a raster of the grid, the lat/long locations, and 
+data for you. However, you need to provide a raster of the grid, the lat/long locations, and
 the area that each cell in the grid represents.
 
 ```{r, Nominal, results = 'hide'}
- # grid <- 'RasterbySiteID_AllWesternUS.tif'
-#  sites <- MasterIM[,c(2:3)]
-#  cell_areas_km2 <- rep(7, 127443)
- 
- # calculate_nominal_resolution(grid, locations, cell_areas_km2)
+r <- raster::raster(
+  xmn = -120, xmx = -90,
+  ymn = 30, ymx = 50,
+  crs ="+init=epsg:4326",
+  resolution = c(0.5, 0.5)
+)
+r[] <- seq_len(prod(dim(r)))
+xy <- raster::sampleRandom(r, size = 50, sp = TRUE)
+grid_cell_area <- rSW2analysis:::calculate_cell_area(sp_sites = xy, sim_raster = r)
+
+calculate_nominal_resolution(
+  grid = r,
+  sites = xy,
+  cell_areas_km2 = grid_cell_area[, "km2"]
+)
 ```
 
 # Output Files Structure Naming Conventions
@@ -203,36 +257,31 @@ where:
 * RCP – Name of which GCM used to drive the GCM (RCP4.5, RCP8.5)
 * variantLabel –Variant of the GCM used (i.e. r1i1p1f1)
 * gn
-* startT – lower time bound or start of the time period contained. Units should be the date (YearMonthDay, XXXXYYZZ).  
-* endT – upper time bound or end of the time period contained. Units should be the date (YearMonthDay, XXXXYYZZ).  
+* startT – lower time bound or start of the time period contained. Units should be the date (YearMonthDay, XXXXYYZZ).
+* endT – upper time bound or end of the time period contained. Units should be the date (YearMonthDay, XXXXYYZZ).
 
 # Create netCDF Function and Examples
 
-The functions create_empty_netCDF_file and populate_netcdf_from_array will create and populate 
+The functions create_empty_netCDF_file and populate_netcdf_from_array will create and populate
 a netCDF from an array. The user defines the dimensions, attribtues, and locations in the functions'
-arguments. 
+arguments.
 
-The two functions work in conjuction with one another. First, an empty netcdf is created. 
-Then, it is filled with data. 
+The two functions work in conjuction with one another. First, an empty netcdf is created.
+Then, it is filled with data.
 
 ## Example 1 - Create a 3 dimension netCDF (lat, long, time) from gridded data
-```{r, 3dGridExample}
+```{r, 3dGridExample, results = 'hide'}
     library(rSW2analysis)
     library(sp)
     library(raster)
-    
+
     # additional arguments
-    
+
     ## locations
     crs <- '+init=epsg:4326' # the CRS
-    
-    ## time bounds
-    annual_time_bounds <- c(43737, 44102, 44103, 44467, 44468, 44832, 44833, 45197,
-                   45198, 45563, 45564, 45928, 45929, 46293, 46294, 46658,
-                  46659, 47024, 47025, 47389) # beginning and end of year days since 1900-01-01
-    
+
     outFileName <- 'dummynetcdf.nc'
-    
+
     # create
     create_empty_netCDF_file(
       data = data1d,
@@ -251,10 +300,10 @@ Then, it is filled with data.
       force_v4 = TRUE,
       overwrite = TRUE
     )
-    
+
     # populate
-    populate_netcdf_from_array( 
-      file = outFileName, 
+    populate_netcdf_from_array(
+      file = outFileName,
       data = data1d,
       var_names <- var_attributes$name,
       has_T_timeAxis = TRUE,
@@ -266,18 +315,22 @@ Then, it is filled with data.
     )
 
 ```
-
-## Create a 3 dimension netCDF (lat, long, time) from non-gridded data
+## Example 2 - Create a 2 dimension netCDF (lat, long) from gridded data
 
 ```{r, 3dNoGridExample, results = 'hide'}
 # to do
 ```
 
-## Create a 4 dimension netCDF (lt, lomg, time, depth) from gridded data
 
-```{r, 4dGridExample}
+## Example 3 - Create a 3 dimension netCDF (lat, long, time) from non-gridded data
 
-depth_bounds <- c(0, 5, 5, 10, 10, 15) # min and max of each depth 
+```{r, 3dNoGridExample, results = 'hide'}
+# to do
+```
+
+## Example 4 - Create a 4 dimension netCDF (lat, long, time, depth) from gridded data
+
+```{r, 4dGridExample, results = 'hide'}
 
  create_empty_netCDF_file(
       data = data3d,
@@ -296,10 +349,10 @@ depth_bounds <- c(0, 5, 5, 10, 10, 15) # min and max of each depth
       force_v4 = TRUE,
       overwrite = TRUE
     )
- 
+
      # populate
-    populate_netcdf_from_array( 
-      file = outFileName, 
+    populate_netcdf_from_array(
+      file = outFileName,
       data = data3d,
       var_names <- var_attributes$name,
       has_T_timeAxis = TRUE,
@@ -310,5 +363,3 @@ depth_bounds <- c(0, 5, 5, 10, 10, 15) # min and max of each depth
       force_v4 = TRUE
     )
 ```
-
-
