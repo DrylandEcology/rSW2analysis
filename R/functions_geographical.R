@@ -1,33 +1,47 @@
 
 #' Calculate areal extent of cells for each site
 #'
-#' @param sp_sites A \code{\link[sp:SpatialPoints-class]{sp::SpatialPoints}}
+#' @param sites A \code{\link[sp:SpatialPoints-class]{sp::SpatialPoints}}
 #'   object for which areal extent of cells will be computed.
-#' @param sim_raster A \code{\link[raster:Raster-class]{raster::Raster}}
-#'   object used for coordinate system and cells. The coordinate system must
-#'   use angular coordinates (longitude/latitude).
-#' @param tol A numerical value to inform the site to cell matching.
+#' @param grid A \code{\link[raster:Raster-class]{raster::Raster}}
+#'   object used for coordinate system and cells.
+#' @param tol A numerical value to inform the site to gridcell matching.
 #'
 #' @seealso \code{\link[geosphere]{areaPolygon}}
 #'
 #' @return A \code{data.frame} with four columns: \var{\dQuote{Longitude}},
 #'   \var{\dQuote{Latitude}}, \var{\dQuote{km2}}, and \var{\dQuote{rel}};
-#'   and one row for each site of \code{sp_sites}.
-#'   Cell area on ellipsoid, based on \code{sim_raster}, in square-kilometer
+#'   and one row for each site of \code{sites}.
+#'   Cell area on ellipsoid, based on \code{grid}, in square-kilometer
 #'   \code{km2} and as fraction of maximal cell area on the equator \code{rel}.
+#'
+#' @examples
+#' r <- raster::raster(
+#'   xmn = 0, xmx = 1,
+#'   ymn = -90, ymx = 90,
+#'   crs ="+init=epsg:4326",
+#'   resolution = c(1, 1)
+#' )
+#' n <- prod(dim(r))
+#' r[] <- seq_len(n)
+#' xy <- raster::sampleRegular(r, size = n, sp = TRUE)
+#' x <- calculate_cell_area(sites = xy, grid = r)
+#'
+#' # Visualize cell area by latitude
+#' with(x, graphics::plot(Latitude, km2, type = "l"))
+#'
 #' @export
-calculate_cell_area <- function(sp_sites, sim_raster,
-  tol = sqrt(.Machine$double.eps)) {
+calculate_cell_area <- function(sites, grid, tol = sqrt(.Machine$double.eps)) {
 
   m2_to_km2 <- 1e-6
 
-  temp <- sp::coordinates(sp_sites)
-  colnames(temp) <- c("Longitude", "Latitude")
+  tmp <- sp::coordinates(sites)
+  colnames(tmp) <- c("Longitude", "Latitude")
 
-  cells <- data.frame(temp, km2 = NA, rel = NA)
+  cells <- data.frame(tmp, km2 = NA, rel = NA)
 
 
-  if (raster::isLonLat(sim_raster)) {
+  if (raster::isLonLat(grid)) {
     # Use function `areaPolygon` which works on
     # angular coordinates (longitude/latitude) on an ellipsoid
     stopifnot(requireNamespace("geosphere"))
@@ -35,36 +49,41 @@ calculate_cell_area <- function(sp_sites, sim_raster,
     unique_lats <- unique(cells[, "Latitude"])
 
     # Create empty raster except for cells at specified latitudes
-    rtemp_init <- raster::init(sim_raster, fun = function(x) rep(NA, x))
-    rtemp <- rtemp_init
-    xy <- cbind(rep(0, length(unique_lats)), unique_lats)
-    rtemp[raster::cellFromXY(rtemp, xy)] <- 1
+    rtmp <- etmp <- raster::init(grid, fun = function(x) rep(NA, x))
+    xy <- cbind(rep(raster::xmin(rtmp), length(unique_lats)), unique_lats)
+    rtmp[raster::cellFromXY(rtmp, xy)] <- 1
 
     # Convert cells into polygons
-    ptemp <- raster::rasterToPolygons(rtemp, dissolve = FALSE)
+    ptmp <- raster::rasterToPolygons(rtmp, dissolve = FALSE)
 
     # Calculate area of polyon for each cell
-    for (k in seq_along(ptemp)) {
-      icols <- abs(cells[, "Latitude"] - sp::coordinates(ptemp[k, ])[, 2]) < tol
+    for (k in seq_along(ptmp)) {
+      icols <- abs(cells[, "Latitude"] - sp::coordinates(ptmp[k, ])[, 2]) < tol
       # Return value of `areaPolygon` is square-meter
-      cells[icols, "km2"] <- m2_to_km2 * geosphere::areaPolygon(ptemp[k, ])
+      cells[icols, "km2"] <- m2_to_km2 * geosphere::areaPolygon(ptmp[k, ])
     }
 
-    # Calculate area of maximal polyon for a cell on the equator
-    rtemp <- rtemp_init
-    rtemp[raster::cellFromXY(rtemp, matrix(c(0, 0), nrow = 1))] <- 1
-    ptemp <- raster::rasterToPolygons(rtemp, dissolve = FALSE)
-    cell_maxarea_km2 <- m2_to_km2 * geosphere::areaPolygon(ptemp)
+    # Calculate area of maximal polygon for a cell on the equator
+    rid <- raster::cellFromXY(etmp, matrix(c(0, 0), nrow = 1))
+    if (is.na(rid)) {
+      dxy <- - raster::res(etmp) - c(raster::xmin(etmp), raster::ymin(etmp))
+      etmp <- raster::shift(etmp, dx = dxy[1], dy = dxy[2])
+      rid <- raster::cellFromXY(etmp, matrix(c(0, 0), nrow = 1))
+    }
+
+    etmp[rid] <- 1
+    etmp <- raster::rasterToPolygons(etmp, dissolve = FALSE)
+    cell_maxarea_km2 <- m2_to_km2 * geosphere::areaPolygon(etmp)
 
   } else {
     # Use Euclidean area for projected/flat grids
-    ar <- prod(raster::res(sim_raster))
+    ar <- prod(raster::res(grid))
 
     # Determine distance units: meters or kilometers?
-    crs_txt <- raster::crs(sim_raster, asText = TRUE)
-    temp <- lapply(strsplit(crs_txt, split = " ")[[1]], strsplit, split = "=")
-    temp <- unlist(temp)
-    crs_units <- temp[1 + which(temp == "+units")]
+    crs_txt <- raster::crs(grid, asText = TRUE)
+    tmp <- lapply(strsplit(crs_txt, split = " ")[[1]], strsplit, split = "=")
+    tmp <- unlist(tmp)
+    crs_units <- tmp[1 + which(tmp == "+units")]
 
     ar_km2 <- ar * switch(crs_units, m = m2_to_km2, km2 = 1, NA)
     cells[, "km2"] <- ar_km2
@@ -108,7 +127,11 @@ calculate_cell_area <- function(sp_sites, sim_raster,
 
 
 #' Calculate the UTM zone based on geographic location
-#' @references Convert Latitude/Longitude to UTM [https://www.wavemetrics.com/code-snippet/convert-latitudelongitude-utm] (attributed to Chuck Gantz).
+#'
+#' @references Convert Latitude/Longitude to UTM
+#'   \url{https://www.wavemetrics.com/code-snippet/convert-latitudelongitude-utm}
+#'   (attributed to Chuck Gantz).
+#'
 #' @export
 get_UTM_Zone <- function(longitude, latitude) {
   Long <- mean(longitude)
@@ -464,7 +487,10 @@ SREX2012_regions <- function(adjusted = FALSE) {
   for (k in seq_along(spoly_regions)) {
     # Correct for 'orphaned holes'
     temp <- spoly_regions[k, ]
-    slot(temp, "polygons") <- lapply(slot(temp, "polygons"), maptools::checkPolygonsHoles)
+    slot(temp, "polygons") <- lapply(
+      slot(temp, "polygons"),
+      maptools::checkPolygonsHoles
+    )
 
     # Merge individual pieces
     temp0 <- raster::aggregate(temp)
