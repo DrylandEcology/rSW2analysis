@@ -37,7 +37,7 @@ calculate_nominal_resolution(
 
 }
 \references{
-\var{CMIP6 Global Attributes, DRS, Filenames, Directory Structure, and CV's}
+CMIP6 Global Attributes, DRS, Filenames, Directory Structure, and CV’s
   10 September 2018 (v6.2.7)
   Appendix 2: Algorithms for Defining the "nominal_resolution" Attribute
   \url{https://docs.google.com/document/d/1h0r8RZr_f3-8egBMMh7aqLwy3snpD6_MrDz1q8n5XUk/edit#bookmark=id.ibeh7ad2gpdi}

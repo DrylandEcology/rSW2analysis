@@ -55,9 +55,9 @@ This function is used for the side-effect of filling a file.
 }
 \description{
 This function add values to a structured netCDF created with the
-\code{\link[create_empty_netCDF_file]{create_empty_netCDF_file}} function. The data
-array provided as an argument to this function should be the same as that provided
-to the create_empty_netCDF_file function.
+\code{\link[create_empty_netCDF_file]{create_empty_netCDF_file}} function.
+The data array provided as an argument to this function should be the same as
+that provided to the create_empty_netCDF_file function.
 One of \var{locations} or \var{grid} needs to be provided, but not both.
 If \var{locations} is a matrix or data.frame, \var{crs} needs to be provided.
 }

@@ -728,7 +728,7 @@ populate_netcdf_from_array <- function(file, data, var_names = NULL,
 
   if(is.null(grid)) {
     grid_template <- raster::raster(loc)
-    extent(grid_template) <- extent(loc)
+    raster::extent(grid_template) <- raster::extent(loc)
   } else {
     grid_template <- rep(NA, raster::ncell(grid))
   }
