@@ -126,9 +126,9 @@ locations <- data.frame(X_WGS84 = c(rep(-124.5938, 5), rep(-124.5312, 5)),
 
 crs <- '+init=epsg:4326'
 
-annual_time_bounds <- c(43737, 44102, 44103, 44467, 44468, 44832, 44833, 45197,
-                        45198, 45563, 45564, 45928, 45929, 46293, 46294, 46658
-                        46659, 47024, 47025, 47389) # beginning and end of year days since 1900-01-01
+annual_time_bounds <- c(43737, 44102, 44102, 44467, 44467, 44832, 44832, 45197,
+                        45197, 45563, 45563, 45928, 45928, 46293, 46293, 46658,
+                        46658, 47024, 47024, 47389) # beginning and end of year
 
 outFileName <- 'dummynetcdf.nc'
 

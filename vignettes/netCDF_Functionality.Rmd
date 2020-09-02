@@ -232,7 +232,7 @@ r <- raster::raster(
 )
 r[] <- seq_len(prod(dim(r)))
 xy <- raster::sampleRandom(r, size = 50, sp = TRUE)
-grid_cell_area <- calculate_cell_area(sp_sites = xy, sim_raster = r)
+grid_cell_area <- calculate_cell_area(sites = xy, grid = r)
 
 calculate_nominal_resolution(
   grid = r,
@@ -274,8 +274,6 @@ Then, it is filled with data.
 
 ## Example 1 - Create a 3 dimension netCDF (lat, long, time) from gridded data
 ```{r, 3dGridExample, results = 'hide'}
-    # additional arguments
-
     ## locations
     crs <- '+init=epsg:4326' # the CRS
 
@@ -316,7 +314,7 @@ Then, it is filled with data.
 ```
 ## Example 2 - Create a 2 dimension netCDF (lat, long) from gridded data
 
-```{r, 3dNoGridExample, results = 'hide'}
+```{r, 2dExample, results = 'hide'}
 # to do
 ```
 

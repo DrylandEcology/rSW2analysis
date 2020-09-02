@@ -86,9 +86,9 @@
 #'
 #' crs <- '+init=epsg:4326'
 #'
-#' annual_time_bounds <- c(43737, 44102, 44103, 44467, 44468, 44832, 44833, 45197,
-#'                         45198, 45563, 45564, 45928, 45929, 46293, 46294, 46658
-#'                         46659, 47024, 47025, 47389) # beginning and end of year days since 1900-01-01
+#' annual_time_bounds <- c(43737, 44102, 44102, 44467, 44467, 44832, 44832, 45197,
+#'                         45197, 45563, 45563, 45928, 45928, 46293, 46293, 46658,
+#'                         46658, 47024, 47024, 47389) # beginning and end of year
 #'
 #' outFileName <- 'dummynetcdf.nc'
 #'
@@ -206,11 +206,11 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
   if(!missing(locations)) {
     if (inherits(locations, "Spatial")) {
       loc <- locations #sp::coordinates(locations)
-      if(isGridded) gridded(loc) = TRUE
+      if(isGridded) sp::gridded(loc) = TRUE
     } else {
-      loc <- SpatialPoints(locations)
-      proj4string(loc) <- CRS(crs)
-      if(isGridded) gridded(loc) = TRUE
+      loc <- sp::SpatialPoints(locations)
+      sp::proj4string(loc) <- sp::CRS(crs)
+      if(isGridded) sp::gridded(loc) = TRUE
     }
   }
 
@@ -487,7 +487,7 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
   if(is.null(grid)){
     prj <- raster::crs(grid)
   } else {
-    prj <- CRS(crs)
+    prj <- sp::CRS(crs)
   }
 
   if (!is.na(prj)) {
@@ -583,9 +583,9 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
 #'
 #' crs <- '+init=epsg:4326'
 #'
-#' annual_time_bounds <- c(43737, 44102, 44103, 44467, 44468, 44832, 44833, 45197,
-#'                         45198, 45563, 45564, 45928, 45929, 46293, 46294, 46658
-#'                         46659, 47024, 47025, 47389) # beginning and end of year days since 1900-01-01
+#' annual_time_bounds <- c(43737, 44102, 44102, 44467, 44467, 44832, 44832, 45197,
+#'                         45197, 45563, 45563, 45928, 45928, 46293, 46293, 46658,
+#'                         46658, 47024, 47024, 47389) # beginning and end of year
 #'
 #' outFileName <- 'dummynetcdf.nc'
 #'
@@ -719,11 +719,11 @@ populate_netcdf_from_array <- function(file, data, var_names = NULL,
     if (inherits(locations, "Spatial")) {
       loc <- locations #sp::coordinates(locations)
     } else {
-      loc <- SpatialPoints(locations)
-      proj4string(loc) <- CRS(crs)
+      loc <- sp::SpatialPoints(locations)
+      sp::proj4string(loc) <- sp::CRS(crs)
     }
     # Create grid from location values ---------------------------------
-    gridded(loc) = TRUE
+    sp::gridded(loc) = TRUE
   }
 
   if(is.null(grid)) {
