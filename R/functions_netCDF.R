@@ -226,7 +226,7 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
   }
 
   # Time dimension setup & info ----------------------------------------------------------------
-  has_time_central <- !missing(time_bounds)
+  has_time_central <- !is.null(time_bounds)
 
   if(has_T_timeAxis & has_time_central) {
 
@@ -282,6 +282,8 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
     if ("long_name" %in% names(var_attributes)) {
       var_longnames <- var_attributes[["long_name"]]
       var_attributes[["long_name"]] <- NULL
+    } else {
+      var_longnames <- NULL
     }
 
     if (is.null(var_longnames) && !is.null(var_names)) {
@@ -291,15 +293,6 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
     if ("units" %in% names(var_attributes)) {
       var_units <- var_attributes[["units"]]
       var_attributes[["units"]] <- NULL
-    }
-  }
-
-  if (has_T_timeAxis == FALSE  & has_Z_verticalAxis == FALSE) { # if both of these are false, netcdf will be organized by vars.
-    var_names <- var_longnames <- names(data)
-    var_units <- rep("", nl)
-
-    if (is.null(var_longnames) && !is.null(var_names)) {
-      var_longnames <- var_names
     }
   }
 
@@ -742,9 +735,11 @@ populate_netcdf_from_array <- function(file, data, var_names = NULL,
 
   for(k in seq(nvars)) {
 
-    stopifnot(var_names[k] %in% attributes(nc$var)$names)
+    nc_names <- attributes(nc$var)$names
+    stopifnot(var_names[k] %in% nc_names)
+    var_nc_index <- grep(var_names[k], nc_names)[1]
 
-    nc_var <- ncdf4::ncvar_get(nc, attributes(nc$var)$names[var_names[k]])
+    nc_var <- ncdf4::ncvar_get(nc, attributes(nc$var)$names[var_nc_index])
     nc_var_dims <- dim(nc_var) # lon, lat, then #vars time or depth,  depth
 
     message(paste('The dimensionality of variable',var_names[k], 'is',
@@ -785,12 +780,11 @@ populate_netcdf_from_array <- function(file, data, var_names = NULL,
                                count = c(var_chunksizes, 1, 1)))
         }
       }
+    }
 
-    } else {
-      # write values, col by col -- values can rep dif. variables, time, or depth
+    if(!has_T_timeAxis & has_Z_verticalAxis | has_T_timeAxis & !has_Z_verticalAxis) {
+      # write values, col by col -- values can rep dif. time, or depth
       for (n in seq_len(nn)) {
-
-        #message('Column ', n, ' is being added to netcdf')
 
         val_grid <- rep(NA, c(nc_var_dims[1] * nc_var_dims[2]))
         temp <- grid_template
@@ -804,6 +798,21 @@ populate_netcdf_from_array <- function(file, data, var_names = NULL,
       }
     }
 
+    if(!has_T_timeAxis & !has_Z_verticalAxis) {
+      # write values, col by col -- no time or depth, just diff variables
+      for (n in seq_len(nn)) {
+
+        val_grid <- rep(NA, c(nc_var_dims[1] * nc_var_dims[2]))
+        temp <- grid_template
+        temp[val_grid_ids] <- data[, n]
+        vals <- matrix(temp, ncol = var_chunksizes[2])
+
+        try(ncdf4::ncvar_put(nc, varid = var_names[k],
+                             vals = vals,
+                             start = c(1, 1),
+                             count = c(var_chunksizes)))
+      }
+    }
     # Flush this step to the file so we dont lose it
     # if there is a crash or other problem
     ncdf4::nc_sync(nc)

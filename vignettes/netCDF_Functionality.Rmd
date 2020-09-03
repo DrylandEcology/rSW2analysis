@@ -141,11 +141,19 @@ be added by the user as they see fit.
 A named list describing the variable data. The *name* and *units* fields are required.
 
 ```{r, VarAtt, results = 'hide'}
+# single variable
 var_attributes <- list(
   name = 'WatYrWDD',
   long_name = 'Water Year Wet Degree Days',
   units = 'number of days'
 )
+
+# multiple variables
+var_attributes2 <- list(
+    name = paste0('VarDD_', 1:10),
+    units = rep('number of days', 10)
+)
+
 ```
 
 ### Time Attributes
@@ -315,9 +323,39 @@ Then, it is filled with data.
 ## Example 2 - Create a 2 dimension netCDF (lat, long) from gridded data
 
 ```{r, 2dExample, results = 'hide'}
-# to do
-```
 
+    # create
+    create_empty_netCDF_file(
+      data = data1d,
+      has_T_timeAxis = FALSE,
+      has_Z_verticalAxis = FALSE,
+      time_bounds = NULL,
+      vert_bounds = NULL,
+      var_attributes = var_attributes2,
+      time_attributes  = NULL,
+      vertical_attributes = NULL,
+      global_attributes = global_attributes,
+      isGridded = TRUE,
+      locations = locationsGrid,
+      crs = crs,
+      file = outFileName,
+      force_v4 = TRUE,
+      overwrite = TRUE
+    )
+
+    # populate
+    populate_netcdf_from_array(
+      file = outFileName,
+      data = data1d,
+      var_names <- var_attributes2$name,
+      has_T_timeAxis = FALSE,
+      has_Z_verticalAxis = FALSE,
+      isGridded = TRUE,
+      locations = locationsGrid,
+      crs = crs,
+      force_v4 = TRUE
+    )
+```
 
 ## Example 3 - Create a 3 dimension netCDF (lat, long, time) from non-gridded data
 
