@@ -168,7 +168,7 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
   force_v4 = TRUE, overwrite = FALSE) {
 
   # ---------------------------------------------------------------------
-  # Set up and checks ---------------------------------------------------
+  # Checks --------------------------------------------------------------
   # ---------------------------------------------------------------------
   stopifnot(requireNamespace("ncdf4"))
   if (force_v4) {
@@ -191,6 +191,25 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
     }
   }
 
+  if(has_T_timeAxis = TRUE && !is.null(time_bounds)){
+    stop('Need to define time bounds data for time dimension') 
+  }
+  
+  if(length(time_attributes$vals) * 2 != length(time_bounds) ){
+    stop('Need to define bounds (min and max) for each time value in time attributes')
+  }
+  
+  if(has_Z_timeAxis = TRUE && !is.null(vert_bounds)){
+    stop('Need to define depth bounds data for depth dimension')
+  }
+  
+  if(length(vertical_attributes$vals) * 2 != length(vert_bounds){
+    stop('Number of depth layers need to be equal to defined values') 
+  }
+  
+  # ---------------------------------------------------------------------
+  # Setup  --------------------------------------------------------------
+  # ---------------------------------------------------------------------
   nl <- NCOL(data)
   if (nl == 1 && is.null(dim(data))) {
     data <- matrix(data, ncol = 1, dimnames = list(NULL, names(data)))
@@ -227,30 +246,52 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
     if(isGridded) grid_halfres <- loc@grid@cellsize / 2
   }
 
-
   # Time dimension setup & info ----------------------------------------------------------------
-  has_time_central <- !is.null(time_bounds)
-
-  if(has_T_timeAxis & has_time_central) {
-
-    has_time_central <- FALSE
-    t_chunksize <- nl
-
-    stopifnot(length(time_attributes[["vals"]]) == nl)
+  if(has_T_timeAxis & !is.null(time_bounds)) {
+    t_chunksize <- length(time_attributes[["vals"]]
   }
 
-  if (has_time_central & !has_T_timeAxis) {
-    stopifnot(length(time_bounds) == 2L)
-    time_central <- mean(time_bounds)
-    t_chunksize <- 1L
+  if (!missing(time_attributes)) {
+    if ("name" %in% names(time_attributes)) {
+      time_names <- vertical_attributes[["name"]]
+      time_attributes[["name"]] <- NULL
+    } else {
+      stop('Need name attribute in time attribute list')
+    }
+    
+    if ("units" %in% names(time_attributes)) {
+      time_units <- time_attributes[["units"]]
+      time_attributes[["units"]] <- NULL
+    } else {
+      stop('Need units attribute in time attribute list')
+    }
+    
+    if ("calendar" %in% names(time_attributes)) {
+      time_cal <- time_attributes[["calendar"]]
+      time_attributes[["calendar"]] <- NULL
+    } else {
+      stop('Need calendar attribute in time attribute list')
+    }
+    
+    if ("vals" %in% names(time_attributes)) {
+      time_vals <- time_attributes[["vals"]]
+      time_attributes[["vals"]] <- NULL
+    } else {
+      stop('Need vals attribute in time attribute list')
+    }
+    
+    ns_att_time <- names(time_attributes)
+    
   }
-
+  
   # Depth info  ---------------------------------------------------------------------------
   if(has_Z_verticalAxis) {
     if(has_T_timeAxis) { # if time and depth are both TRUE , the third dimension
       z_chunksize <- dim(data)[3]
+      stopifnot(z_chunksize ==  length(depth_attributes[["vals"]])
     } else { # no time, then we can assume that the depth dimension is the 2d
       z_chunksize <- nl
+      stopifnot(z_chunksize ==  length(depth_attributes[["vals"]])
     }
   }
 
@@ -258,16 +299,22 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
     if ("name" %in% names(vertical_attributes)) {
       vert_names <- vertical_attributes[["name"]]
       vertical_attributes[["name"]] <- NULL
+    } else {
+      stop('Need name attribute in vertical attribute list')
     }
-
+  
     if ("units" %in% names(vertical_attributes)) {
       vert_units <- vertical_attributes[["units"]]
       vertical_attributes[["units"]] <- NULL
+    } else {
+      stop('Need units attribute in vertical attribute list')
     }
 
     if ("vals" %in% names(vertical_attributes)) {
       vert_vals <- vertical_attributes[["vals"]]
       vertical_attributes[["vals"]] <- NULL
+    } else {
+      stop('Need vals attribute in vertical attribute list')
     }
 
     ns_att_vert <- names(vertical_attributes)
@@ -316,7 +363,7 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
         var_chunksizes <- c(raster::ncol(grid), raster::nrow(grid))
     }
     var_start <- c(1, 1)
-    } else {
+    } else { # locations aren't gridded
     var_chunksizes <- c(nloc)
     var_start <- c(1)
   }
@@ -333,7 +380,7 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
 
   # define dimensions ---------------------------------------------------------------------
 
-  #  bound dimension 
+  #  bounds dimension 
   bnddim <- ncdf4::ncdim_def(name = "bnds", units = "", vals = seq_len(2L),
                                            create_dimvar = FALSE)
 
@@ -350,17 +397,10 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
 
   # time dimension
   if(has_T_timeAxis) {
-    if (has_time_central) {
-      tdim <- ncdf4::ncdim_def(name = time_attributes[['name']],
-                               units = time_attributes[['units']],
-                               calendar = time_attributes[['calendar']],
-                               vals = time_central)
-    } else {
-      tdim <-  ncdf4::ncdim_def(name = time_attributes[['name']],
-                                units = time_attributes[['units']],
-                                calendar = time_attributes[['calendar']],
-                                vals = time_attributes[['vals']])
-    }
+      tdim <-  ncdf4::ncdim_def(name = time_names,
+                                units = time_units,
+                                calendar = time_calendar,
+                                vals = time_vals)
   }
 
   # vertical dimension
@@ -381,14 +421,14 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
     var_dims <- c(var_dims, list(zdim))
   }
 
-  if(has_T_timeAxis || has_Z_verticalAxis) nn <- 1 else nn <- nl
+  if(length(time_vals) > 1 || length(vert_vals) > 1) nn <- 1 else nn <- nl 
 
   var_defs <- lapply(seq_len(nn), function(k)
     ncdf4::ncvar_def(name = var_names[k], units = var_units[k],
       dim = var_dims, chunksizes = var_chunksizes, missval = NAflag,
       longname = var_longnames[k], prec = ncdf4_datatype))
   
-  # add lat and long as variables
+  # add lat and long as variables if not gridded
   if(!isGridded){
    latvar <-  ncdf4::ncvar_def(name = 'lat', units = 'degrees_north',
                                dim = list(idim), chunksizes = var_chunksizes[1], missval = NAflag,
@@ -427,7 +467,6 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
                                     dim = list(bnddim, zdim), missval = NULL,
                                     chunksizes = c(2L, 1L))
   }
-  
     
   nc_dimvars <- if(isGridded) list(lonbnddef, latbnddef) else list()
 
@@ -469,15 +508,9 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
   }
 
   if (has_T_timeAxis) {
-      if(has_time_central){
-        try(ncdf4::ncvar_put(nc, varid = "time_bnds",
-                             vals = time_bounds,
-                             start = c(1, 1), count = c(2L, 1L)))
-      } else {
         try(ncdf4::ncvar_put(nc, varid = "time_bnds",
                              vals = time_bounds,
                              start = c(1,1), count = c(2, t_chunksize))) # beginning and end of each TP
-      }
     }
   
   if(has_Z_verticalAxis) {
@@ -499,6 +532,11 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
   if (has_T_timeAxis) {
     ncdf4::ncatt_put(nc, "time", "axis", "T")
     ncdf4::ncatt_put(nc, "time", "bounds", "time_bnds")
+    
+    for (natt in ns_att_time) {
+      ncdf4::ncatt_put(nc, varid = time_names, attname = natt,
+                       attval = time_attributes[[ns_att_time]][1])
+    }
   }
 
   if (has_Z_verticalAxis) {
@@ -564,7 +602,7 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
 
   # The end --------------------------------------------------------------
 
-  message(paste("The file has", nc$nvars, "variables and",  nc$ndim,"dimensions"))
+  message(paste("The file has", nc$nvars, "variables and",  nc$ndim, "dimensions"))
 
   invisible(TRUE)
 }
