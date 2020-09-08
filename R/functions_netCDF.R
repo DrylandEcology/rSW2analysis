@@ -51,7 +51,8 @@
 #'   dimension of the netCDF.
 #' @param global_attributes A list of named character strings defining the
 #'   global attributes of the netCDF.
-#'   then the global attributes will be added to the netCDF file.
+#' @param crs_attributes A list of named character string defining the CRS
+#'   of the netCDF.
 #' @param isGridded A logical value. Represents whether the location data is on
 #'   a regular grid or not.
 #' @param grid filename (character). File containing the grid information
@@ -164,8 +165,8 @@
 create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
   has_Z_verticalAxis = FALSE, time_bounds, vert_bounds, var_attributes,
   time_attributes, vertical_attributes, global_attributes,
-  isGridded = TRUE, grid = NULL, locations, crs, file,
-  force_v4 = TRUE, overwrite = FALSE) {
+  crs_attributes, isGridded = TRUE, grid = NULL, locations, crs, 
+  file, force_v4 = TRUE, overwrite = FALSE) {
 
   # ---------------------------------------------------------------------
   # Checks --------------------------------------------------------------
@@ -191,26 +192,41 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
     }
   }
 
-  if(has_T_timeAxis = TRUE && !is.null(time_bounds)){
-    stop('Need to define time bounds data for time dimension') 
+  nl <- NCOL(data)
+  
+  if(has_T_timeAxis = TRUE) {
+    tn <- length(time_attributes$vals)
+    
+    if(is.null(time_bounds)) {
+      stop('Need to define time bounds data for time dimension') 
+    }
+    
+    if(tn * 2 != length(time_bounds) ){
+      stop('Need to define bounds (min and max) for each time value in time attributes')
+    }
+    
+    if(tn > 1 && tn !=nl) {
+      stop('number of values in time dimension should either be of length 1
+      (if all variable in the dataset represent the same measurement time) or equal
+      to the number of columns in the dataset (dataset is a time series of one variable)')
+    }
   }
   
-  if(length(time_attributes$vals) * 2 != length(time_bounds) ){
-    stop('Need to define bounds (min and max) for each time value in time attributes')
-  }
-  
-  if(has_Z_timeAxis = TRUE && !is.null(vert_bounds)){
-    stop('Need to define depth bounds data for depth dimension')
-  }
-  
-  if(length(vertical_attributes$vals) * 2 != length(vert_bounds){
-    stop('Number of depth layers need to be equal to defined values') 
+  if(has_Z_timeAxis = TRUE) {
+    zn <- length(time_attributes$vals)
+    
+    if(is.null(vert_bounds)){
+      stop('Need to define depth bounds data for depth dimension')
+      }
+    
+    if(zn * 2 != length(vert_bounds){
+      stop('Number of depth layers need to be equal to defined values') 
+    }
   }
   
   # ---------------------------------------------------------------------
   # Setup  --------------------------------------------------------------
   # ---------------------------------------------------------------------
-  nl <- NCOL(data)
   if (nl == 1 && is.null(dim(data))) {
     data <- matrix(data, ncol = 1, dimnames = list(NULL, names(data)))
   }
@@ -246,14 +262,28 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
     if(isGridded) grid_halfres <- loc@grid@cellsize / 2
   }
 
+  # crs attributes setup & info ----------------------------------------------------------------
+  if (!missing(crs_attributes)) {
+    
+    if ("crs_wkt" %in% names(crs_attributes)) {
+      crs_wkt <- crs_attributes[["crs_wkt"]]
+      crs_attributes[["crs_wkt"]] <- NULL
+    } else {
+      stop('Need crs_wkt attribute in crs attribute list')
+    }
+  
+    ns_att_crs <- names(crs_attributes)
+    
+  }
+  
   # Time dimension setup & info ----------------------------------------------------------------
   if(has_T_timeAxis & !is.null(time_bounds)) {
-    t_chunksize <- length(time_attributes[["vals"]]
+    t_chunksize <- length(time_attributes[["vals"]])
   }
 
   if (!missing(time_attributes)) {
     if ("name" %in% names(time_attributes)) {
-      time_names <- vertical_attributes[["name"]]
+      time_names <- time_attributes[["name"]]
       time_attributes[["name"]] <- NULL
     } else {
       stop('Need name attribute in time attribute list')
@@ -347,7 +377,7 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
     } else {
       stop('Need unit attribute in variable attribute list')
     }
-    
+
     ns_att_vars <- names(var_attributes)
   }
 
@@ -488,7 +518,7 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
 
   on.exit(ncdf4::nc_close(nc))
 
- #--- write values of dimension bands -----------------------------------------------------
+ #--- write values of dimension bounds -----------------------------------------------------
   if(isGridded) {
     try(ncdf4::ncvar_put(nc, varid = "lon_bnds",
                         vals = rbind(xvals - grid_halfres[1], xvals + grid_halfres[1]),
@@ -534,8 +564,8 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
     ncdf4::ncatt_put(nc, "time", "bounds", "time_bnds")
     
     for (natt in ns_att_time) {
-      ncdf4::ncatt_put(nc, varid = time_names, attname = natt,
-                       attval = time_attributes[[ns_att_time]][1])
+      ncdf4::ncatt_put(nc, varid = 'time', attname = natt,
+                       attval = time_attributes[[natt]])
     }
   }
 
@@ -544,8 +574,8 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
     ncdf4::ncatt_put(nc, "depth", "bounds", "depth_bnds")
     
     for (natt in ns_att_vert) {
-      ncdf4::ncatt_put(nc, varid = vert_names, attname = natt,
-                       attval = vertical_attributes[[ns_att_vert]][1])
+      ncdf4::ncatt_put(nc, varid = 'depth', attname = natt,
+                       attval = vertical_attributes[[natt]])
     }
   }
 
@@ -565,12 +595,16 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
   }
 
   if (!is.na(prj)) {
-    ncdf4::ncatt_put(nc, varid = "crs", attname = "proj4",
-                     attval = as.character(prj))
+    ncdf4::ncatt_put(nc, "crs", attname = "crs_wkt", crs_wkt)
+   
+     for (natt in ns_att_crs) {
+       ncdf4::ncatt_put(nc, varid = 'crs', attname = natt,
+                        attval = crs_attributes[[natt]])
+    }
   }
 
   # add global attributes --------------------------------------------------------s
-  ncdf4::ncatt_put(nc, varid = 0, attname = "Conventions", attval = "CF-1.4")
+  ncdf4::ncatt_put(nc, varid = 0, attname = "Conventions", attval = "CF-1.8")
 
   ncdf4::ncatt_put(nc, varid = 0, attname = "created_by",
     attval = paste0(R.version[["version.string"]], ", R packages ",
