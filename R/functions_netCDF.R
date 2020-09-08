@@ -9,13 +9,12 @@ create_netCDF_from_raster_with_time <- function(x, file, ...) {
   xname <- "longitude"
   yname <- "latitude"
   zname <- "time"
-  nl <- raster::nlayers(x)
   varnames <- names(x)
 
   # create netCDF file
     raster::writeRaster(x,
       filename = file, format = "CDF", xname = xname, yname = yname,
-      varname = , zname = zname)
+      varname = varnames, zname = zname)
 
   # add info to netCDF file
   rnc <- ncdf4::nc_open(file, write = TRUE)
@@ -540,7 +539,9 @@ read_netCDF_to_raster <- function(x, ...) {
 #'  \var{CMIP6 Global Attributes, DRS, Filenames, Directory Structure, and CV's}
 #'   10 September 2018 (v6.2.7)
 #'   Appendix 2: Algorithms for Defining the "nominal_resolution" Attribute
+#nolint start
 #'   \url{https://docs.google.com/document/d/1h0r8RZr_f3-8egBMMh7aqLwy3snpD6_MrDz1q8n5XUk/edit#bookmark=id.ibeh7ad2gpdi}
+#nolint end
 #'
 #' @examples
 #' r <- raster::raster(
@@ -611,4 +612,3 @@ calculate_nominal_resolution <- function(grid, sites, cell_areas_km2) {
                           ifelse(mean_resolution_km < 7200, "5000 km",
                             "10000 km")))))))))))))
 }
-

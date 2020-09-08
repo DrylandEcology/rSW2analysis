@@ -105,7 +105,7 @@ get_raster_datatype <- function(data) {
     BYTE = "INT1U",
     SMALL = "INT2S",
     INTEG = "INT4S",
-    NUMER = , FLOAT = , SINGL = , REAL = "FLT4S",
+    NUMER = , FLOAT = , SINGL = , REAL = "FLT4S", #nolint
     DOUBL = "FLT8S"
     )
 }
@@ -158,6 +158,3 @@ get_isoline_polygon <- function(x, SFSW2_prj_meta, subset, alpha) {
 
   raster::rasterToPolygons(rtmp, dissolve = TRUE)
 }
-
-
-

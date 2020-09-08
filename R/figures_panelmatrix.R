@@ -241,9 +241,9 @@ plot_matrix_of_panels <- function(n_panels,
     byrow = TRUE)
 
   stemp2 <- seq_len(n_panels[2L])
-  for (k in seq_len(n_panels[1L])) { # byrow = TRUE
-    #lmat[k + 1L, -c(1L, 2L + n_panels[2L])] <- (k - 1L) * n_panels[2L] + stemp2
-    lmat[(k - 1) * 2 + 2, seq_len(ncol(lmat)) %% 2 == 0] <- (k - 1L) * n_panels[2L] + stemp2
+  for (k in seq_len(n_panels[1L])) {
+    lmat[(k - 1) * 2 + 2, seq_len(ncol(lmat)) %% 2 == 0] <-
+        (k - 1L) * n_panels[2L] + stemp2
   }
 
   # Figure device
@@ -344,4 +344,3 @@ plot_matrix_of_panels <- function(n_panels,
     i <- i + 1
   }
 }
-

@@ -449,4 +449,3 @@ load_rSFSW2_data_for_analysis <- function(meta, path, path_tmp,
 
   res
 }
-

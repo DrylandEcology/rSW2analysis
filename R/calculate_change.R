@@ -332,7 +332,6 @@ compare_direction_1rel2ref <- function(dx, dy, vars = NULL, cl = NULL,
   if (is.null(cl)) {
     cl <- define_direction_1rel()
   }
-  ncls <- seq_len(nrow(cl))
 
 
   # Prepare output container
@@ -368,5 +367,3 @@ compare_direction_1rel2ref <- function(dx, dy, vars = NULL, cl = NULL,
 
   res
 }
-
-
