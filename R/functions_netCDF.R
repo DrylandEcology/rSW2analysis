@@ -213,6 +213,8 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
       if(isGridded) sp::gridded(loc) = TRUE
     }
   }
+  
+  if(!isGridded) nloc <- dim(loc@coords)[1]
 
   # Note: xvals should be organized from west to east, yvals from north to south
   if(!is.null(grid)){
@@ -222,8 +224,9 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
   } else {
     xvals <- sort(unique(loc@coords[,1]))
     yvals <- sort(unique(loc@coords[,2]), decreasing = TRUE)
-    grid_halfres <- loc@grid@cellsize / 2
+    if(isGridded) grid_halfres <- loc@grid@cellsize / 2
   }
+
 
   # Time dimension setup & info ----------------------------------------------------------------
   has_time_central <- !is.null(time_bounds)
@@ -271,12 +274,13 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
 
   }
 
-
   # Variable info  ------------------------------------------------------------------------
   if (!missing(var_attributes)) {
     if ("name" %in% names(var_attributes)) {
       var_names <- var_attributes[["name"]]
       var_attributes[["name"]] <- NULL
+    } else {
+      stop('Need name attribute in variable attribute list')
     }
 
     if ("long_name" %in% names(var_attributes)) {
@@ -293,10 +297,10 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
     if ("units" %in% names(var_attributes)) {
       var_units <- var_attributes[["units"]]
       var_attributes[["units"]] <- NULL
+    } else {
+      stop('Need unit attribute in variable attribute list')
     }
-  }
-
-  if (!missing(var_attributes)) {
+    
     ns_att_vars <- names(var_attributes)
   }
 
@@ -305,19 +309,23 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
   # ---------------------------------------------------------------------------------------
 
   # Starts and chunksizes -----------------------------------------------------------------
-  if(is.null(grid)) {
-    var_chunksizes <- c(length(xvals), length(yvals))
-  } else {
-    var_chunksizes <- c(raster::ncol(grid), raster::nrow(grid))
+  if(isGridded) {
+    if(is.null(grid)) {
+      var_chunksizes <- c(length(xvals), length(yvals))
+      } else {
+        var_chunksizes <- c(raster::ncol(grid), raster::nrow(grid))
+    }
+    var_start <- c(1, 1)
+    } else {
+    var_chunksizes <- c(nloc)
+    var_start <- c(1)
   }
-
-  var_start <- c(1, 1)
 
   if (has_T_timeAxis) {
     var_chunksizes <- c(var_chunksizes, t_chunksize)
     var_start <- c(var_start, 1)
   }
-
+  
   if (has_Z_verticalAxis) {
     var_chunksizes <- c(var_chunksizes, z_chunksize)
     var_start <- c(var_start, 1)
@@ -325,15 +333,20 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
 
   # define dimensions ---------------------------------------------------------------------
 
-  #  bound dimension for lat and long
+  #  bound dimension 
   bnddim <- ncdf4::ncdim_def(name = "bnds", units = "", vals = seq_len(2L),
-    create_dimvar = FALSE)
+                                           create_dimvar = FALSE)
 
   # lat and long dimension
-  xdim <- ncdf4::ncdim_def(name = "lon", longname = "Longitude",
-    units = "degrees_east", vals = xvals)
-  ydim <- ncdf4::ncdim_def(name = "lat", longname = "Latitude",
-    units = "degrees_north", vals = yvals)
+  if(isGridded){
+    xdim <- ncdf4::ncdim_def(name = "lon", longname = "Longitude",
+                             units = "degrees_east", vals = xvals)
+    ydim <- ncdf4::ncdim_def(name = "lat", longname = "Latitude",
+                             units = "degrees_north", vals = yvals)    
+  } else {
+    idim <- ncdf4::ncdim_def(name = 'site', longname = 'SOILWAT2 simulation sites',
+                             units = 'site_id', vals = 1:nrow(data))
+  }
 
   # time dimension
   if(has_T_timeAxis) {
@@ -358,7 +371,7 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
   }
 
   # define dimensionality of netcdf variables -------------------------------------------------
-  var_dims <- list(xdim, ydim)
+  var_dims <- if(isGridded) list(xdim, ydim) else list(idim)
 
   if (has_T_timeAxis) {
     var_dims <- c(var_dims, list(tdim))
@@ -374,32 +387,49 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
     ncdf4::ncvar_def(name = var_names[k], units = var_units[k],
       dim = var_dims, chunksizes = var_chunksizes, missval = NAflag,
       longname = var_longnames[k], prec = ncdf4_datatype))
+  
+  # add lat and long as variables
+  if(!isGridded){
+   latvar <-  ncdf4::ncvar_def(name = 'lat', units = 'degrees_north',
+                               dim = list(idim), chunksizes = var_chunksizes[1], missval = NAflag,
+                               longname = 'site latitiude', prec = ncdf4_datatype)
+
+   longvar <- ncdf4::ncvar_def(name = 'lon', units = 'degrees_east',
+                               dim = list(idim), chunksizes = var_chunksizes[1], missval = NAflag,
+                               longname = 'site longitude', prec = ncdf4_datatype)
+   
+   var_defs <- c(var_defs, list(latvar, longvar))
+  }
 
   # CRS defintion ------------------------------------------------------------------------
   crsdef <- ncdf4::ncvar_def(name = "crs", units = "", dim = list(),
     missval = NULL, prec = "integer")
 
   # define dimension bands ---------------------------------------------------------------
-  lonbnddef <- ncdf4::ncvar_def(name = "lon_bnds", units = "",
-    dim = list(bnddim, xdim), missval = NULL,
-    chunksizes = c(2L, var_chunksizes[1]))
+  if(isGridded) {
+    lonbnddef <- ncdf4::ncvar_def(name = "lon_bnds", units = "",
+                                  dim = list(bnddim, xdim), missval = NULL,
+                                  chunksizes = c(2L, var_chunksizes[1]))
 
-  latbnddef <- ncdf4::ncvar_def(name = "lat_bnds", units = "",
-    dim = list(bnddim, ydim), missval = NULL,
-    chunksizes = c(2L, var_chunksizes[2]))
-
+    latbnddef <- ncdf4::ncvar_def(name = "lat_bnds", units = "",
+                                  dim = list(bnddim, ydim), missval = NULL,
+                                  chunksizes = c(2L, var_chunksizes[2]))
+  }
+  
   if (has_T_timeAxis) {
-    tbnddef <- ncdf4::ncvar_def(name = "time_bnds", units = "",
+      tbnddef <- ncdf4::ncvar_def(name = "time_bnds", units = "",
                                 dim = list(bnddim, tdim), missval = NULL,
                                 chunksizes = c(2L, 1L))
   }
+  
   if (has_Z_verticalAxis) {
-    vertbnddef <- ncdf4::ncvar_def(name = "depth_bnds", units = "",
-                                   dim = list(bnddim, zdim), missval = NULL,
-                                   chunksizes = c(2L, 1L))
+      vertbnddef <- ncdf4::ncvar_def(name = "depth_bnds", units = "",
+                                    dim = list(bnddim, zdim), missval = NULL,
+                                    chunksizes = c(2L, 1L))
   }
-
-  nc_dimvars <- list(lonbnddef, latbnddef)
+  
+    
+  nc_dimvars <- if(isGridded) list(lonbnddef, latbnddef) else list()
 
   if (has_T_timeAxis) {
     nc_dimvars <- c(nc_dimvars, list(tbnddef))
@@ -407,6 +437,7 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
   if (has_Z_verticalAxis) {
     nc_dimvars <- c(nc_dimvars, list(vertbnddef))
   }
+  
   # ---------------------------------------------------------------------------------------
   #--- create empty netCDF file -----------------------------------------------------------
   # ---------------------------------------------------------------------------------------
@@ -419,39 +450,51 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
   on.exit(ncdf4::nc_close(nc))
 
  #--- write values of dimension bands -----------------------------------------------------
-  try(ncdf4::ncvar_put(nc, varid = "lon_bnds",
-    vals = rbind(xvals - grid_halfres[1], xvals + grid_halfres[1]),
-    start = c(1, 1), count = c(2L, var_chunksizes[1])))
-
-  try(ncdf4::ncvar_put(nc, varid = "lat_bnds",
-    vals = rbind(yvals + grid_halfres[2], yvals - grid_halfres[2]),
-    start = c(1, 1), count = c(2L, var_chunksizes[2])))
-
-  if (has_T_timeAxis) {
-    if(has_time_central){
-      try(ncdf4::ncvar_put(nc, varid = "time_bnds",
-                           vals = time_bounds,
-                           start = c(1, 1), count = c(2L, 1L)))
-    } else {
-      try(ncdf4::ncvar_put(nc, varid = "time_bnds",
-                           vals = time_bounds,
-                           start = c(1, 1), count = c(2L, t_chunksize))) # beginning and end of each TP
-    }
+  if(isGridded) {
+    try(ncdf4::ncvar_put(nc, varid = "lon_bnds",
+                        vals = rbind(xvals - grid_halfres[1], xvals + grid_halfres[1]),
+                        start = c(1, 1), count = c(2L, var_chunksizes[1])))
+    
+    try(ncdf4::ncvar_put(nc, varid = "lat_bnds",
+                         vals = rbind(yvals + grid_halfres[2], yvals - grid_halfres[2]),
+                         start = c(1, 1), count = c(2L, var_chunksizes[2])))
+  } else {
+    try(ncdf4::ncvar_put(nc, varid = "lon",
+                         vals = locations$X_WGS84,
+                         start = c(1), count = c(var_chunksizes[1])))
+    
+    try(ncdf4::ncvar_put(nc, varid = "lat",
+                         vals = locations$Y_WGS84,
+                         start = c(1), count = c( var_chunksizes[1])))
   }
 
+  if (has_T_timeAxis) {
+      if(has_time_central){
+        try(ncdf4::ncvar_put(nc, varid = "time_bnds",
+                             vals = time_bounds,
+                             start = c(1, 1), count = c(2L, 1L)))
+      } else {
+        try(ncdf4::ncvar_put(nc, varid = "time_bnds",
+                             vals = time_bounds,
+                             start = c(1,1), count = c(2, t_chunksize))) # beginning and end of each TP
+      }
+    }
+  
   if(has_Z_verticalAxis) {
-    try(ncdf4::ncvar_put(nc, varid = "depth_bnds",
-                         vals = vert_bounds,
-                         start = c(1, 1), count = c(2L, z_chunksize))) # top and bottom of each soil layer
+      try(ncdf4::ncvar_put(nc, varid = "depth_bnds",
+                           vals = vert_bounds,
+                           start = c(1, 1), count = c(2L, z_chunksize))) # top and bottom of each soil layer
   }
 
   #--- add attributes -----------------------------------------------------------------
 
   # add dimension attributes --------------------------------
-  ncdf4::ncatt_put(nc, "lon", "axis", "X")
-  ncdf4::ncatt_put(nc, "lon", "bounds", "lon_bnds")
-  ncdf4::ncatt_put(nc, "lat", "axis", "Y")
-  ncdf4::ncatt_put(nc, "lat", "bounds", "lat_bnds")
+ if (isGridded) {
+   ncdf4::ncatt_put(nc, "lon", "axis", "X")
+   ncdf4::ncatt_put(nc, "lon", "bounds", "lon_bnds")
+   ncdf4::ncatt_put(nc, "lat", "axis", "Y")
+   ncdf4::ncatt_put(nc, "lat", "bounds", "lat_bnds")
+   }
 
   if (has_T_timeAxis) {
     ncdf4::ncatt_put(nc, "time", "axis", "T")
@@ -461,11 +504,11 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
   if (has_Z_verticalAxis) {
     ncdf4::ncatt_put(nc, "depth", "axis", "Z")
     ncdf4::ncatt_put(nc, "depth", "bounds", "depth_bnds")
-  }
-
-  for (natt in ns_att_vert) {
-    ncdf4::ncatt_put(nc, varid = vert_names, attname = natt,
-                     attval = vertical_attributes[[ns_att_vert]][1])
+    
+    for (natt in ns_att_vert) {
+      ncdf4::ncatt_put(nc, varid = vert_names, attname = natt,
+                       attval = vertical_attributes[[ns_att_vert]][1])
+    }
   }
 
   # add variable attributes  ---------------------------------------------------

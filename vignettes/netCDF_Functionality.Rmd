@@ -61,30 +61,41 @@ Locations all need to be on the same coordinates reference system (CRS). Data ca
 be either be organized on a regularly spaced grid (i.e. wall to wall simulations for
 a given area) or not (i.e. project data representing plot points in a park).
 
-If the former, the coordinates need to be in order. If the later,
+If the former, the coordinates need to be in order (i.e. xvals should be organized
+from west to east, yvals from south to north).
 
-```{r, createlocs, results = 'hide'}
+If the locations are gridded, the netCDF will be created with a lat and long dimension.
+
+If the locations are not gridded, the netCDF will be created with an automatically
+generated *site* dimension, and lat and long variables affiliated with each site,
+similar to [this example](http://cfconventions.org/Data/cf-conventions/cf-conventions-1.8/cf-conventions.html#_orthogonal_multidimensional_array_representation_of_time_series).
+
+```{r, createLocs, results = 'hide'}
   # points on a regular spaced grid in the WGS84 CRS
-  locationsGrid <- data.frame(X_WGS84 = c(rep(-124.5938, 5), rep(-124.5312, 5)),
+  locations <- data.frame(X_WGS84 = c(rep(-124.5938, 5), rep(-124.5312, 5)),
                         Y_WGS84 = rep(c(47.90625, 47.96875, 48.03125, 48.09375,
                                      48.15625), 2))
-
-  # irregularly spaced points in the WGS84 CRS
-  #locationsRandom
 ```
 
 ## Dimension Data
 
 NetCDFs are organized into dimensions. Dimensions have two key components: Bounds
-and values. The dimensions also have other information which is degined in the Attibute Data
-(see below).
+and values. The dimensions also have other information which is designated in the
+*Attribute Data* (see below).
 
 ### Latitude (Y) and Longitude (X) Dimensions
 
-All NetCDFs will have at least two dimensions, latitude and longitude.
+NetCDFs created *with* gridded locations will have at least two dimensions: latitude and longitude.
 
 The bounds and values of the latitude and longitude are determined from the location
 data within the *create_empty_netCDF_file* function.
+
+### Site (i) Dimension
+
+NetCDFs created *without* gridded locations will have at least one dimensions: site.
+
+Site numbers will be automatically assigned within the *create_empty_netCDF_file* function,
+and have affiliated lat and long variables.
 
 ### Time (T) Dimension
 
@@ -299,7 +310,7 @@ Then, it is filled with data.
       vertical_attributes = NULL,
       global_attributes = global_attributes,
       isGridded = TRUE,
-      locations = locationsGrid,
+      locations = locations,
       crs = crs,
       file = outFileName,
       force_v4 = TRUE,
@@ -314,7 +325,7 @@ Then, it is filled with data.
       has_T_timeAxis = TRUE,
       has_Z_verticalAxis = FALSE,
       isGridded = TRUE,
-      locations = locationsGrid,
+      locations = locations,
       crs = crs,
       force_v4 = TRUE
     )
@@ -336,7 +347,7 @@ Then, it is filled with data.
       vertical_attributes = NULL,
       global_attributes = global_attributes,
       isGridded = TRUE,
-      locations = locationsGrid,
+      locations = locations,
       crs = crs,
       file = outFileName,
       force_v4 = TRUE,
@@ -351,7 +362,7 @@ Then, it is filled with data.
       has_T_timeAxis = FALSE,
       has_Z_verticalAxis = FALSE,
       isGridded = TRUE,
-      locations = locationsGrid,
+      locations = locations,
       crs = crs,
       force_v4 = TRUE
     )
@@ -360,7 +371,42 @@ Then, it is filled with data.
 ## Example 3 - Create a 3 dimension netCDF (lat, long, time) from non-gridded data
 
 ```{r, 3dNoGridExample, results = 'hide'}
-# to do
+
+# Set isGridded to FALSE. A site dimension will be created and have affiliated
+# lat and long coordinates
+
+ # create
+    create_empty_netCDF_file(
+      data = data1d,
+      has_T_timeAxis = TRUE,
+      has_Z_verticalAxis = FALSE,
+      time_bounds = annual_time_bounds,
+      vert_bounds = NULL,
+      var_attributes = var_attributes,
+      time_attributes  = time_attributes,
+      vertical_attributes = NULL,
+      global_attributes = global_attributes,
+      isGridded = FALSE, # <- This is now false!
+      locations = locations,
+      crs = crs,
+      file = outFileName,
+      force_v4 = TRUE,
+      overwrite = TRUE
+    )
+
+    # populate
+    populate_netcdf_from_array(
+      file = outFileName,
+      data = data1d,
+      var_names <- var_attributes$name,
+      has_T_timeAxis = TRUE,
+      has_Z_verticalAxis = FALSE,
+      isGridded = FALSE,  # <- This is now false!
+      locations = locations,
+      crs = crs,
+      force_v4 = TRUE
+    )
+
 ```
 
 ## Example 4 - Create a 4 dimension netCDF (lat, long, time, depth) from gridded data
@@ -378,7 +424,7 @@ Then, it is filled with data.
       vertical_attributes = vertical_attributes,
       global_attributes = global_attributes,
       isGridded = TRUE,
-      locations = locationsGrid,
+      locations = locations,
       crs = crs,
       file = outFileName,
       force_v4 = TRUE,
@@ -393,7 +439,7 @@ Then, it is filled with data.
       has_T_timeAxis = TRUE,
       has_Z_verticalAxis = TRUE,
       isGridded = TRUE,
-      locations = locationsGrid,
+      locations = locations,
       crs = crs,
       force_v4 = TRUE
     )
