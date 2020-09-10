@@ -122,7 +122,8 @@ if (
       path = normalizePath(paths[dir.exists(paths)]),
       exclusions = list(files_not_tolint),
       linters = linters_config,
-      parse_settings = FALSE
+      parse_settings = FALSE,
+      relative_path = FALSE # TRUE assumes that argument path is of length 1
     )
 
     if (length(lints) > 0) {
