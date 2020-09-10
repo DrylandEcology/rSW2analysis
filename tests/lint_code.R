@@ -75,26 +75,28 @@ if (
 
     linters_config <- lintr::with_defaults(
       #------ DEFAULT LINTERS
-      lintr::assignment_linter,
-      lintr::closed_curly_linter(allow_single_line = TRUE),
-      lintr::commas_linter,
-      lintr::commented_code_linter,
-      lintr::equals_na_linter,
-      lintr::function_left_parentheses_linter,
-      lintr::infix_spaces_linter,
-      lintr::line_length_linter(80L),
-      lintr::no_tab_linter,
-      lintr::object_length_linter(30L),
-      lintr::object_usage_linter,
-      lintr::open_curly_linter(allow_single_line = TRUE),
-      lintr::paren_brace_linter,
-      lintr::pipe_continuation_linter,
-      lintr::seq_linter,
-      lintr::single_quotes_linter,
-      lintr::spaces_inside_linter,
-      lintr::spaces_left_parentheses_linter,
-      lintr::trailing_blank_lines_linter,
-      lintr::trailing_whitespace_linter,
+      assignment_linter = lintr::assignment_linter,
+      closed_curly_linter =
+        lintr::closed_curly_linter(allow_single_line = TRUE),
+      commas_linter = lintr::commas_linter,
+      commented_code_linter = lintr::commented_code_linter,
+      equals_na_linter = lintr::equals_na_linter,
+      function_left_parentheses_linter =
+        lintr::function_left_parentheses_linter,
+      infix_spaces_linter = lintr::infix_spaces_linter,
+      line_length_linter = lintr::line_length_linter(length = 80L),
+      no_tab_linter = lintr::no_tab_linter,
+      object_length_linter = lintr::object_length_linter,
+      object_usage_linter = lintr::object_usage_linter,
+      open_curly_linter = lintr::open_curly_linter(allow_single_line = TRUE),
+      paren_brace_linter = lintr::paren_brace_linter,
+      pipe_continuation_linter = lintr::pipe_continuation_linter,
+      seq_linter = lintr::seq_linter,
+      single_quotes_linter = lintr::single_quotes_linter,
+      spaces_inside_linter = lintr::spaces_inside_linter,
+      spaces_left_parentheses_linter = lintr::spaces_left_parentheses_linter,
+      trailing_blank_lines_linter = lintr::trailing_blank_lines_linter,
+      trailing_whitespace_linter = lintr::trailing_whitespace_linter,
       #--- Turn off default linters for now:
       object_name_linter = NULL,
       cyclocomp_linter = NULL,
@@ -106,16 +108,15 @@ if (
       # see https://github.com/jimhester/lintr/issues/468
       #lintr::nonportable_path_linter(lax = TRUE),
       #--- Activated non-default linters:
-      lintr::absolute_path_linter(lax = TRUE),
-      lintr::nonportable_path_linter(lax = TRUE),
-      lintr::infix_spaces_linter,
-      lintr::T_and_F_symbol_linter,
-      lintr::semicolon_terminator_linter(
+      absolute_path_linter = lintr::absolute_path_linter(lax = TRUE),
+      infix_spaces_linter = lintr::infix_spaces_linter,
+      T_and_F_symbol_linter = lintr::T_and_F_symbol_linter,
+      semicolon_terminator_linter = lintr::semicolon_terminator_linter(
         semicolon = c("compound", "trailing")
       ),
-      lintr::undesirable_function_linter,
-      lintr::undesirable_operator_linter,
-      lintr::unneeded_concatenation_linter
+      undesirable_function_linter = lintr::undesirable_function_linter,
+      undesirable_operator_linter = lintr::undesirable_operator_linter,
+      unneeded_concatenation_linter = lintr::unneeded_concatenation_linter
     )
 
     lints <- lintr::lint_dir(
