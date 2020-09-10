@@ -3,7 +3,7 @@
 #'
 #' @param x A Raster* object
 #' @export
-create_netCDF_from_raster_with_time <- function(x, file, ...) {
+create_netCDF_from_raster_with_time <- function(x, file, ...) { #nolint
   stopifnot(requireNamespace("ncdf4"))
 
   xname <- "longitude"
@@ -57,7 +57,7 @@ create_netCDF_from_raster_with_time <- function(x, file, ...) {
 #'  @return This function is used for the side-effect of creating a file.
 #'
 #' @export
-create_netCDF_from_raster_with_variables <- function(x, time_bounds,
+create_netCDF_from_raster_with_variables <- function(x, time_bounds,  #nolint
   var_attributes, global_attributes, file, force_v4 = TRUE,
   overwrite = FALSE) {
 
@@ -270,7 +270,7 @@ create_netCDF_from_raster_with_variables <- function(x, time_bounds,
 #' @describeIn create_netCDF_from_raster_with_variables Convert array where
 #'   variables are organized in the third dimension to a \var{netCDF} file
 #' @export
-create_netCDF_from_array_with_variables <- function(x, locations, grid,
+create_netCDF_from_array_with_variables <- function(x, locations, grid,  #nolint
   time_bounds, var_attributes, global_attributes, file, force_v4 = TRUE,
   overwrite = FALSE) {
 
