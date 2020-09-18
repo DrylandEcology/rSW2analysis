@@ -14,10 +14,10 @@ create_empty_netCDF_file(
   time_attributes,
   vertical_attributes,
   global_attributes,
+  crs_attributes,
   isGridded = TRUE,
   grid = NULL,
   locations,
-  crs,
   file,
   force_v4 = TRUE,
   overwrite = FALSE
@@ -35,11 +35,11 @@ is set to \code{FALSE} then the Z axis will be the third dimension.
 If \var{has_T_timeAxis} is set to \code{TRUE} then the Z axis will be the
 fourth dimension.}
 
-\item{time_bounds}{A numeric string that continuously lists the lower and upper
+\item{time_bounds}{A numeric vector that continuously lists the lower and upper
 bounds of each time dimension value. In the absence of a time dimension,
 this argument can be used to define the calculation period of the variable(s).}
 
-\item{vert_bounds}{A numeric string that continuously lists the lower and upper
+\item{vert_bounds}{A numeric vector that continuously lists the lower and upper
 bounds of each vertical dimension value.}
 
 \item{var_attributes}{A list of named character strings defining the variables
@@ -52,8 +52,10 @@ dimension of the netCDF.}
 dimension of the netCDF.}
 
 \item{global_attributes}{A list of named character strings defining the
-global attributes of the netCDF.
-then the global attributes will be added to the netCDF file.}
+global attributes of the netCDF.}
+
+\item{crs_attributes}{A list of named character string defining the CRS
+of the netCDF.}
 
 \item{isGridded}{A logical value. Represents whether the location data is on
 a regular grid or not.}
@@ -65,8 +67,6 @@ the 'native' raster package format and those that can be read via rgdal.}
 \item{locations}{A SpatialPoints object or a matrix or data.frame with two
 columns containing long and lat values. Data must be organized by (1) long,
 (2) lat.}
-
-\item{crs}{character or object of class 'CRS'.}
 
 \item{file}{A character string. The file path of the netCDF file to be
 created.}
@@ -80,8 +80,8 @@ if it already exists.}
 This function is used for the side-effect of creating a file.
 }
 \description{
-This function creates a strucutured netCDF with metadata from an array, but
- without data.
+This function creates a strucutured netCDF follwing CF 1.8 standards with metadata
+ from an array, but without data.
 }
 \details{
 The user provides an array and specifies spatial information, dimensionality,
@@ -89,9 +89,9 @@ The user provides an array and specifies spatial information, dimensionality,
 
  The netCDF always includes at least two dimensions: Latitude and Longitude.
  Information about these dimensions are taken from the \var{locations},
- \var{isGridded}, \var{crs}, and \var{grid} arguments. One of \var{locations}
- or \var{grid} needs to be provided, but not both. If \var{locations} is a matrix
- or data.frame, \var{crs} needs to be provided.
+ \var{isGridded}, \var{crs_attributes}, and \var{grid} arguments. One of \var{locations}
+ or \var{grid} needs to be provided, but not both.
+ 
  Additional dimensions are added by setting \var{has_T_timeAxis} and/or
  \var{has_Z_verticalAxis} to \code{TRUE}. If both flags are set to
  \code{FALSE} then the netCDF is two dimensions with one or more variables.
@@ -103,6 +103,7 @@ The user provides an array and specifies spatial information, dimensionality,
  these dimensions is set in the respective \var{bounds} and \var{attributes} arguments.
  \var{has_T_timeAxis} and/or \var{has_Z_verticalAxis} is set to \code{TRUE}
  the netCDF can \emph{only} have one variable.
+ 
  The \var{data} object is used to set up the size and dataType in the netCDF. The metadata
  needs to match the data. This object contains the data that you intend to
  populate the netCDF wtih. The array should be set up so that each row is a site's info,
@@ -124,8 +125,6 @@ locations <- data.frame(X_WGS84 = c(rep(-124.5938, 5), rep(-124.5312, 5)),
                         Y_WGS84 = rep(c(47.90625, 47.96875, 48.03125, 48.09375,
                                    48.15625), 2))
 
-crs <- '+init=epsg:4326'
-
 annual_time_bounds <- c(43737, 44102, 44102, 44467, 44467, 44832, 44832, 45197,
                         45197, 45563, 45563, 45928, 45928, 46293, 46293, 46658,
                         46658, 47024, 47024, 47389) # beginning and end of year
@@ -139,7 +138,7 @@ time_attributes <- list(
    name = 'time',
    units = 'days since 1900-01-01',
    calendar = 'standard',
-   unlim = TRUE,
+   unlim = 'TRUE',
    vals = c(43554, 43920, 44285, 44650, 45015, 45381, 45746, 46111, 46476, 46842)# mid point of year
    )
 
@@ -150,6 +149,17 @@ var_attributes <- list(
    units = 'Celsius',
    description = 'example data!'
    )
+
+# CRS attributes
+crs_attributes <- list(
+  proj = '+init=epsg:4326',
+  longitude_of_prime_meridian = 0.0,
+  semi_major_axis = 6378137.0,
+  inverse_flattening = 298.257223563,
+  crs_wkt = 'GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],
+                         AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0, AUTHORITY["EPSG","8901"]],
+                         UNIT["degree",0.01745329251994328,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]]'
+)
 
 # global attributes
 global_attributes <- list(
@@ -171,7 +181,7 @@ global_attributes <- list(
    projection = 'Geographic',
    grid = 'WGS84',
    grid_label = "gn",
-   nominal_resolution = "10 km", # \code{\link{calculate_nominal_resolution}}
+   nominal_resolution = "10 km", # \code{calculate_nominal_resolution}
    further_info_url = "https://github.com/DrylandEcology/",
    contact = "you@email.com"
    )
@@ -187,9 +197,9 @@ create_empty_netCDF_file(
      time_attributes  = time_attributes,
      vertical_attributes = NULL,
      global_attributes = global_attributes,
+     crs_attributes = crs_attributes,
      isGridded = TRUE,
      locations = locations,
-     crs = crs,
      file = outFileName,
      force_v4 = TRUE,
      overwrite = TRUE
@@ -197,9 +207,7 @@ create_empty_netCDF_file(
 
 }
 \seealso{
-\code{\link{populate_netcdf_from_array}}
+\code{populate_netcdf_from_array}
 
 \url{http://cfconventions.org/cf-conventions/cf-conventions.html} # for defining attributes
-
-Demonstration of netCDF functionality in rSW2analysis vignette
 }
