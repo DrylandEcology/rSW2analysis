@@ -16,7 +16,8 @@ vignette: >
 
 This vignette is an overview of how to use the functions in the rSW2analysis package to
 convert arrays of rSOILWAT2 and SOILWAT2 output data into netCDFs that adhere to
-[CF conventions 1.8](http://cfconventions.org/Data/cf-conventions/cf-conventions-1.8/cf-conventions.html).
+[CF conventions 1.8](http://cfconventions.org/Data/cf-conventions/cf-conventions-1.8/cf-conventions.html)
+and [CMIP6 conventions](https://docs.google.com/document/d/1h0r8RZr_f3-8egBMMh7aqLwy3snpD6_MrDz1q8n5XUk/edit#).
 
 Additionally, this document describes the Dryland Ecology Lab's standards and
 conventions in regards to naming, metadata, and netCDF structure.
@@ -64,7 +65,7 @@ a given area) or not (e.g. project data representing plot points in a park).
 If the data is on a grid, either a gridded raster file or a table of coordinates
 can be provided. If the former, the coordinates will be extracted from the grid.
 If the later, the coordinates need to be ordered from least to greatest. For example,
-in the western hemishpere, xvals should be organized rom west to east, yvals from south to north.
+in the western hemisphere, xvals should be organized from west to east, yvals from south to north.
 If the locations are gridded, the netCDF will be created with a lat and long dimension.
 
 
@@ -75,15 +76,15 @@ locations <- data.frame(X_WGS84 = c(rep(-124.5938, 5), rep(-124.5312, 5)),
                                         48.15625), 2))
 ```
 
-If the locations are not gridded, locations must be provided in a table. 
-The netCDF will be created with an automatically generated *site* dimension, 
+If the locations are not gridded, locations must be provided in a table.
+The netCDF will be created with an automatically generated *site* dimension,
 and lat and long variables affiliated with each site, similar to [this example](http://cfconventions.org/Data/cf-conventions/cf-conventions-1.8/cf-conventions.html#_orthogonal_multidimensional_array_representation_of_time_series).
 
 The crs_attribute list provides more information about the CRS.
 
 ## Dimension Data
 
-NetCDFs are organized into dimensins. Dimensions have two key components: Bounds
+NetCDFs are organized into dimensions. Dimensions have two key components: Bounds
 and values. The dimensions also have other information which is designated in the
 *Attribute Data* (see below).
 
@@ -96,9 +97,12 @@ For example, if you have an array that contains time series data
 (n = 10 measurements) of one variable, then the values in the time attribute data
 needs to be of length 10 the bounds needs to be of length 20.
 
+See http://cfconventions.org/Data/cf-conventions/cf-conventions-1.8/cf-conventions.html#cell-boundaries
+for more information.
+
 ### Latitude (Y) and Longitude (X) Dimensions
 
-NetCDFs created *with* gridded locations will have at least two dimensions: latitude and longitude.
+NetCDFs created with *gridded* locations will have at least two dimensions: latitude and longitude.
 
 The bounds and values of the latitude and longitude are determined from either the grid
 or the location data within the *create_empty_netCDF_file* function.
@@ -157,7 +161,7 @@ necessary for interpreting the data.
 
 Different attribute types include variable attributes, time attributes, depth
 attributes, crs_attributes, and global attributes. The format of attributes is a
-named list. Each attribute list has a bare minimum of required fields. Endless 
+named list. Each attribute list has a bare minimum of required fields. Endless
 other fields are optional and can be added by the user as they see fit.
 
 ### Variable Attributes
@@ -168,6 +172,13 @@ The length of the "name" and "units" fields must be the same and must match the 
 of columns in the data. For example, if you have a netcdf with 10 variables,
 the array should have 10 columns, and the "name" and "unit" field ashould each
 have 10 values.
+
+Use CMIP6 standard variable names where available.The [day](https://github.com/PCMDI/cmip6-cmor-tables/blob/master/Tables/CMIP6_day.json)
+and [Eday](https://github.com/PCMDI/cmip6-cmor-tables/blob/master/Tables/CMIP6_Eday.json)
+tables for time-varying variables and [fx](https://github.com/PCMDI/cmip6-cmor-tables/blob/master/Tables/CMIP6_fx.json)
+and [Efx](https://github.com/PCMDI/cmip6-cmor-tables/blob/master/Tables/CMIP6_Efx.json)
+for time-invariant variables.
+
 
 ```{r, VarAtt, results = 'hide'}
 # single variable
@@ -285,11 +296,11 @@ global_attributes <- list(
 
 #### Nominal resolution
 
-If the data is calculated and reported on a grid, CMIP6 convention calls for the
-field *nominal resolution* to be contained in the global attributes. The function
-\code{\link{calculate_nominal_resolution}} will calculate the nominal resolution of your gridded
-data for you. However, you need to provide a raster of the grid, the lat/long locations, and
-the area that each cell in the grid represents.
+If the data is calculated and reported on a grid, [CMIP6 convention](https://docs.google.com/document/d/1h0r8RZr_f3-8egBMMh7aqLwy3snpD6_MrDz1q8n5XUk/edit)
+calls for the field *nominal resolution* to be contained in the global attributes.
+The function \code{calculate_nominal_resolution} will calculate the nominal resolution
+of your gridded data for you. However, you need to provide a raster of the grid,
+the lat/long locations, and the area that each cell in the grid represents.
 
 ```{r, Nominal, results = 'hide'}
 r <- raster::raster(
@@ -314,26 +325,30 @@ calculate_nominal_resolution(
 File structure should be organized by: variableName / allFilesPerVariable. Each file
 will contain variable output for one time period and/or climate model.
 
+Our naming conventions for files, strives to be similar to the [CMIP6 conventions](https://docs.google.com/document/d/1h0r8RZr_f3-8egBMMh7aqLwy3snpD6_MrDz1q8n5XUk/edit#)
+(see Appendix 1).
+
 The name for each file should be in the format as follows:
-**var_LorA_timestep_Project_SOILWAT2_GCM_RCP_variantLabel_gn_startT_endT.nc**
+**var_LmonOrAmon_timestep_Project_SOILWAT2_GCM_RCP_variantLabel_gn_startT-endT.nc**
 
 where:
 
 * var – Shorthand name for variable that is contained in files (i.e. ppt for precipitation, WDD for wet degree days)
-* LorA – Land (L) or atmospheric (A) data
-* timestep – The time-step of the data contained (i.e. the units of the time dimension (i.e. year, month)).
+* LmonOrAmon – Land (L) or atmospheric (A) data
+* timestep – The time-step of the data contained (i.e. the units of the time dimension (e.g. year, month)).
+  * use 'fx' if data is fixed and does not have a timestp
 * Project – Project Name (i.e. SEUG or RangeResil, etc.)
 * SOILWAT2 – Keep as is. Denotes that SOILWAT2 was used to generate these results
-* GCM – Name of the GCM climate data used to drive the SOILWAT2 model (i.e. IPSL5, CCSM2-1)
-* RCP – Name of which GCM used to drive the GCM (RCP4.5, RCP8.5)
-* variantLabel –Variant of the GCM used (i.e. r1i1p1f1)
-* gn
+* GCM – Name of the GCM climate data used to drive the SOILWAT2 model (e.g. IPSL5, CCSM2-1)
+* RCP – Name of experiment under which the GCM was run (e.g. RCP4.5, RCP8.5)
+* variantLabel – Variant of the GCM used (e.g. r1i1p1f1)
+* gn - grid_label. 'gn' is the "native grid", which should only be used if the SOILWAT2 output resolution has not been modified.
 * startT – lower time bound or start of the time period contained. Units should be the date (YearMonthDay, XXXXYYZZ).
 * endT – upper time bound or end of the time period contained. Units should be the date (YearMonthDay, XXXXYYZZ).
 
 # Create netCDF Function and Examples
 
-The functions \code{\link{create_empty_netCDF_file}} and \code{\link{populate_netcdf_from_array}}
+The functions \code{create_empty_netCDF_file} and \code{populate_netcdf_from_array}
 will create and populate a netCDF from an array. The user defines the dimensions, attributes, and locations in the functions' arguments.
 
 The two functions work in conjunction with one another. First, an empty netcdf is created.
@@ -374,10 +389,10 @@ Then, it is filled with data.
       locations = locations,
       force_v4 = TRUE
     )
-    
+
     data2d_2 <- read_netCDF_to_array('dummynetcdf.nc', locations)
     identical(data2d, data2d_2)
-    
+
 ```
 ## Example 2 - Create a 2 dimension netCDF (lat, long) from gridded data
 
@@ -413,7 +428,7 @@ Then, it is filled with data.
       locations = locations,
       force_v4 = TRUE
     )
-    
+
     data2d_2 <- read_netCDF_to_array('dummynetcdf.nc', locations)
     identical(data2d, data2d_2)
 ```
@@ -493,7 +508,7 @@ Then, it is filled with data.
       locations = locations,
       force_v4 = TRUE
     )
-    
+
     data3d_2 <- read_netCDF_to_array('dummynetcdf.nc', locations)
     identical(data3d, data3d_2)
 ```

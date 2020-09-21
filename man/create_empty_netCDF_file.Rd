@@ -20,7 +20,8 @@ create_empty_netCDF_file(
   locations,
   file,
   force_v4 = TRUE,
-  overwrite = FALSE
+  overwrite = FALSE,
+  verbose = FALSE
 )
 }
 \arguments{
@@ -110,6 +111,13 @@ The user provides an array and specifies spatial information, dimensionality,
  and each column is a value for variables, time or depth. If the netcdf is 4d
  (time and depth == \code{TRUE}, then need to have a 3-d data array,
  where each additional dimension contains values for each depth.
+ 
+ For variable names, Use CMIP6 standard variable names where available. 
+ The [day](https://github.com/PCMDI/cmip6-cmor-tables/blob/master/Tables/CMIP6_day.json) 
+ and [Eday](https://github.com/PCMDI/cmip6-cmor-tables/blob/master/Tables/CMIP6_Eday.json) 
+ tables for time-varying variables and [fx](https://github.com/PCMDI/cmip6-cmor-tables/blob/master/Tables/CMIP6_fx.json) 
+ and [Efx](https://github.com/PCMDI/cmip6-cmor-tables/blob/master/Tables/CMIP6_Efx.json) 
+ for time-invariant variables.
 }
 \examples{
 #############################################################################

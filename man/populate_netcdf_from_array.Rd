@@ -13,7 +13,8 @@ populate_netcdf_from_array(
   isGridded = TRUE,
   grid = NULL,
   locations,
-  force_v4 = TRUE
+  force_v4 = TRUE,
+  verbose = FALSE
 )
 }
 \arguments{

@@ -3,8 +3,7 @@
 \name{read_netCDF_to_raster}
 \alias{read_netCDF_to_raster}
 \title{Enhance \code{\link[raster]{raster}} to handle added information written
-to a \var{netCDF} file by function
-\code{\link{create_netCDF_from_raster_with_variables}}}
+to a \var{netCDF} file by function}
 \usage{
 read_netCDF_to_raster(x, ...)
 }
@@ -14,5 +13,4 @@ A Raster* object.
 \description{
 Enhance \code{\link[raster]{raster}} to handle added information written
 to a \var{netCDF} file by function
-\code{\link{create_netCDF_from_raster_with_variables}}
 }

@@ -29,7 +29,13 @@
 #'  and each column is a value for variables, time or depth. If the netcdf is 4d
 #'  (time and depth == \code{TRUE}, then need to have a 3-d data array,
 #'  where each additional dimension contains values for each depth.
-#'
+#'  
+#'  For variable names, Use CMIP6 standard variable names where available. 
+#'  The [day](https://github.com/PCMDI/cmip6-cmor-tables/blob/master/Tables/CMIP6_day.json) 
+#'  and [Eday](https://github.com/PCMDI/cmip6-cmor-tables/blob/master/Tables/CMIP6_Eday.json) 
+#'  tables for time-varying variables and [fx](https://github.com/PCMDI/cmip6-cmor-tables/blob/master/Tables/CMIP6_fx.json) 
+#'  and [Efx](https://github.com/PCMDI/cmip6-cmor-tables/blob/master/Tables/CMIP6_Efx.json) 
+#'  for time-invariant variables.
 #'
 #' @param data A numeric array.
 #' @param has_T_timeAxis A logical value. Indicates that the netCDF created will
@@ -175,7 +181,7 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
   has_Z_verticalAxis = FALSE, time_bounds, vert_bounds, var_attributes,
   time_attributes, vertical_attributes, global_attributes,
   crs_attributes, isGridded = TRUE, grid = NULL, locations,
-  file, force_v4 = TRUE, overwrite = FALSE) {
+  file, force_v4 = TRUE, overwrite = FALSE, verbose = FALSE) {
 
   # ---------------------------------------------------------------------
   # Checks --------------------------------------------------------------
@@ -657,7 +663,9 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
 
   # The end --------------------------------------------------------------
 
-  message(paste("The file has", nc$nvars, "variables and",  nc$ndim, "dimensions"))
+  if(verbose == TRUE) {
+    message(paste("The file has", nc$nvars, "variables and",  nc$ndim, "dimensions"))
+  }
 
   invisible(TRUE)
 }
@@ -810,7 +818,7 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
 populate_netcdf_from_array <- function(file, data, var_names = NULL,
                                        has_T_timeAxis, has_Z_verticalAxis,
                                        isGridded = TRUE, grid = NULL, locations,
-                                       force_v4 = TRUE) {
+                                       force_v4 = TRUE, verbose = FALSE) {
 
 
   # ---------------------------------------------------------------------
@@ -823,6 +831,7 @@ populate_netcdf_from_array <- function(file, data, var_names = NULL,
     stopifnot(utils::packageVersion("raster") >= "2.9.1")
   }
 
+  
   stopifnot(file.exists(file) || !missing(locations)) # file and locations need to exist
 
   # open file, writeable --------------
@@ -840,9 +849,11 @@ populate_netcdf_from_array <- function(file, data, var_names = NULL,
   if(has_T_timeAxis & has_Z_verticalAxis) stopifnot(data_dims == 3) # if have both T and Z, data should be 3 dims
   if(!has_T_timeAxis & !has_Z_verticalAxis) stopifnot(nvars == nn) # if org by vars names should be equal to nl
 
-  #print(paste("The file has", nc$nvars, "variables and",  nc$ndim,"dimensions"))
-  #print(paste("The dimensions are", paste(nc_dims, collapse = ', ')))
-
+  if(verbose == TRUE){
+    print(paste("The file has", nc$nvars, "variables and",  nc$ndim,"dimensions"))
+    print(paste("The dimensions are", paste(nc_dims, collapse = ', ')))
+  }
+  
   # ---------------------------------------------------------------------
   #  Locations and spatial info  ----------------------------------------
   # ---------------------------------------------------------------------
@@ -886,8 +897,10 @@ populate_netcdf_from_array <- function(file, data, var_names = NULL,
     nc_var <- ncdf4::ncvar_get(nc, attributes(nc$var)$names[var_nc_index])
     nc_var_dims <- dim(nc_var) # lon, lat, then #vars time or depth of gridded 
 
-    message(paste('The dimensionality of variable',var_names[k], 'is',
-                paste(nc_var_dims, collapse = ', ')))
+    if(verbose == TRUE) {
+      message(paste('The dimensionality of variable',var_names[k], 'is',
+                    paste(nc_var_dims, collapse = ', ')))
+    }
     
     # Set up chunksizes  ---------------------------------------------------
     if(has_Z_verticalAxis) {
@@ -919,7 +932,7 @@ populate_netcdf_from_array <- function(file, data, var_names = NULL,
         if(has_T_timeAxis && has_Z_verticalAxis) {
           
           for(z in seq(z_chunksize)) { # by Z axis
-            message('Adding depth layer ', z)
+            if (verbose == TRUE) message('Adding depth layer ', z)
             for (t in seq_len(nn)) { # col by col - always time in this case
               
               vals <- data[, t, z]
@@ -978,7 +991,7 @@ populate_netcdf_from_array <- function(file, data, var_names = NULL,
           temp <- grid_template
           
           for(z in seq(z_chunksize)) { # by Z axis
-            message('Adding depth layer ', z)
+           if(verbose == TRUE) message('Adding depth layer ', z)
             for (t in seq_len(nn)) { # col by col - always time in this case
               
               temp[val_grid_ids] <- data[, t, z]
@@ -1019,7 +1032,6 @@ populate_netcdf_from_array <- function(file, data, var_names = NULL,
 
 #' Enhance \code{\link[raster]{raster}} to handle added information written
 #' to a \var{netCDF} file by function
-#' \code{\link{create_netCDF_from_raster_with_variables}}
 #'
 #' @return A Raster* object.
 #' @export
