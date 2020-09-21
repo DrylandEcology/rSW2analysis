@@ -110,7 +110,7 @@ NetCDFs created *without* gridded locations will have at least one dimensions: s
 Site numbers will be automatically assigned within the *create_empty_netCDF_file* function,
 and have affiliated lat and long variables.
 
-### Time (T) Dimension
+### Time (t) Dimension
 
 The user must define the bounds and values for the time dimension, as inputs to the
 *create_empty_netCDF_file*.
@@ -135,7 +135,7 @@ annual_time_bounds <- c(43737, 44102, 44102, 44467, 44467, 44832, 44833, 45197,
                         46658, 47024, 47024, 47389) # beginning and end of year in days since 1900-01-01
 ```
 
-### Depth (Z) Dimension
+### Depth (z) Dimension
 
 The user must define the bounds and values for the depth dimension.
 
@@ -225,6 +225,15 @@ vertical_attributes <- list(
 ```
 
 ### CRS Attributes
+
+The CRS attributes describe the coordinate reference system (CRS).
+
+The only required field in the CRS attribute list is the 'proj' field. The proj
+field is the the CRS is proj4string from the PROJ.4 library.
+
+Additionally, we strongly recommed defining the CRS in the crs_wkt format, which
+is preferred by [netCDF convention] (http://cfconventions.org/cf-conventions/cf-conventions.html#use-of-the-crs-well-known-text-format).
+
 
 ```{r, CRSAtt, results = 'hide'}
 crs_attributes <- list(
@@ -333,8 +342,6 @@ Then, it is filled with data.
 ## Example 1 - Create a 3 dimension netCDF (lat, long, time) from gridded data
 ```{r, 3dGridExample, results = 'hide'}
     ## locations
-    crs <- '+init=epsg:4326' # the CRS
-
     outFileName <- 'dummynetcdf.nc'
 
     # create
@@ -367,7 +374,10 @@ Then, it is filled with data.
       locations = locations,
       force_v4 = TRUE
     )
-
+    
+    data2d_2 <- read_netCDF_to_array('dummynetcdf.nc', locations)
+    identical(data2d, data2d_2)
+    
 ```
 ## Example 2 - Create a 2 dimension netCDF (lat, long) from gridded data
 
@@ -403,6 +413,9 @@ Then, it is filled with data.
       locations = locations,
       force_v4 = TRUE
     )
+    
+    data2d_2 <- read_netCDF_to_array('dummynetcdf.nc', locations)
+    identical(data2d, data2d_2)
 ```
 
 ## Example 3 - Create a 3 dimension netCDF (lat, long, time) from non-gridded data
@@ -443,6 +456,8 @@ Then, it is filled with data.
       force_v4 = TRUE
     )
 
+    data2d_2 <- read_netCDF_to_array('dummynetcdf.nc', locations)
+    identical(data2d, data2d_2)
 ```
 
 ## Example 4 - Create a 4 dimension netCDF (lat, long, time, depth) from gridded data
@@ -478,4 +493,7 @@ Then, it is filled with data.
       locations = locations,
       force_v4 = TRUE
     )
+    
+    data3d_2 <- read_netCDF_to_array('dummynetcdf.nc', locations)
+    identical(data3d, data3d_2)
 ```

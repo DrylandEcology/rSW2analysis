@@ -904,40 +904,45 @@ populate_netcdf_from_array <- function(file, data, var_names = NULL,
       var_chunksizes <- nc_var_dims[1] # site
       
       #  -----------------------------------------------------------------------
-      # add variable values ! -------------------------------------------------
-      # -----------------------------------------------------------------------
-      if(has_T_timeAxis && has_Z_verticalAxis) {
+      # add variable values ! --------------------------------------------------
+      # ------------------------------------------------------------------------
+      if(nvars > 1) {
         
-        for(z in seq(z_chunksize)) { # by Z axis
-          message('Adding depth layer ', z)
-          for (t in seq_len(nn)) { # col by col - always time in this case
+        vals <- data[ ,k]
+        
+        try(ncdf4::ncvar_put(nc, varid = var_names[k],
+                             vals = vals,
+                             start = 1,
+                             count = var_chunksizes))
+        
+      } else {
+        if(has_T_timeAxis && has_Z_verticalAxis) {
+          
+          for(z in seq(z_chunksize)) { # by Z axis
+            message('Adding depth layer ', z)
+            for (t in seq_len(nn)) { # col by col - always time in this case
+              
+              vals <- data[, t, z]
+              
+              try(ncdf4::ncvar_put(nc, varid = var_names[k],
+                                   vals = vals,
+                                   start = c(1, t, z), #x-y-t-z
+                                   count = c(var_chunksizes, 1, 1)))
+            }
+          }
+        } else { 
+          # write values, col by col -- n values can rep dif. vals, time, or depth
+          for (n in seq_len(nn)) {
             
-            vals <- data[, t, z]
+            vals <-  data[, n] # by time chunk or var chunk
+
+            var_start <-  c(1, n)
             
             try(ncdf4::ncvar_put(nc, varid = var_names[k],
                                  vals = vals,
-                                 start = c(1, t, z), #x-y-t-z
-                                 count = c(var_chunksizes, 1, 1)))
+                                 start = var_start,
+                                 count = c(var_chunksizes, 1)))
           }
-        }
-      } else { 
-        # write values, col by col -- n values can rep dif. vals, time, or depth
-        for (n in seq_len(nn)) {
-          
-          vals <-  data[, n] # by time chunk or var chunk
-          
-          if(!has_T_timeAxis && !has_Z_verticalAxis) {
-            var_start <-  c(1)
-            var_chunksizes2  <- c(var_chunksizes)
-          } else {
-            var_start <-  c(1, n)
-            var_chunksizes2  <- c(var_chunksizes, 1)
-          }
-          
-          try(ncdf4::ncvar_put(nc, varid = var_names[k],
-                               vals = vals,
-                               start = var_start,
-                               count = var_chunksizes2))
         }
       }
     }
@@ -953,48 +958,57 @@ populate_netcdf_from_array <- function(file, data, var_names = NULL,
       var_chunksizes <- c(nc_var_dims[1], nc_var_dims[2]) # lon, lat
       
       #  -----------------------------------------------------------------------
-      # add variable values ! -------------------------------------------------
-      # -----------------------------------------------------------------------
-      if(has_T_timeAxis && has_Z_verticalAxis) {
-        
+      # add variable values ! --------------------------------------------------
+      # ------------------------------------------------------------------------
+      if(nvars > 1) {
         temp <- grid_template
+        temp[val_grid_ids] <- data[, k]
+        vals <- matrix(temp,  ncol = var_chunksizes[2])
         
-        for(z in seq(z_chunksize)) { # by Z axis
-          message('Adding depth layer ', z)
-          for (t in seq_len(nn)) { # col by col - always time in this case
-            
-            temp[val_grid_ids] <- data[, t, z]
-            vals <- matrix(temp, ncol = as.numeric(var_chunksizes[2]))
-            
-            try(ncdf4::ncvar_put(nc, varid = var_names[k],
-                                 vals = vals,
-                                 start = c(1, 1, t, z), #x-y-t-z
-                                 count = c(var_chunksizes, 1, 1)))
-          }
-        }
+        var_start <-  c(1, 1)
+        
+        try(ncdf4::ncvar_put(nc, varid = var_names[k],
+                             vals = vals,
+                             start = var_start,
+                             count = var_chunksizes))
+        
       } else {
-        # write values, col by col -- n values can rep dif. vals, time, or depth
-        for (n in seq_len(nn)) {
+        if(has_T_timeAxis && has_Z_verticalAxis) {
           
           temp <- grid_template
-          temp[val_grid_ids] <- data[, n]
-          vals <- matrix(temp,  ncol = var_chunksizes[2])
           
-          if(!has_T_timeAxis && !has_Z_verticalAxis) {
-            var_start <-  c(1,1)
-            var_chunksizes2  <- c(var_chunksizes)
-          } else {
-            var_start <-  c(1, 1, n)
-            var_chunksizes2  <- c(var_chunksizes, 1)
+          for(z in seq(z_chunksize)) { # by Z axis
+            message('Adding depth layer ', z)
+            for (t in seq_len(nn)) { # col by col - always time in this case
+              
+              temp[val_grid_ids] <- data[, t, z]
+              vals <- matrix(temp, ncol = as.numeric(var_chunksizes[2]))
+              
+              try(ncdf4::ncvar_put(nc, varid = var_names[k],
+                                   vals = vals,
+                                   start = c(1, 1, t, z), #x-y-t-z
+                                   count = c(var_chunksizes, 1, 1)))
+            }
           }
-          
-          try(ncdf4::ncvar_put(nc, varid = var_names[k],
-                               vals = vals,
-                               start = var_start,
-                               count = var_chunksizes2))
+        } else {
+          # write values, col by col -- n values can rep dif. time, or depth
+          for (n in seq_len(nn)) {
+            
+            temp <- grid_template
+            temp[val_grid_ids] <- data[, n]
+            vals <- matrix(temp,  ncol = var_chunksizes[2])
+
+            var_start <-  c(1, 1, n)
+
+            try(ncdf4::ncvar_put(nc, varid = var_names[k],
+                                 vals = vals,
+                                 start = var_start,
+                                 count = c(var_chunksizes, 1)))
+          }
         }
       }
     }
+    
     # Flush this step to the file so we dont lose it
     # if there is a crash or other problem
     ncdf4::nc_sync(nc)
@@ -1032,6 +1046,118 @@ read_netCDF_to_raster <- function(x, ...) {
   }
 
   r
+}
+
+#' Read data from a netcdf into an array or matrix
+#'
+#' @param x a netCDF fiile
+#' @return an array
+#' @export
+#' 
+read_netCDF_to_array <- function(x, locations) {
+  
+  # open file, writeable --------------
+  nc <- ncdf4::nc_open(x, write = TRUE)
+  on.exit(ncdf4::nc_close(nc))
+  
+  # figure out dimensionality
+  nc_dims <-  attributes(nc$dim)$names #dims of netcdf
+  
+  if('site' %in% nc_dims) isGridded = FALSE
+  if('lat' %in% nc_dims) isGridded = TRUE
+  
+  has_T_timeAxis <-  ifelse('time' %in% nc_dims, TRUE, FALSE)
+  has_Z_verticalAxis <-  ifelse('depth' %in% nc_dims, TRUE, FALSE)
+  
+  # Define variables
+  nc_var_names <- attributes(nc$var)$names
+  nc_var_names <- grep('bnds|crs|lat|lon', nc_var_names, invert = TRUE, value = TRUE)
+  
+  if(isGridded == TRUE) {
+    
+    # location stuff  ---------------------------------------------------------
+    loc <- sp::SpatialPoints(locations)
+    # Create grid from location values ----------------------------------------
+    sp::gridded(loc) = TRUE
+    grid_template <- raster::raster(loc)
+    raster::extent(grid_template) <- raster::extent(loc)
+    
+    val_ids <- raster::cellFromXY(grid_template, locations)
+    
+    nc_var <- ncdf4::ncvar_get(nc, nc_var_names[1])
+    nc_var_dims <- dim(nc_var)
+    
+    locDims <- c(nc_var_dims[1] * nc_var_dims[2])
+    dimtz <- nc_var_dims[3]
+    dimz <- if(has_T_timeAxis && has_Z_verticalAxis) nc_var_dims[4]
+    
+    
+  } else {
+    
+    nc_var <- ncdf4::ncvar_get(nc, nc_var_names[1])
+    nc_var_dims <- dim(nc_var)
+    
+    val_ids <- seq_len(nc_var_dims[1])
+    
+    locDims <- nc_var_dims[1]
+    dimtz <- nc_var_dims[2]
+    dimz <- if(has_T_timeAxis && has_Z_verticalAxis) nc_var_dims[3]
+    
+  }
+    
+  # ---------------------------------------------------------------------------
+  # Put variables into array
+  # ---------------------------------------------------------------------------
+  
+  # multi variable
+  if(length(nc_var_names) > 1) { 
+    
+    nc_var <- ncdf4::ncvar_get(nc, nc_var_names[1])
+    nc_var_dims <- dim(nc_var)
+    newArray <- array( , dim = c(locDims, 
+                                 length(nc_var_names)))
+    
+    for(k in 1:length(nc_var_names)) { 
+      nc_var <- ncdf4::ncvar_get(nc, nc_var_names[k])
+      v <-  c(nc_var)
+      newArray[, k] <- v[val_ids]
+    }
+    
+  } else {
+    # values
+    nc_var <- ncdf4::ncvar_get(nc, nc_var_names[1])
+    nc_var_dims <- dim(nc_var)
+    
+    if(has_T_timeAxis && has_Z_verticalAxis) {
+      # if there is a time AND depth axis
+      
+      newArray <- array(, dim = c(locDims, 
+                                  dimtz, dimz))
+      
+      for(z in seq(dimz)){
+        
+        for(i in seq(dimtz)) {
+          
+          if(isGridded == TRUE) v <- c(nc_var[, , i, z]) else v <- c(nc_var[, i, z])
+          newArray[, i, z] <- v[val_ids]
+          
+        }
+      }
+      
+    } else {
+      # if there is a time OR depth axis
+      newArray <- array(, dim = c(locDims, dimtz))
+      
+      for(i in seq(dimtz)) {
+        
+        if(isGridded == TRUE) v <- c(nc_var[, , i]) else v <- c(nc_var[, i])
+        newArray[, i] <- v[val_ids]
+        
+      }
+    }
+  }
+
+  return(newArray)
 }
 
 #' Calculate "nominal resolution" of grid
