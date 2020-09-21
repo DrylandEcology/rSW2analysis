@@ -47,7 +47,8 @@ Suggests:
     MuMIn,
     colorspace,
     knitr,
-    rmarkdwon
+    rmarkdwon,
+    sf
 VignetteBuilder: knitr
 Language: en-US
 RoxygenNote: 7.1.1
