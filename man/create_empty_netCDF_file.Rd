@@ -212,6 +212,8 @@ create_empty_netCDF_file(
      force_v4 = TRUE,
      overwrite = TRUE
    )
+   
+unlink(outFileName)    
 
 }
 \seealso{

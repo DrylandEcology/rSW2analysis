@@ -242,21 +242,27 @@ The CRS attributes describe the coordinate reference system (CRS).
 The only required field in the CRS attribute list is the 'proj' field. The proj
 field is the the CRS is proj4string from the PROJ.4 library.
 
-Additionally, we strongly recommed defining the CRS in the crs_wkt format, which
+Additionally, we strongly recommend defining the CRS in the crs_wkt format, which
 is preferred by [netCDF convention] (http://cfconventions.org/cf-conventions/cf-conventions.html#use-of-the-crs-well-known-text-format).
 
+The *wkt* function in the raster package can be used to generate wkts.
 
 ```{r, CRSAtt, results = 'hide'}
+
 crs_attributes <- list(
  proj = '+init=epsg:4326',
   grid_mapping_name = "latitude_longitude",
   longitude_of_prime_meridian = 0.0,
   semi_major_axis = 6378137.0,
-  inverse_flattening = 298.257223563,
-  crs_wkt = 'GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],
-                        AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0, AUTHORITY["EPSG","8901"]],
-                        UNIT["degree",0.01745329251994328,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]]'
+  inverse_flattening = 298.257223563
 )
+
+locationsSP <- sp::SpatialPoints(locations)
+sp::proj4string(locationsSP) <- sp::CRS(crs_attributes$proj)
+WKTex <- raster::wkt(locationsSP)
+
+crs_attributes <- c(crs_attributes, crs_wkt = WKTex)
+
 ```
 
 ### Global Attributes
@@ -356,81 +362,116 @@ Then, it is filled with data.
 
 ## Example 1 - Create a 3 dimension netCDF (lat, long, time) from gridded data
 ```{r, 3dGridExample, results = 'hide'}
-    ## locations
-    outFileName <- 'dummynetcdf.nc'
+library(ncdf4)
+## locations
+outFileName <- 'dummynetcdf.nc'
 
-    # create
-    create_empty_netCDF_file(
-      data = data2d,
-      has_T_timeAxis = TRUE,
-      has_Z_verticalAxis = FALSE,
-      time_bounds = annual_time_bounds,
-      vert_bounds = NULL,
-      var_attributes = var_attributes,
-      time_attributes  = time_attributes,
-      vertical_attributes = NULL,
-      crs_attributes = crs_attributes,
-      global_attributes = global_attributes,
-      isGridded = TRUE,
-      locations = locations,
-      file = outFileName,
-      force_v4 = TRUE,
-      overwrite = TRUE
-    )
+# create
+create_empty_netCDF_file(
+  data = data2d,
+  has_T_timeAxis = TRUE,
+  has_Z_verticalAxis = FALSE,
+  time_bounds = annual_time_bounds,
+  vert_bounds = NULL,
+  var_attributes = var_attributes,
+  time_attributes  = time_attributes,
+  vertical_attributes = NULL,
+  crs_attributes = crs_attributes,
+  global_attributes = global_attributes,
+  isGridded = TRUE,
+  locations = locations,
+  file = outFileName,
+  force_v4 = TRUE,
+  overwrite = TRUE
+)
 
-    # populate
-    populate_netcdf_from_array(
-      file = outFileName,
-      data = data2d,
-      var_names <- var_attributes$name,
-      has_T_timeAxis = TRUE,
-      has_Z_verticalAxis = FALSE,
-      isGridded = TRUE,
-      locations = locations,
-      force_v4 = TRUE
-    )
+# populate
+populate_netcdf_from_array(
+  file = outFileName,
+  data = data2d,
+  var_names <- var_attributes$name,
+  has_T_timeAxis = TRUE,
+  has_Z_verticalAxis = FALSE,
+  isGridded = TRUE,
+  locations = locations,
+  force_v4 = TRUE, 
+  verbose = TRUE
+)
 
-    data2d_2 <- read_netCDF_to_array('dummynetcdf.nc', locations)
-    identical(data2d, data2d_2)
+# check data
+data2d_2 <- read_netCDF_to_array('dummynetcdf.nc', locations)
+all.equal(data2d, data2d_2)
+
+# check coords, times
+tmp <- ncdf4::nc_open(outFileName)
+
+lon <- c(ncvar_get(tmp, varid = "lon"))
+identical(lon, sort(unique(locations$X_WGS84)))
+
+lat <- c(ncvar_get(tmp, varid = "lat"))
+identical(lat, sort(unique(locations$Y_WGS84), decreasing = TRUE))
+
+timeVals <- c(ncvar_get(tmp, varid = "time"))
+identical(timeVals, time_attributes[['vals']])
+
+timeBnds <- c(ncvar_get(tmp, varid = "time_bnds"))
+identical(timeBnds, annual_time_bounds)
+
+ncdf4::nc_close(tmp)
+unlink(outFileName)
 
 ```
 ## Example 2 - Create a 2 dimension netCDF (lat, long) from gridded data
 
 ```{r, 2dExample, results = 'hide'}
 
-    # create
-    create_empty_netCDF_file(
-      data = data2d,
-      has_T_timeAxis = FALSE,
-      has_Z_verticalAxis = FALSE,
-      time_bounds = NULL,
-      vert_bounds = NULL,
-      var_attributes = var_attributes2,
-      time_attributes  = NULL,
-      vertical_attributes = NULL,
-      crs_attributes = crs_attributes,
-      global_attributes = global_attributes,
-      isGridded = TRUE,
-      locations = locations,
-      file = outFileName,
-      force_v4 = TRUE,
-      overwrite = TRUE
-    )
+# create
+create_empty_netCDF_file(
+  data = data2d,
+  has_T_timeAxis = FALSE,
+  has_Z_verticalAxis = FALSE,
+  time_bounds = NULL,
+  vert_bounds = NULL,
+  var_attributes = var_attributes2,
+  time_attributes  = NULL,
+  vertical_attributes = NULL,
+  crs_attributes = crs_attributes,
+  global_attributes = global_attributes,
+  isGridded = TRUE,
+  locations = locations,
+  file = outFileName,
+  force_v4 = TRUE,
+  overwrite = TRUE
+)
 
-    # populate
-    populate_netcdf_from_array(
-      file = outFileName,
-      data = data2d,
-      var_names <- var_attributes2$name,
-      has_T_timeAxis = FALSE,
-      has_Z_verticalAxis = FALSE,
-      isGridded = TRUE,
-      locations = locations,
-      force_v4 = TRUE
-    )
+# populate
+populate_netcdf_from_array(
+  file = outFileName,
+  data = data2d,
+  var_names <- var_attributes2$name,
+  has_T_timeAxis = FALSE,
+  has_Z_verticalAxis = FALSE,
+  isGridded = TRUE,
+  locations = locations,
+  force_v4 = TRUE
+)
 
-    data2d_2 <- read_netCDF_to_array('dummynetcdf.nc', locations)
-    identical(data2d, data2d_2)
+# check data
+data2d_2 <- read_netCDF_to_array('dummynetcdf.nc', locations)
+all.equal(data2d, data2d_2)
+
+# check coords
+tmp <- ncdf4::nc_open(outFileName)
+
+lon <- c(ncvar_get(tmp, varid = "lon"))
+identical(lon, sort(unique(locations$X_WGS84)))
+
+lat <- c(ncvar_get(tmp, varid = "lat"))
+identical(lat, sort(unique(locations$Y_WGS84), decreasing = TRUE))
+
+ncdf4::nc_close(tmp)
+unlink(outFileName)
+
 ```
 
 ## Example 3 - Create a 3 dimension netCDF (lat, long, time) from non-gridded data
@@ -440,75 +481,119 @@ Then, it is filled with data.
 # Set isGridded to FALSE. A site dimension will be created and have affiliated
 # lat and long coordinates
 
- # create
-    create_empty_netCDF_file(
-      data = data2d,
-      has_T_timeAxis = TRUE,
-      has_Z_verticalAxis = FALSE,
-      time_bounds = annual_time_bounds,
-      vert_bounds = NULL,
-      var_attributes = var_attributes,
-      time_attributes  = time_attributes,
-      vertical_attributes = NULL,
-      crs_attributes = crs_attributes,
-      global_attributes = global_attributes,
-      isGridded = FALSE, # <- This is now false!
-      locations = locations,
-      file = outFileName,
-      force_v4 = TRUE,
-      overwrite = TRUE
-    )
+# create
+create_empty_netCDF_file(
+  data = data2d,
+  has_T_timeAxis = TRUE,
+  has_Z_verticalAxis = FALSE,
+  time_bounds = annual_time_bounds,
+  vert_bounds = NULL,
+  var_attributes = var_attributes,
+  time_attributes  = time_attributes,
+  vertical_attributes = NULL,
+  crs_attributes = crs_attributes,
+  global_attributes = global_attributes,
+  isGridded = FALSE, # <- This is now false!
+  locations = locations,
+  file = outFileName,
+  force_v4 = TRUE,
+  overwrite = TRUE
+)
 
-    # populate
-    populate_netcdf_from_array(
-      file = outFileName,
-      data = data2d,
-      var_names <- var_attributes$name,
-      has_T_timeAxis = TRUE,
-      has_Z_verticalAxis = FALSE,
-      isGridded = FALSE,  # <- This is now false!
-      locations = locations,
-      force_v4 = TRUE
-    )
+# populate
+populate_netcdf_from_array(
+  file = outFileName,
+  data = data2d,
+  var_names <- var_attributes$name,
+  has_T_timeAxis = TRUE,
+  has_Z_verticalAxis = FALSE,
+  isGridded = FALSE,  # <- This is now false!
+  locations = locations,
+  force_v4 = TRUE
+)
 
-    data2d_2 <- read_netCDF_to_array('dummynetcdf.nc', locations)
-    identical(data2d, data2d_2)
+# check data
+data2d_2 <- read_netCDF_to_array('dummynetcdf.nc', locations)
+all.equal(data2d, data2d_2)
+
+# check coords, times
+tmp <- ncdf4::nc_open(outFileName)
+
+lon <- c(ncvar_get(tmp, varid = "lon"))
+identical(lon, locations$X_WGS84)
+
+lat <- c(ncvar_get(tmp, varid = "lat"))
+identical(lat, locations$Y_WGS84)
+
+timeVals <- c(ncvar_get(tmp, varid = "time"))
+identical(timeVals, time_attributes[['vals']])
+
+timeBnds <- c(ncvar_get(tmp, varid = "time_bnds"))
+identical(timeBnds, annual_time_bounds)
+
+ncdf4::nc_close(tmp)
+unlink(outFileName)
 ```
 
 ## Example 4 - Create a 4 dimension netCDF (lat, long, time, depth) from gridded data
 
 ```{r, 4dGridExample, results = 'hide'}
 
- create_empty_netCDF_file(
-      data = data3d,
-      has_T_timeAxis = TRUE,
-      has_Z_verticalAxis = TRUE,
-      time_bounds = annual_time_bounds,
-      vert_bounds = depth_bounds,
-      var_attributes = var_attributes,
-      time_attributes  = time_attributes,
-      vertical_attributes = vertical_attributes,
-      crs_attributes = crs_attributes,
-      global_attributes = global_attributes,
-      isGridded = TRUE,
-      locations = locations,
-      file = outFileName,
-      force_v4 = TRUE,
-      overwrite = TRUE
-    )
+create_empty_netCDF_file(
+  data = data3d,
+  has_T_timeAxis = TRUE,
+  has_Z_verticalAxis = TRUE,
+  time_bounds = annual_time_bounds,
+  vert_bounds = depth_bounds,
+  var_attributes = var_attributes,
+  time_attributes  = time_attributes,
+  vertical_attributes = vertical_attributes,
+  crs_attributes = crs_attributes,
+  global_attributes = global_attributes,
+  isGridded = TRUE,
+  locations = locations,
+  file = outFileName,
+  force_v4 = TRUE,
+  overwrite = TRUE
+)
 
-     # populate
-    populate_netcdf_from_array(
-      file = outFileName,
-      data = data3d,
-      var_names <- var_attributes$name,
-      has_T_timeAxis = TRUE,
-      has_Z_verticalAxis = TRUE,
-      isGridded = TRUE,
-      locations = locations,
-      force_v4 = TRUE
-    )
+# populate
+populate_netcdf_from_array(
+  file = outFileName,
+  data = data3d,
+  var_names <- var_attributes$name,
+  has_T_timeAxis = TRUE,
+  has_Z_verticalAxis = TRUE,
+  isGridded = TRUE,
+  locations = locations,
+  force_v4 = TRUE
+)
 
-    data3d_2 <- read_netCDF_to_array('dummynetcdf.nc', locations)
-    identical(data3d, data3d_2)
+# check data
+data3d_2 <- read_netCDF_to_array('dummynetcdf.nc', locations)
+all.equal(data3d, data3d_2)
+
+# check coords, times, depth
+tmp <- ncdf4::nc_open(outFileName)
+
+lon <- c(ncvar_get(tmp, varid = "lon"))
+identical(lon, sort(unique(locations$X_WGS84)))
+
+lat <- c(ncvar_get(tmp, varid = "lat"))
+identical(lat, sort(unique(locations$Y_WGS84), decreasing = TRUE))
+
+timeVals <- c(ncvar_get(tmp, varid = "time"))
+identical(timeVals, time_attributes[['vals']])
+
+timeBnds <- c(ncvar_get(tmp, varid = "time_bnds"))
+identical(timeBnds, annual_time_bounds)
+
+depthVals <- c(ncvar_get(tmp, varid = "depth"))
+identical(depthVals, vertical_attributes[['vals']])
+
+depthBnds <- c(ncvar_get(tmp, varid = "depth_bnds"))
+identical(depthBnds, depth_bounds)
+
+ncdf4::nc_close(tmp)
+unlink(outFileName)
 ```

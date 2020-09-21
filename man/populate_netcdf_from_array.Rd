@@ -164,6 +164,8 @@ populate_netcdf_from_array(
      locations = locations,
      force_v4 = TRUE
    )
+   
+ unlink(outFileName)    
 
 }
 \seealso{

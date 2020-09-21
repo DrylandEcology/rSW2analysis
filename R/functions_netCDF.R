@@ -171,6 +171,8 @@
 #'      force_v4 = TRUE,
 #'      overwrite = TRUE
 #'    )
+#'    
+#' unlink(outFileName)    
 #'
 #' @seealso \code{populate_netcdf_from_array}
 #' @seealso \url{http://cfconventions.org/cf-conventions/cf-conventions.html} # for defining attributes
@@ -199,7 +201,8 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
 
   # find CRS definition
   crs <- crs_attributes[['proj']]
-  if(is.null(crs) & isS4(locations)) crs <-  locations@proj4string
+  if(is.null(crs) & inherits(locations, 'Spatial')) crs <-  locations@proj4string
+  if(is.null(crs) & inherits(locations, 'sf')) crs <- sf::st_crs(locations)[[1]]
   
   if(!missing(locations) && is.null(crs)){
     stop('Error: If you are giving locations and not a grid, need to define the CRS
@@ -261,17 +264,24 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
 
   # location and spatial info  -------------------------------------------------------------
   if(!missing(locations)) {
-    if (inherits(locations, "Spatial")) {
-      loc <- locations #sp::coordinates(locations)
-      if(isGridded) sp::gridded(loc) = TRUE
-    } else {
+    if (inherits(locations, 'sf')) {
+      loc <- sf::st_geometry(locations)
+      st_crs(loc) <- crs 
+    } else { # assume spatial or turn to spatial
       loc <- sp::SpatialPoints(locations)
       sp::proj4string(loc) <- sp::CRS(crs)
       if(isGridded) sp::gridded(loc) = TRUE
     }
   }
 
-  if(!isGridded) nloc <- dim(loc@coords)[1]
+  if(!isGridded) {
+    if(inherits(loc, 'Spatial')) {
+      nloc <- dim(loc@coords)[1]
+    } 
+    if(inherits(loc, 'sf')) {
+      nloc <- dim(locations)[1]
+    } 
+  }
 
   # Note: xvals should be organized from west to east, yvals from north to south
   if(!is.null(grid)) {
@@ -279,18 +289,31 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
     yvals <- raster::yFromRow(grid, seq_len(raster::nrow(grid)))
     grid_halfres <- raster::res(grid) / 2
   } else {
-    xvals <- sort(unique(loc@coords[,1]))
-    yvals <- sort(unique(loc@coords[,2]), decreasing = TRUE)
-    if(isGridded) grid_halfres <- loc@grid@cellsize / 2
+    if(inherits(loc, 'Spatial')) {
+      xvals <- sort(unique(loc@coords[,1]))
+      yvals <- sort(unique(loc@coords[,2]), decreasing = TRUE)
+      if(isGridded) grid_halfres <- loc@grid@cellsize / 2
+    }
+    if(inherits(loc, 'sf')) {
+      xvals <- sort(unique(st_coordinates(locations)[,1]))
+      yvals <- sort(unique(st_coordinates(locations)[,2]))
+      
+      if(isGridded) {
+        loc <- as(loc, Class = 'Spatial')
+        sp::gridded(loc) = TRUE
+        grid_halfres <- loc@grid@cellsize / 2      }
+    }
   }
-
+  
   # crs attributes setup & info ----------------------------------------------------------------
   if (!missing(crs_attributes)) {
 
-    if ("crs_wkt" %in% names(crs_attributes)) {
-      crs_wkt <- crs_attributes[["crs_wkt"]]
-      crs_attributes[["crs_wkt"]] <- NULL
-    } 
+    if ("proj" %in% names(crs_attributes)) {
+      proj <- crs_attributes[["proj"]]
+      crs_attributes[["proj"]] <- NULL
+    } else {
+      stop('Need "proj" in crs_attributes')
+    }
     
     ns_att_crs <- names(crs_attributes)
 
@@ -555,12 +578,22 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
                          vals = rbind(yvals + grid_halfres[2], yvals - grid_halfres[2]),
                          start = c(1, 1), count = c(2L, var_chunksizes[2])))
   } else {
+    
+    if(inherits(loc, 'Spatial')){
+      xLocs <- sp::coordinates(locations)[,1]
+      yLocs <- sp::coordinates(locations)[,2]
+    }
+    if(inherits(loc, 'sf')){
+      xLocs <- sf::st_coordinates(locations)[,1]
+      yLocs <- sf::st_coordinates(locations)[,2]
+    }
+    
     try(ncdf4::ncvar_put(nc, varid = "lon",
-                         vals = locations$X_WGS84,
+                         vals = xLocs,
                          start = c(1), count = c(var_chunksizes[1])))
 
     try(ncdf4::ncvar_put(nc, varid = "lat",
-                         vals = locations$Y_WGS84,
+                         vals = yLocs,
                          start = c(1), count = c( var_chunksizes[1])))
   }
 
@@ -622,7 +655,7 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
   }
 
   if (!is.na(prj)) {
-    ncdf4::ncatt_put(nc, "crs", attname = "crs_wkt", crs_wkt)
+    ncdf4::ncatt_put(nc, "crs", attname = "proj", proj)
 
      for (natt in ns_att_crs) {
        ncdf4::ncatt_put(nc, varid = 'crs', attname = natt,
@@ -663,7 +696,7 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
 
   # The end --------------------------------------------------------------
 
-  if(verbose == TRUE) {
+  if(verbose) {
     message(paste("The file has", nc$nvars, "variables and",  nc$ndim, "dimensions"))
   }
 
@@ -808,6 +841,8 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
 #'      locations = locations,
 #'      force_v4 = TRUE
 #'    )
+#'    
+#'  unlink(outFileName)    
 #'
 #' @seealso \code{create_empty_netCDF_file}
 #' @seealso \url{http://cfconventions.org/cf-conventions/cf-conventions.html} # for defining attributes
@@ -830,7 +865,6 @@ populate_netcdf_from_array <- function(file, data, var_names = NULL,
     # avoid "_FillValue" error in older versions of `raster` package
     stopifnot(utils::packageVersion("raster") >= "2.9.1")
   }
-
   
   stopifnot(file.exists(file) || !missing(locations)) # file and locations need to exist
 
@@ -849,7 +883,7 @@ populate_netcdf_from_array <- function(file, data, var_names = NULL,
   if(has_T_timeAxis & has_Z_verticalAxis) stopifnot(data_dims == 3) # if have both T and Z, data should be 3 dims
   if(!has_T_timeAxis & !has_Z_verticalAxis) stopifnot(nvars == nn) # if org by vars names should be equal to nl
 
-  if(verbose == TRUE){
+  if(verbose){
     print(paste("The file has", nc$nvars, "variables and",  nc$ndim,"dimensions"))
     print(paste("The dimensions are", paste(nc_dims, collapse = ', ')))
   }
@@ -865,25 +899,27 @@ populate_netcdf_from_array <- function(file, data, var_names = NULL,
   }
   
   if(isGridded) {
-    if (inherits(locations, "Spatial")) {
-      loc <- locations #sp::coordinates(locations)
-    } else {
+    if(inherits(locations, 'sf')) {
+      loc <- sf::st_geometry(locations)
+      st_crs(loc) <- crs 
+      loc <- as(loc, Class = 'Spatial')
+    } else { # either assumes its spatial class or data.frame
       loc <- sp::SpatialPoints(locations)
       sp::proj4string(loc) <- sp::CRS(crs)
-    } 
-    # Create grid from location values ---------------------------------
-    sp::gridded(loc) = TRUE
+    }
     
-    if(is.null(grid)) {
+    if(is.null(grid)){       # make grid
+      sp::gridded(loc) = TRUE
       grid_template <- raster::raster(loc)
       raster::extent(grid_template) <- raster::extent(loc)
     } else {
       grid_template <- rep(NA, raster::ncell(grid))
-    }
+    } 
     
-    val_grid_ids <- raster::cellFromXY(grid_template, locations)
-  }
+    val_grid_ids <- raster::cellFromXY(grid_template, loc)
 
+  }
+  
   # ---------------------------------------------------------------------
   # Add data ------------------------------------------------------------
   # ---------------------------------------------------------------------
@@ -897,7 +933,7 @@ populate_netcdf_from_array <- function(file, data, var_names = NULL,
     nc_var <- ncdf4::ncvar_get(nc, attributes(nc$var)$names[var_nc_index])
     nc_var_dims <- dim(nc_var) # lon, lat, then #vars time or depth of gridded 
 
-    if(verbose == TRUE) {
+    if(verbose) {
       message(paste('The dimensionality of variable',var_names[k], 'is',
                     paste(nc_var_dims, collapse = ', ')))
     }
@@ -932,7 +968,7 @@ populate_netcdf_from_array <- function(file, data, var_names = NULL,
         if(has_T_timeAxis && has_Z_verticalAxis) {
           
           for(z in seq(z_chunksize)) { # by Z axis
-            if (verbose == TRUE) message('Adding depth layer ', z)
+            if (verbose) message('Adding depth layer ', z)
             for (t in seq_len(nn)) { # col by col - always time in this case
               
               vals <- data[, t, z]
@@ -991,7 +1027,7 @@ populate_netcdf_from_array <- function(file, data, var_names = NULL,
           temp <- grid_template
           
           for(z in seq(z_chunksize)) { # by Z axis
-           if(verbose == TRUE) message('Adding depth layer ', z)
+           if(verbose) message('Adding depth layer ', z)
             for (t in seq_len(nn)) { # col by col - always time in this case
               
               temp[val_grid_ids] <- data[, t, z]
