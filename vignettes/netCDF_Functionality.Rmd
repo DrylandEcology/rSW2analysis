@@ -150,7 +150,7 @@ For depth values, we use the maximum depth value.
 depths_max <- c(5, 10, 15) # maximum depth of each layer of depth
 
 ## depth bounds
-depth_bounds <- c(0, 5, 5, 10, 10, 15) # min and max of each nlayer of depth depth
+depth_bounds <- c(0, 5, 5, 10, 10, 15) # min and max of each nlayer of depth
 ```
 
 ## Attribute Data
@@ -173,12 +173,7 @@ of columns in the data. For example, if you have a netcdf with 10 variables,
 the array should have 10 columns, and the "name" and "unit" field ashould each
 have 10 values.
 
-Use CMIP6 standard variable names where available.The [day](https://github.com/PCMDI/cmip6-cmor-tables/blob/master/Tables/CMIP6_day.json)
-and [Eday](https://github.com/PCMDI/cmip6-cmor-tables/blob/master/Tables/CMIP6_Eday.json)
-tables for time-varying variables and [fx](https://github.com/PCMDI/cmip6-cmor-tables/blob/master/Tables/CMIP6_fx.json)
-and [Efx](https://github.com/PCMDI/cmip6-cmor-tables/blob/master/Tables/CMIP6_Efx.json)
-for time-invariant variables.
-
+Use CMIP6 standard variable names where available. The variable names are contained in the [CMIP6-cmor-tables](https://github.com/PCMDI/cmip6-cmor-tables/tree/master/Tables).
 
 ```{r, VarAtt, results = 'hide'}
 # single variable
@@ -245,7 +240,12 @@ field is the the CRS is proj4string from the PROJ.4 library.
 Additionally, we strongly recommend defining the CRS in the crs_wkt format, which
 is preferred by [netCDF convention] (http://cfconventions.org/cf-conventions/cf-conventions.html#use-of-the-crs-well-known-text-format).
 
-The *wkt* function in the raster package can be used to generate wkts.
+The *wkt* function in the raster package can be used to generate wkts, or functionality
+in the sf and sp packages (see examples below):
+* raster: raster::wkt()
+* sf package: cat(sf::st_crs(4326)$wkt, "\n")
+* sp package: cat(sp::wkt(sp::CRS(SRS_string = "EPSG:4326")), "\n") -- if rgdal is build against PROJ >= 6 and GDAL >= 3
+
 
 ```{r, CRSAtt, results = 'hide'}
 
@@ -257,11 +257,13 @@ crs_attributes <- list(
   inverse_flattening = 298.257223563
 )
 
-locationsSP <- sp::SpatialPoints(locations)
-sp::proj4string(locationsSP) <- sp::CRS(crs_attributes$proj)
+locationsSP <- sp::SpatialPoints(coords = locations, proj4string = sp::CRS(crs_attributes$proj))
 WKTex <- raster::wkt(locationsSP)
 
-crs_attributes <- c(crs_attributes, crs_wkt = WKTex)
+crs_attributes[["crs_wkt"]] <- WKTex
+
+# other ways to access wkts
+sp::CRS(crs_attributes$proj)
 
 ```
 
@@ -289,12 +291,12 @@ global_attributes <- list(
     parent_mip_era = "CMIP5",
     parent_experiment_id = "RCP45",
     parent_source = "CanESM2",
-    parent_variant_label = "r1i1p1f1",
+    parent_variant_label = "r1i1p1",
     product = "model-output",
     projection = 'Geographic',
     grid = 'WGS84',
     grid_label = "gn",
-    nominal_resolution = "10 km", # \code{\link{populate_netcdf_from_array}}
+    nominal_resolution = "10 km", # calculated with function calculate_nominal_resolution
     further_info_url = "https://github.com/DrylandEcology/",
     contact = "you@email.com"
     )
@@ -306,7 +308,7 @@ If the data is calculated and reported on a grid, [CMIP6 convention](https://doc
 calls for the field *nominal resolution* to be contained in the global attributes.
 The function \code{calculate_nominal_resolution} will calculate the nominal resolution
 of your gridded data for you. However, you need to provide a raster of the grid,
-the lat/long locations, and the area that each cell in the grid represents.
+the lat/long coordinate pairs, and the area that each cell in the grid represents.
 
 ```{r, Nominal, results = 'hide'}
 r <- raster::raster(
@@ -335,19 +337,22 @@ Our naming conventions for files, strives to be similar to the [CMIP6 convention
 (see Appendix 1).
 
 The name for each file should be in the format as follows:
-**var_LmonOrAmon_timestep_Project_SOILWAT2_GCM_RCP_variantLabel_gn_startT-endT.nc**
+**var_TableName_Project_SOILWAT2_GCM_RCP_variantLabel_gn_startT-endT.nc**
 
 where:
 
 * var – Shorthand name for variable that is contained in files (i.e. ppt for precipitation, WDD for wet degree days)
-* LmonOrAmon – Land (L) or atmospheric (A) data
-* timestep – The time-step of the data contained (i.e. the units of the time dimension (e.g. year, month)).
-  * use 'fx' if data is fixed and does not have a timestp
+* Table - Relevant [CMIP6 Table](https://github.com/PCMDI/cmip6-cmor-tables/tree/master/Tables).
+  * Table name is broken into two parts:
+    * LorAorE – Land (L) or atmospheric (A) or extended (E) data
+      * Note: Variables (var) fall into particular categories: L, A, or E. In many cases the variables our lab generates will not be listed in the tables presented here. In this case *use E* for extended.
+    * timestep – The time-step of the data contained (i.e. the units of the time dimension (e.g. year, month)).
+      * use 'fx' if data is fixed and does not have a timestp
 * Project – Project Name (i.e. SEUG or RangeResil, etc.)
 * SOILWAT2 – Keep as is. Denotes that SOILWAT2 was used to generate these results
 * GCM – Name of the GCM climate data used to drive the SOILWAT2 model (e.g. IPSL5, CCSM2-1)
 * RCP – Name of experiment under which the GCM was run (e.g. RCP4.5, RCP8.5)
-* variantLabel – Variant of the GCM used (e.g. r1i1p1f1)
+* variantLabel – Variant of the GCM used (e.g. r1i1p1 (CMIP5 format), r1i1p1f1 (CCMIP6 format))
 * gn - grid_label. 'gn' is the "native grid", which should only be used if the SOILWAT2 output resolution has not been modified.
 * startT – lower time bound or start of the time period contained. Units should be the date (YearMonthDay, XXXXYYZZ).
 * endT – upper time bound or end of the time period contained. Units should be the date (YearMonthDay, XXXXYYZZ).
@@ -394,7 +399,7 @@ populate_netcdf_from_array(
   has_Z_verticalAxis = FALSE,
   isGridded = TRUE,
   locations = locations,
-  force_v4 = TRUE, 
+  force_v4 = TRUE,
   verbose = TRUE
 )
 

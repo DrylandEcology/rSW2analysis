@@ -10,7 +10,7 @@
 #'  Information about these dimensions are taken from the \var{locations},
 #'  \var{isGridded}, \var{crs_attributes}, and \var{grid} arguments. One of \var{locations}
 #'  or \var{grid} needs to be provided, but not both.
-#'  
+#'
 #'  Additional dimensions are added by setting \var{has_T_timeAxis} and/or
 #'  \var{has_Z_verticalAxis} to \code{TRUE}. If both flags are set to
 #'  \code{FALSE} then the netCDF is two dimensions with one or more variables.
@@ -22,19 +22,19 @@
 #'  these dimensions is set in the respective \var{bounds} and \var{attributes} arguments.
 #'  \var{has_T_timeAxis} and/or \var{has_Z_verticalAxis} is set to \code{TRUE}
 #'  the netCDF can \emph{only} have one variable.
-#'  
+#'
 #'  The \var{data} object is used to set up the size and dataType in the netCDF. The metadata
 #'  needs to match the data. This object contains the data that you intend to
 #'  populate the netCDF wtih. The array should be set up so that each row is a site's info,
 #'  and each column is a value for variables, time or depth. If the netcdf is 4d
 #'  (time and depth == \code{TRUE}, then need to have a 3-d data array,
 #'  where each additional dimension contains values for each depth.
-#'  
-#'  For variable names, Use CMIP6 standard variable names where available. 
-#'  The [day](https://github.com/PCMDI/cmip6-cmor-tables/blob/master/Tables/CMIP6_day.json) 
-#'  and [Eday](https://github.com/PCMDI/cmip6-cmor-tables/blob/master/Tables/CMIP6_Eday.json) 
-#'  tables for time-varying variables and [fx](https://github.com/PCMDI/cmip6-cmor-tables/blob/master/Tables/CMIP6_fx.json) 
-#'  and [Efx](https://github.com/PCMDI/cmip6-cmor-tables/blob/master/Tables/CMIP6_Efx.json) 
+#'
+#'  For variable names, Use CMIP6 standard variable names where available.
+#'  The [day](https://github.com/PCMDI/cmip6-cmor-tables/blob/master/Tables/CMIP6_day.json)
+#'  and [Eday](https://github.com/PCMDI/cmip6-cmor-tables/blob/master/Tables/CMIP6_Eday.json)
+#'  tables for time-varying variables and [fx](https://github.com/PCMDI/cmip6-cmor-tables/blob/master/Tables/CMIP6_fx.json)
+#'  and [Efx](https://github.com/PCMDI/cmip6-cmor-tables/blob/master/Tables/CMIP6_Efx.json)
 #'  for time-invariant variables.
 #'
 #' @param data A numeric array.
@@ -143,7 +143,7 @@
 #'    parent_mip_era = "CMIP5",
 #'    parent_experiment_id = "RCP45",
 #'    parent_source = "CanESM2",
-#'    parent_variant_label = "r1i1p1f1",
+#'    parent_variant_label = "r1i1p1",
 #'    product = "model-output",
 #'    projection = 'Geographic',
 #'    grid = 'WGS84',
@@ -171,12 +171,12 @@
 #'      force_v4 = TRUE,
 #'      overwrite = TRUE
 #'    )
-#'    
-#' unlink(outFileName)    
+#'
+#' unlink(outFileName)
 #'
 #' @seealso \code{populate_netcdf_from_array}
 #' @seealso \url{http://cfconventions.org/cf-conventions/cf-conventions.html} # for defining attributes
-#' 
+#'
 #' @export
 
 create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
@@ -203,11 +203,11 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
   crs <- crs_attributes[['proj']]
   if(is.null(crs) & inherits(locations, 'Spatial')) crs <-  locations@proj4string
   if(is.null(crs) & inherits(locations, 'sf')) crs <- sf::st_crs(locations)[[1]]
-  
+
   if(!missing(locations) && is.null(crs)){
     stop('Error: If you are giving locations and not a grid, need to define the CRS
          in the crs_attribute[["proj"]] argument')
-  } 
+  }
 
   if (file.exists(file)) {
     if (overwrite) {
@@ -266,7 +266,7 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
   if(!missing(locations)) {
     if (inherits(locations, 'sf')) {
       loc <- sf::st_geometry(locations)
-      st_crs(loc) <- crs 
+      st_crs(loc) <- crs
     } else { # assume spatial or turn to spatial
       loc <- sp::SpatialPoints(locations)
       sp::proj4string(loc) <- sp::CRS(crs)
@@ -277,10 +277,10 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
   if(!isGridded) {
     if(inherits(loc, 'Spatial')) {
       nloc <- dim(loc@coords)[1]
-    } 
+    }
     if(inherits(loc, 'sf')) {
       nloc <- dim(locations)[1]
-    } 
+    }
   }
 
   # Note: xvals should be organized from west to east, yvals from north to south
@@ -295,16 +295,16 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
       if(isGridded) grid_halfres <- loc@grid@cellsize / 2
     }
     if(inherits(loc, 'sf')) {
-      xvals <- sort(unique(st_coordinates(locations)[,1]))
-      yvals <- sort(unique(st_coordinates(locations)[,2]))
-      
+      xvals <- sort(unique(sf::st_coordinates(locations)[,1]))
+      yvals <- sort(unique(sf::st_coordinates(locations)[,2]))
+
       if(isGridded) {
         loc <- as(loc, Class = 'Spatial')
         sp::gridded(loc) = TRUE
         grid_halfres <- loc@grid@cellsize / 2      }
     }
   }
-  
+
   # crs attributes setup & info ----------------------------------------------------------------
   if (!missing(crs_attributes)) {
 
@@ -314,13 +314,13 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
     } else {
       stop('Need "proj" in crs_attributes')
     }
-    
+
     ns_att_crs <- names(crs_attributes)
 
   }
 
   # Time dimension setup & info ----------------------------------------------------------------
-  if(has_T_timeAxis & !is.null(time_bounds)) {
+  if(has_T_timeAxis && !is.null(time_bounds)) {
     t_chunksize <- length(time_attributes[["vals"]])
   }
 
@@ -332,28 +332,28 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
       } else {
         stop('Need name attribute in time attribute list')
       }
-      
+
       if ("units" %in% names(time_attributes)) {
         time_units <- time_attributes[["units"]]
         time_attributes[["units"]] <- NULL
       } else {
         stop('Need units attribute in time attribute list')
       }
-      
+
       if ("calendar" %in% names(time_attributes)) {
         time_cal <- time_attributes[["calendar"]]
         time_attributes[["calendar"]] <- NULL
       } else {
         stop('Need calendar attribute in time attribute list')
       }
-      
+
       if ("vals" %in% names(time_attributes)) {
         time_vals <- time_attributes[["vals"]]
         time_attributes[["vals"]] <- NULL
       } else {
         stop('Need vals attribute in time attribute list')
       }
-      
+
       ns_att_time <- names(time_attributes)
     }
   } else {
@@ -379,28 +379,28 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
       } else {
         stop('Need name attribute in vertical attribute list')
       }
-      
+
       if ("units" %in% names(vertical_attributes)) {
         vert_units <- vertical_attributes[["units"]]
         vertical_attributes[["units"]] <- NULL
       } else {
         stop('Need units attribute in vertical attribute list')
       }
-      
+
       if ("vals" %in% names(vertical_attributes)) {
         vert_vals <- vertical_attributes[["vals"]]
         vertical_attributes[["vals"]] <- NULL
       } else {
         stop('Need vals attribute in vertical attribute list')
       }
-      
+
       ns_att_vert <- names(vertical_attributes)
-      
+
     }
   } else {
     vert_vals <- 0
   }
-  
+
   # Variable info  ------------------------------------------------------------------------
   if (!missing(var_attributes)) {
     if ("name" %in% names(var_attributes)) {
@@ -512,11 +512,11 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
   if(!isGridded){
    latvar <-  ncdf4::ncvar_def(name = 'lat', units = 'degrees_north',
                                dim = list(idim), chunksizes = var_chunksizes[1], missval = NAflag,
-                               longname = 'site latitiude', prec = ncdf4_datatype)
+                               longname = 'latitude', prec = ncdf4_datatype)
 
    longvar <- ncdf4::ncvar_def(name = 'lon', units = 'degrees_east',
                                dim = list(idim), chunksizes = var_chunksizes[1], missval = NAflag,
-                               longname = 'site longitude', prec = ncdf4_datatype)
+                               longname = 'longitude', prec = ncdf4_datatype)
 
    var_defs <- c(var_defs, list(latvar, longvar))
   }
@@ -578,7 +578,7 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
                          vals = rbind(yvals + grid_halfres[2], yvals - grid_halfres[2]),
                          start = c(1, 1), count = c(2L, var_chunksizes[2])))
   } else {
-    
+
     if(inherits(loc, 'Spatial')){
       xLocs <- sp::coordinates(locations)[,1]
       yLocs <- sp::coordinates(locations)[,2]
@@ -587,7 +587,7 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
       xLocs <- sf::st_coordinates(locations)[,1]
       yLocs <- sf::st_coordinates(locations)[,2]
     }
-    
+
     try(ncdf4::ncvar_put(nc, varid = "lon",
                          vals = xLocs,
                          start = c(1), count = c(var_chunksizes[1])))
@@ -648,19 +648,11 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
   }
 
   # add coordinate system attributes --------------------------------------------
-  if(!is.null(grid)){
-    prj <- raster::crs(grid)
-  } else {
-    prj <- sp::CRS(crs)
-  }
+  ncdf4::ncatt_put(nc, "crs", attname = "proj", proj)
 
-  if (!is.na(prj)) {
-    ncdf4::ncatt_put(nc, "crs", attname = "proj", proj)
-
-     for (natt in ns_att_crs) {
-       ncdf4::ncatt_put(nc, varid = 'crs', attname = natt,
-                        attval = crs_attributes[[natt]])
-    }
+   for (natt in ns_att_crs) {
+     ncdf4::ncatt_put(nc, varid = 'crs', attname = natt,
+                      attval = crs_attributes[[natt]])
   }
 
   # add global attributes --------------------------------------------------------s
@@ -668,8 +660,8 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
 
   ncdf4::ncatt_put(nc, varid = 0, attname = "created_by",
     attval = paste0(R.version[["version.string"]], ", R packages ",
-      if (requireNamespace("rSFSW2")) {
-        paste0("rSFSW2 v", utils::packageVersion("rSFSW2"), " and ")
+      if (requireNamespace("rSW2analysis")) {
+        paste0("rSW2analysis v", utils::packageVersion("rSW2analysis"), " and ")
       },
       "ncdf4 v", utils::packageVersion("ncdf4"),
       ", and ", system2("nc-config", "--version", stdout = TRUE, stderr = TRUE))
@@ -841,8 +833,8 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
 #'      locations = locations,
 #'      force_v4 = TRUE
 #'    )
-#'    
-#'  unlink(outFileName)    
+#'
+#'  unlink(outFileName)
 #'
 #' @seealso \code{create_empty_netCDF_file}
 #' @seealso \url{http://cfconventions.org/cf-conventions/cf-conventions.html} # for defining attributes
@@ -861,17 +853,13 @@ populate_netcdf_from_array <- function(file, data, var_names = NULL,
   # ---------------------------------------------------------------------
 
   stopifnot(requireNamespace("ncdf4"))
-  if (force_v4) {
-    # avoid "_FillValue" error in older versions of `raster` package
-    stopifnot(utils::packageVersion("raster") >= "2.9.1")
-  }
-  
+
   stopifnot(file.exists(file) || !missing(locations)) # file and locations need to exist
 
   # open file, writeable --------------
   nc <- ncdf4::nc_open(file, write = TRUE)
   on.exit(ncdf4::nc_close(nc))
-  
+
   # check  netcdf against data and inputs ---------------------------
   nc_dims <-  attributes(nc$dim)$names #dims of netcdf
   nn <- NCOL(data) # number of cols of data
@@ -887,39 +875,38 @@ populate_netcdf_from_array <- function(file, data, var_names = NULL,
     print(paste("The file has", nc$nvars, "variables and",  nc$ndim,"dimensions"))
     print(paste("The dimensions are", paste(nc_dims, collapse = ', ')))
   }
-  
+
   # ---------------------------------------------------------------------
   #  Locations and spatial info  ----------------------------------------
   # ---------------------------------------------------------------------
-  
+
   crs <- ncdf4::ncatt_get(nc, varid = 'crs')[['proj']]
-  
+
   if(!inherits(locations, "Spatial") & is.null(crs)){
     stop('Need CRS for locations data') # need crs if locations isn't spatially defined
   }
-  
+
   if(isGridded) {
     if(inherits(locations, 'sf')) {
       loc <- sf::st_geometry(locations)
-      st_crs(loc) <- crs 
+      sf::st_crs(loc) <- crs
       loc <- as(loc, Class = 'Spatial')
     } else { # either assumes its spatial class or data.frame
-      loc <- sp::SpatialPoints(locations)
-      sp::proj4string(loc) <- sp::CRS(crs)
+      loc <- sp::SpatialPoints(locations, proj4string = sp::CRS(crs))
     }
-    
+
     if(is.null(grid)){       # make grid
-      sp::gridded(loc) = TRUE
+      sp::gridded(loc) <- TRUE
       grid_template <- raster::raster(loc)
       raster::extent(grid_template) <- raster::extent(loc)
     } else {
       grid_template <- rep(NA, raster::ncell(grid))
-    } 
-    
+    }
+
     val_grid_ids <- raster::cellFromXY(grid_template, loc)
 
   }
-  
+
   # ---------------------------------------------------------------------
   # Add data ------------------------------------------------------------
   # ---------------------------------------------------------------------
@@ -931,62 +918,62 @@ populate_netcdf_from_array <- function(file, data, var_names = NULL,
     var_nc_index <- grep(var_names[k], nc_names)[1]
 
     nc_var <- ncdf4::ncvar_get(nc, attributes(nc$var)$names[var_nc_index])
-    nc_var_dims <- dim(nc_var) # lon, lat, then #vars time or depth of gridded 
+    nc_var_dims <- dim(nc_var) # lon, lat, then #vars time or depth of gridded
 
     if(verbose) {
       message(paste('The dimensionality of variable',var_names[k], 'is',
                     paste(nc_var_dims, collapse = ', ')))
     }
-    
+
     # Set up chunksizes  ---------------------------------------------------
     if(has_Z_verticalAxis) {
       if(has_T_timeAxis) { # if time and depth are both TRUE , the third dimension
         z_chunksize <- dim(data)[3]
-      } 
+      }
     }
-    
+
     # ---------------------------------------------------------------------
     # NOT GRIDDED ---------------------------------------------------------
     # ---------------------------------------------------------------------
-    if(isGridded == FALSE) {
-      
+    if(!isGridded) {
+
       var_chunksizes <- nc_var_dims[1] # site
-      
+
       #  -----------------------------------------------------------------------
       # add variable values ! --------------------------------------------------
       # ------------------------------------------------------------------------
       if(nvars > 1) {
-        
+
         vals <- data[ ,k]
-        
+
         try(ncdf4::ncvar_put(nc, varid = var_names[k],
                              vals = vals,
                              start = 1,
                              count = var_chunksizes))
-        
+
       } else {
         if(has_T_timeAxis && has_Z_verticalAxis) {
-          
+
           for(z in seq(z_chunksize)) { # by Z axis
             if (verbose) message('Adding depth layer ', z)
             for (t in seq_len(nn)) { # col by col - always time in this case
-              
+
               vals <- data[, t, z]
-              
+
               try(ncdf4::ncvar_put(nc, varid = var_names[k],
                                    vals = vals,
                                    start = c(1, t, z), #x-y-t-z
                                    count = c(var_chunksizes, 1, 1)))
             }
           }
-        } else { 
+        } else {
           # write values, col by col -- n values can rep dif. vals, time, or depth
           for (n in seq_len(nn)) {
-            
+
             vals <-  data[, n] # by time chunk or var chunk
 
             var_start <-  c(1, n)
-            
+
             try(ncdf4::ncvar_put(nc, varid = var_names[k],
                                  vals = vals,
                                  start = var_start,
@@ -995,17 +982,16 @@ populate_netcdf_from_array <- function(file, data, var_names = NULL,
         }
       }
     }
-    
+
     #  GRIDDED --------------------------------------------------------------
-    if(isGridded == TRUE) {
-      
+    if(isGridded) {
+
       # more checks based on dim of var ----------------------------------------
-      
-      if(has_T_timeAxis & !has_Z_verticalAxis) stopifnot(nc_var_dims[3] == nn)
-      if(!has_T_timeAxis & has_Z_verticalAxis) stopifnot(nc_var_dims[3] == nn)
-      
+
+      if (isTRUE(xor(has_T_timeAxis, has_Z_verticalAxis))) stopifnot(nc_var_dims[3] == nn)
+
       var_chunksizes <- c(nc_var_dims[1], nc_var_dims[2]) # lon, lat
-      
+
       #  -----------------------------------------------------------------------
       # add variable values ! --------------------------------------------------
       # ------------------------------------------------------------------------
@@ -1013,26 +999,26 @@ populate_netcdf_from_array <- function(file, data, var_names = NULL,
         temp <- grid_template
         temp[val_grid_ids] <- data[, k]
         vals <- matrix(temp,  ncol = var_chunksizes[2])
-        
+
         var_start <-  c(1, 1)
-        
+
         try(ncdf4::ncvar_put(nc, varid = var_names[k],
                              vals = vals,
                              start = var_start,
                              count = var_chunksizes))
-        
+
       } else {
         if(has_T_timeAxis && has_Z_verticalAxis) {
-          
+
           temp <- grid_template
-          
+
           for(z in seq(z_chunksize)) { # by Z axis
            if(verbose) message('Adding depth layer ', z)
             for (t in seq_len(nn)) { # col by col - always time in this case
-              
+
               temp[val_grid_ids] <- data[, t, z]
               vals <- matrix(temp, ncol = as.numeric(var_chunksizes[2]))
-              
+
               try(ncdf4::ncvar_put(nc, varid = var_names[k],
                                    vals = vals,
                                    start = c(1, 1, t, z), #x-y-t-z
@@ -1042,7 +1028,7 @@ populate_netcdf_from_array <- function(file, data, var_names = NULL,
         } else {
           # write values, col by col -- n values can rep dif. time, or depth
           for (n in seq_len(nn)) {
-            
+
             temp <- grid_template
             temp[val_grid_ids] <- data[, n]
             vals <- matrix(temp,  ncol = var_chunksizes[2])
@@ -1053,14 +1039,13 @@ populate_netcdf_from_array <- function(file, data, var_names = NULL,
                                  vals = vals,
                                  start = var_start,
                                  count = c(var_chunksizes, 1)))
+
           }
         }
       }
+
     }
-    
-    # Flush this step to the file so we dont lose it
-    # if there is a crash or other problem
-    ncdf4::nc_sync(nc)
+
   }
 
   invisible(TRUE)
@@ -1101,111 +1086,111 @@ read_netCDF_to_raster <- function(x, ...) {
 #' @param x a netCDF fiile
 #' @return an array
 #' @export
-#' 
+#'
 read_netCDF_to_array <- function(x, locations) {
-  
+
   # open file, writeable --------------
   nc <- ncdf4::nc_open(x, write = TRUE)
   on.exit(ncdf4::nc_close(nc))
-  
+
   # figure out dimensionality
   nc_dims <-  attributes(nc$dim)$names #dims of netcdf
-  
-  if('site' %in% nc_dims) isGridded = FALSE
-  if('lat' %in% nc_dims) isGridded = TRUE
-  
+
+  if('site' %in% nc_dims) isGridded <- FALSE
+  if('lat' %in% nc_dims) isGridded <- TRUE
+
   has_T_timeAxis <-  ifelse('time' %in% nc_dims, TRUE, FALSE)
   has_Z_verticalAxis <-  ifelse('depth' %in% nc_dims, TRUE, FALSE)
-  
+
   # Define variables
   nc_var_names <- attributes(nc$var)$names
   nc_var_names <- grep('bnds|crs|lat|lon', nc_var_names, invert = TRUE, value = TRUE)
-  
-  if(isGridded == TRUE) {
-    
+
+  if(isGridded) {
+
     # location stuff  ---------------------------------------------------------
     loc <- sp::SpatialPoints(locations)
     # Create grid from location values ----------------------------------------
-    sp::gridded(loc) = TRUE
+    sp::gridded(loc) <- TRUE
     grid_template <- raster::raster(loc)
     raster::extent(grid_template) <- raster::extent(loc)
-    
+
     val_ids <- raster::cellFromXY(grid_template, locations)
-    
+
     nc_var <- ncdf4::ncvar_get(nc, nc_var_names[1])
     nc_var_dims <- dim(nc_var)
-    
-    locDims <- c(nc_var_dims[1] * nc_var_dims[2])
+
+    locDims <- nc_var_dims[1] * nc_var_dims[2]
     dimtz <- nc_var_dims[3]
     dimz <- if(has_T_timeAxis && has_Z_verticalAxis) nc_var_dims[4]
-    
-    
+
+
   } else {
-    
+
     nc_var <- ncdf4::ncvar_get(nc, nc_var_names[1])
     nc_var_dims <- dim(nc_var)
-    
+
     val_ids <- seq_len(nc_var_dims[1])
-    
+
     locDims <- nc_var_dims[1]
     dimtz <- nc_var_dims[2]
     dimz <- if(has_T_timeAxis && has_Z_verticalAxis) nc_var_dims[3]
-    
+
   }
-    
+
   # ---------------------------------------------------------------------------
   # Put variables into array
   # ---------------------------------------------------------------------------
-  
+
   # multi variable
-  if(length(nc_var_names) > 1) { 
-    
+  if(length(nc_var_names) > 1) {
+
     nc_var <- ncdf4::ncvar_get(nc, nc_var_names[1])
     nc_var_dims <- dim(nc_var)
-    newArray <- array( , dim = c(locDims, 
+    newArray <- array(, dim = c(locDims,
                                  length(nc_var_names)))
-    
-    for(k in 1:length(nc_var_names)) { 
+
+    for(k in seq_along(nc_var_names)) {
       nc_var <- ncdf4::ncvar_get(nc, nc_var_names[k])
       v <-  c(nc_var)
       newArray[, k] <- v[val_ids]
     }
-    
+
   } else {
     # values
     nc_var <- ncdf4::ncvar_get(nc, nc_var_names[1])
     nc_var_dims <- dim(nc_var)
-    
+
     if(has_T_timeAxis && has_Z_verticalAxis) {
       # if there is a time AND depth axis
-      
-      newArray <- array(, dim = c(locDims, 
+
+      newArray <- array(, dim = c(locDims,
                                   dimtz, dimz))
-      
+
       for(z in seq(dimz)){
-        
+
         for(i in seq(dimtz)) {
-          
-          if(isGridded == TRUE) v <- c(nc_var[, , i, z]) else v <- c(nc_var[, i, z])
+
+          if(isGridded) v <- c(nc_var[, , i, z]) else v <- c(nc_var[, i, z])
           newArray[, i, z] <- v[val_ids]
-          
+
         }
       }
-      
+
     } else {
       # if there is a time OR depth axis
       newArray <- array(, dim = c(locDims, dimtz))
-      
+
       for(i in seq(dimtz)) {
-        
-        if(isGridded == TRUE) v <- c(nc_var[, , i]) else v <- c(nc_var[, i])
+
+        if(isGridded) v <- c(nc_var[, , i]) else v <- c(nc_var[, i])
         newArray[, i] <- v[val_ids]
-        
+
       }
     }
   }
 
-  return(newArray)
+  newArray
 }
 
 #' Calculate "nominal resolution" of grid
