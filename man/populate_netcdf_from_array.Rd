@@ -45,8 +45,8 @@ columns containing long and lat values. Data must be organized by long, lat.}
 
 \item{var_name}{A character string equal to the length of the number of variables.
 The length of var_name should either be 1 if there is either a time and/or
-depth dimension \emph{or} equal to the number of columns in the array if
-there is no time or depth dimension.}
+vertical dimension \emph{or} equal to the number of columns in the array if
+there is no time or vertical dimension.}
 }
 \value{
 This function is used for the side-effect of filling a file.
@@ -82,7 +82,6 @@ outFileName <- 'dummynetcdf.nc'
 
 # time attribute
 time_attributes <- list(
-   name = 'time',
    units = 'days since 1900-01-01',
    calendar = 'standard',
    unlim = 'TRUE',
@@ -103,11 +102,12 @@ crs_attributes <- list(
  grid_mapping_name = 'latitude_longitude',
  longitude_of_prime_meridian = 0.0,
  semi_major_axis = 6378137.0,
- inverse_flattening = 298.257223563,
- crs_wkt = 'GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],
-                        AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0, AUTHORITY["EPSG","8901"]],
-                        UNIT["degree",0.01745329251994328,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]]'
-)
+ inverse_flattening = 298.257223563
+ )
+
+locationsSP <- sp::SpatialPoints(coords = locations, proj4string = sp::CRS(crs_attributes$proj))
+WKTex <- raster::wkt(locationsSP)
+crs_attributes[["crs_wkt"]] <- WKTex
 
 # global attributes
 global_attributes <- list(
@@ -164,8 +164,8 @@ populate_netcdf_from_array(
      locations = locations,
      force_v4 = TRUE
    )
-   
- unlink(outFileName)    
+
+ unlink(outFileName)
 
 }
 \seealso{

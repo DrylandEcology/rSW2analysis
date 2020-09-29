@@ -92,7 +92,7 @@ The user provides an array and specifies spatial information, dimensionality,
  Information about these dimensions are taken from the \var{locations},
  \var{isGridded}, \var{crs_attributes}, and \var{grid} arguments. One of \var{locations}
  or \var{grid} needs to be provided, but not both.
- 
+
  Additional dimensions are added by setting \var{has_T_timeAxis} and/or
  \var{has_Z_verticalAxis} to \code{TRUE}. If both flags are set to
  \code{FALSE} then the netCDF is two dimensions with one or more variables.
@@ -100,23 +100,23 @@ The user provides an array and specifies spatial information, dimensionality,
  \var{has_T_timeAxis} \emph{or} \var{has_Z_verticalAxis} is set to \code{TRUE} then a
  third dimension is added to the netCDF. If \emph{both} \var{has_T_timeAxis}
  and \var{has_Z_verticalAxis} are set to TRUE, then the netCDF will have four
- dimensions, with time as the third, and depth as the fourth. Information about
+ dimensions, with time as the third, and vertical as the fourth. Information about
  these dimensions is set in the respective \var{bounds} and \var{attributes} arguments.
  \var{has_T_timeAxis} and/or \var{has_Z_verticalAxis} is set to \code{TRUE}
  the netCDF can \emph{only} have one variable.
- 
+
  The \var{data} object is used to set up the size and dataType in the netCDF. The metadata
  needs to match the data. This object contains the data that you intend to
  populate the netCDF wtih. The array should be set up so that each row is a site's info,
- and each column is a value for variables, time or depth. If the netcdf is 4d
- (time and depth == \code{TRUE}, then need to have a 3-d data array,
- where each additional dimension contains values for each depth.
- 
- For variable names, Use CMIP6 standard variable names where available. 
- The [day](https://github.com/PCMDI/cmip6-cmor-tables/blob/master/Tables/CMIP6_day.json) 
- and [Eday](https://github.com/PCMDI/cmip6-cmor-tables/blob/master/Tables/CMIP6_Eday.json) 
- tables for time-varying variables and [fx](https://github.com/PCMDI/cmip6-cmor-tables/blob/master/Tables/CMIP6_fx.json) 
- and [Efx](https://github.com/PCMDI/cmip6-cmor-tables/blob/master/Tables/CMIP6_Efx.json) 
+ and each column is a value for variables, time or vertical. If the netcdf is 4d
+ (time and vertical == \code{TRUE}, then need to have a 3-d data array,
+ where each additional dimension contains values for each vertical horizon.
+
+ For variable names, Use CMIP6 standard variable names where available.
+ The [day](https://github.com/PCMDI/cmip6-cmor-tables/blob/master/Tables/CMIP6_day.json)
+ and [Eday](https://github.com/PCMDI/cmip6-cmor-tables/blob/master/Tables/CMIP6_Eday.json)
+ tables for time-varying variables and [fx](https://github.com/PCMDI/cmip6-cmor-tables/blob/master/Tables/CMIP6_fx.json)
+ and [Efx](https://github.com/PCMDI/cmip6-cmor-tables/blob/master/Tables/CMIP6_Efx.json)
  for time-invariant variables.
 }
 \examples{
@@ -143,7 +143,6 @@ outFileName <- 'dummynetcdf.nc'
 
 # time attribute
 time_attributes <- list(
-   name = 'time',
    units = 'days since 1900-01-01',
    calendar = 'standard',
    unlim = 'TRUE',
@@ -163,11 +162,12 @@ crs_attributes <- list(
   proj = '+init=epsg:4326',
   longitude_of_prime_meridian = 0.0,
   semi_major_axis = 6378137.0,
-  inverse_flattening = 298.257223563,
-  crs_wkt = 'GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],
-                         AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0, AUTHORITY["EPSG","8901"]],
-                         UNIT["degree",0.01745329251994328,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]]'
+  inverse_flattening = 298.257223563
 )
+
+locationsSP <- sp::SpatialPoints(coords = locations, proj4string = sp::CRS(crs_attributes$proj))
+WKTex <- raster::wkt(locationsSP)
+crs_attributes[["crs_wkt"]] <- WKTex
 
 # global attributes
 global_attributes <- list(
@@ -184,7 +184,7 @@ global_attributes <- list(
    parent_mip_era = "CMIP5",
    parent_experiment_id = "RCP45",
    parent_source = "CanESM2",
-   parent_variant_label = "r1i1p1f1",
+   parent_variant_label = "r1i1p1",
    product = "model-output",
    projection = 'Geographic',
    grid = 'WGS84',
@@ -212,8 +212,8 @@ create_empty_netCDF_file(
      force_v4 = TRUE,
      overwrite = TRUE
    )
-   
-unlink(outFileName)    
+
+unlink(outFileName)
 
 }
 \seealso{

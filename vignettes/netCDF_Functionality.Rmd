@@ -255,7 +255,6 @@ crs_attributes <- list(
 
 locationsSP <- sp::SpatialPoints(coords = locations, proj4string = sp::CRS(crs_attributes$proj))
 WKTex <- raster::wkt(locationsSP)
-
 crs_attributes[["crs_wkt"]] <- WKTex
 
 # other ways to access wkts
@@ -589,10 +588,10 @@ identical(timeVals, time_attributes[['vals']])
 timeBnds <- c(ncvar_get(tmp, varid = "time_bnds"))
 identical(timeBnds, annual_time_bounds)
 
-depthVals <- c(ncvar_get(tmp, varid = "depth"))
+depthVals <- c(ncvar_get(tmp, varid = "vertical"))
 identical(depthVals, vertical_attributes[['vals']])
 
-depthBnds <- c(ncvar_get(tmp, varid = "depth_bnds"))
+depthBnds <- c(ncvar_get(tmp, varid = "vertical_bnds"))
 identical(depthBnds, depth_bounds)
 
 ncdf4::nc_close(tmp)

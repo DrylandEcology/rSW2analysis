@@ -101,7 +101,6 @@
 #'
 #' # time attribute
 #' time_attributes <- list(
-#'    name = 'time',
 #'    units = 'days since 1900-01-01',
 #'    calendar = 'standard',
 #'    unlim = 'TRUE',
@@ -122,11 +121,12 @@
 #    grid_mapping_name = "latitude_longitude",
 #'   longitude_of_prime_meridian = 0.0,
 #'   semi_major_axis = 6378137.0,
-#'   inverse_flattening = 298.257223563,
-#'   crs_wkt = 'GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],
-#'                          AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0, AUTHORITY["EPSG","8901"]],
-#'                          UNIT["degree",0.01745329251994328,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]]'
+#'   inverse_flattening = 298.257223563
 #' )
+#' 
+#' locationsSP <- sp::SpatialPoints(coords = locations, proj4string = sp::CRS(crs_attributes$proj))
+#' WKTex <- raster::wkt(locationsSP)
+#' crs_attributes[["crs_wkt"]] <- WKTex
 #'
 #' # global attributes
 #' global_attributes <- list(
@@ -326,12 +326,6 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
 
   if(has_T_timeAxis) {
     if (!missing(time_attributes) || !is.null(time_attributes)) {
-      if ("name" %in% names(time_attributes)) {
-        time_names <- time_attributes[["name"]]
-        time_attributes[["name"]] <- NULL
-      } else {
-        stop('Need name attribute in time attribute list')
-      }
 
       if ("units" %in% names(time_attributes)) {
         time_units <- time_attributes[["units"]]
@@ -373,12 +367,6 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
 
   if(has_Z_verticalAxis) {
     if (!missing(vertical_attributes) || !is.null(vertical_attributes) ) {
-      if ("name" %in% names(vertical_attributes)) {
-        vert_names <- vertical_attributes[["name"]]
-        vertical_attributes[["name"]] <- NULL
-      } else {
-        stop('Need name attribute in vertical attribute list')
-      }
 
       if ("units" %in% names(vertical_attributes)) {
         vert_units <- vertical_attributes[["units"]]
@@ -751,7 +739,6 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
 #'
 #' # time attribute
 #' time_attributes <- list(
-#'    name = 'time',
 #'    units = 'days since 1900-01-01',
 #'    calendar = 'standard',
 #'    unlim = 'TRUE',
@@ -772,11 +759,12 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
 #'  grid_mapping_name = 'latitude_longitude',
 #'  longitude_of_prime_meridian = 0.0,
 #'  semi_major_axis = 6378137.0,
-#'  inverse_flattening = 298.257223563,
-#'  crs_wkt = 'GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],
-#'                         AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0, AUTHORITY["EPSG","8901"]],
-#'                         UNIT["degree",0.01745329251994328,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]]'
-#' )
+#'  inverse_flattening = 298.257223563
+#'  )
+#' 
+#' locationsSP <- sp::SpatialPoints(coords = locations, proj4string = sp::CRS(crs_attributes$proj))
+#' WKTex <- raster::wkt(locationsSP)
+#' crs_attributes[["crs_wkt"]] <- WKTex
 #'
 #' # global attributes
 #' global_attributes <- list(
