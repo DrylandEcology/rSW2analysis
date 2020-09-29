@@ -18,7 +18,7 @@
 #'  \var{has_T_timeAxis} \emph{or} \var{has_Z_verticalAxis} is set to \code{TRUE} then a
 #'  third dimension is added to the netCDF. If \emph{both} \var{has_T_timeAxis}
 #'  and \var{has_Z_verticalAxis} are set to TRUE, then the netCDF will have four
-#'  dimensions, with time as the third, and depth as the fourth. Information about
+#'  dimensions, with time as the third, and vertical as the fourth. Information about
 #'  these dimensions is set in the respective \var{bounds} and \var{attributes} arguments.
 #'  \var{has_T_timeAxis} and/or \var{has_Z_verticalAxis} is set to \code{TRUE}
 #'  the netCDF can \emph{only} have one variable.
@@ -26,9 +26,9 @@
 #'  The \var{data} object is used to set up the size and dataType in the netCDF. The metadata
 #'  needs to match the data. This object contains the data that you intend to
 #'  populate the netCDF wtih. The array should be set up so that each row is a site's info,
-#'  and each column is a value for variables, time or depth. If the netcdf is 4d
-#'  (time and depth == \code{TRUE}, then need to have a 3-d data array,
-#'  where each additional dimension contains values for each depth.
+#'  and each column is a value for variables, time or vertical. If the netcdf is 4d
+#'  (time and vertical == \code{TRUE}, then need to have a 3-d data array,
+#'  where each additional dimension contains values for each vertical horizon.
 #'
 #'  For variable names, Use CMIP6 standard variable names where available.
 #'  The [day](https://github.com/PCMDI/cmip6-cmor-tables/blob/master/Tables/CMIP6_day.json)
@@ -241,11 +241,11 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
     zn <- length(vertical_attributes$vals)
 
     if(is.null(vert_bounds)){
-      stop('Need to define depth bounds data for depth dimension')
+      stop('Need to define vertical bounds data for  ertical dimension')
       }
 
     if(zn * 2 != length(vert_bounds)) {
-      stop('Number of depth layers need to be equal to defined values')
+      stop('Number of vertical layers need to be equal to defined values')
     }
   }
 
@@ -360,12 +360,12 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
     time_vals <- 0
   }
 
-  # Depth info  ---------------------------------------------------------------------------
+  # Vertical info  ---------------------------------------------------------------------------
   if(has_Z_verticalAxis && !is.null(vert_bounds)) {
-    if(has_T_timeAxis) { # if time and depth are both TRUE , the third dimension
+    if(has_T_timeAxis) { # if time and vertical are both TRUE , the third dimension
       z_chunksize <- dim(data)[3]
       stopifnot(z_chunksize ==  zn)
-    } else { # no time, then we can assume that the depth dimension is the 2d
+    } else { # no time, then we can assume that the vertical dimension is the 2d
       z_chunksize <- nl
       stopifnot(z_chunksize ==  zn)
     }
@@ -477,7 +477,7 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
 
   # time dimension
   if(has_T_timeAxis) {
-      tdim <-  ncdf4::ncdim_def(name = time_names,
+      tdim <-  ncdf4::ncdim_def(name = 'time',
                                 units = time_units,
                                 calendar = time_cal,
                                 vals = time_vals)
@@ -485,7 +485,7 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
 
   # vertical dimension
   if(has_Z_verticalAxis) {
-    zdim <-  ncdf4::ncdim_def(name = vert_names,
+    zdim <-  ncdf4::ncdim_def(name = 'vertical',
                               units = vert_units,
                               vals = vert_vals)
   }
@@ -543,7 +543,7 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
   }
 
   if (has_Z_verticalAxis) {
-      vertbnddef <- ncdf4::ncvar_def(name = "depth_bnds", units = "",
+      vertbnddef <- ncdf4::ncvar_def(name = "vertical_bnds", units = "",
                                     dim = list(bnddim, zdim), missval = NULL,
                                     chunksizes = c(2L, 1L))
   }
@@ -604,7 +604,7 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
     }
 
   if(has_Z_verticalAxis) {
-      try(ncdf4::ncvar_put(nc, varid = "depth_bnds",
+      try(ncdf4::ncvar_put(nc, varid = "vertical_bnds",
                            vals = vert_bounds,
                            start = c(1, 1), count = c(2L, z_chunksize))) # top and bottom of each soil layer
   }
@@ -630,11 +630,11 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
   }
 
   if (has_Z_verticalAxis) {
-    ncdf4::ncatt_put(nc, "depth", "axis", "Z")
-    ncdf4::ncatt_put(nc, "depth", "bounds", "depth_bnds")
+    ncdf4::ncatt_put(nc, "vertical", "axis", "Z")
+    ncdf4::ncatt_put(nc, "vertical", "bounds", "vertical_bnds")
 
     for (natt in ns_att_vert) {
-      ncdf4::ncatt_put(nc, varid = 'depth', attname = natt,
+      ncdf4::ncatt_put(nc, varid = 'vertical', attname = natt,
                        attval = vertical_attributes[[natt]])
     }
   }
@@ -707,8 +707,8 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
 #' @param data A numeric array.
 #' @param var_name A character string equal to the length of the number of variables.
 #'   The length of var_name should either be 1 if there is either a time and/or
-#'   depth dimension \emph{or} equal to the number of columns in the array if
-#'   there is no time or depth dimension.
+#'   vertical dimension \emph{or} equal to the number of columns in the array if
+#'   there is no time or vertical dimension.
 #' @param has_T_timeAxis A logical value. Indicates that the netCDF file
 #'     has a third, time dimension.
 #' @param has_Z_verticalAxis A logical value. Indicates that the netCDF file
@@ -867,7 +867,7 @@ populate_netcdf_from_array <- function(file, data, var_names = NULL,
   nvars <- length(var_names) #  vars names set by user
 
   if(has_T_timeAxis) stopifnot('time' %in% nc_dims)
-  if(has_Z_verticalAxis) stopifnot('depth' %in% nc_dims)
+  if(has_Z_verticalAxis) stopifnot('vertical' %in% nc_dims)
   if(has_T_timeAxis & has_Z_verticalAxis) stopifnot(data_dims == 3) # if have both T and Z, data should be 3 dims
   if(!has_T_timeAxis & !has_Z_verticalAxis) stopifnot(nvars == nn) # if org by vars names should be equal to nl
 
@@ -918,7 +918,7 @@ populate_netcdf_from_array <- function(file, data, var_names = NULL,
     var_nc_index <- grep(var_names[k], nc_names)[1]
 
     nc_var <- ncdf4::ncvar_get(nc, attributes(nc$var)$names[var_nc_index])
-    nc_var_dims <- dim(nc_var) # lon, lat, then #vars time or depth of gridded
+    nc_var_dims <- dim(nc_var) # lon, lat, then #vars time or vertical of gridded
 
     if(verbose) {
       message(paste('The dimensionality of variable',var_names[k], 'is',
@@ -927,7 +927,7 @@ populate_netcdf_from_array <- function(file, data, var_names = NULL,
 
     # Set up chunksizes  ---------------------------------------------------
     if(has_Z_verticalAxis) {
-      if(has_T_timeAxis) { # if time and depth are both TRUE , the third dimension
+      if(has_T_timeAxis) { # if time and vertical are both TRUE , the third dimension
         z_chunksize <- dim(data)[3]
       }
     }
@@ -955,7 +955,7 @@ populate_netcdf_from_array <- function(file, data, var_names = NULL,
         if(has_T_timeAxis && has_Z_verticalAxis) {
 
           for(z in seq(z_chunksize)) { # by Z axis
-            if (verbose) message('Adding depth layer ', z)
+            if (verbose) message('Adding vertical layer ', z)
             for (t in seq_len(nn)) { # col by col - always time in this case
 
               vals <- data[, t, z]
@@ -967,7 +967,7 @@ populate_netcdf_from_array <- function(file, data, var_names = NULL,
             }
           }
         } else {
-          # write values, col by col -- n values can rep dif. vals, time, or depth
+          # write values, col by col -- n values can rep dif. vals, time, or vert
           for (n in seq_len(nn)) {
 
             vals <-  data[, n] # by time chunk or var chunk
@@ -1013,7 +1013,7 @@ populate_netcdf_from_array <- function(file, data, var_names = NULL,
           temp <- grid_template
 
           for(z in seq(z_chunksize)) { # by Z axis
-           if(verbose) message('Adding depth layer ', z)
+           if(verbose) message('Adding vertical layer ', z)
             for (t in seq_len(nn)) { # col by col - always time in this case
 
               temp[val_grid_ids] <- data[, t, z]
@@ -1026,7 +1026,7 @@ populate_netcdf_from_array <- function(file, data, var_names = NULL,
             }
           }
         } else {
-          # write values, col by col -- n values can rep dif. time, or depth
+          # write values, col by col -- n values can rep dif. time, or verticals
           for (n in seq_len(nn)) {
 
             temp <- grid_template
@@ -1099,8 +1099,8 @@ read_netCDF_to_array <- function(x, locations) {
   if('site' %in% nc_dims) isGridded <- FALSE
   if('lat' %in% nc_dims) isGridded <- TRUE
 
-  has_T_timeAxis <-  ifelse('time' %in% nc_dims, TRUE, FALSE)
-  has_Z_verticalAxis <-  ifelse('depth' %in% nc_dims, TRUE, FALSE)
+  has_T_timeAxis <-  'time' %in% nc_dims
+  has_Z_verticalAxis <-  'vertical' %in% nc_dims
 
   # Define variables
   nc_var_names <- attributes(nc$var)$names
@@ -1109,7 +1109,12 @@ read_netCDF_to_array <- function(x, locations) {
   if(isGridded) {
 
     # location stuff  ---------------------------------------------------------
-    loc <- sp::SpatialPoints(locations)
+    if(inherits(locations, 'sf')) {
+      loc <- sf::st_geometry(locations)
+      loc <- as(loc, Class = 'Spatial')
+    } else { # either assumes its spatial class or data.frame
+      loc <- sp::SpatialPoints(locations)
+    }
     # Create grid from location values ----------------------------------------
     sp::gridded(loc) <- TRUE
     grid_template <- raster::raster(loc)
@@ -1162,7 +1167,7 @@ read_netCDF_to_array <- function(x, locations) {
     nc_var_dims <- dim(nc_var)
 
     if(has_T_timeAxis && has_Z_verticalAxis) {
-      # if there is a time AND depth axis
+      # if there is a time AND vertical axis
 
       newArray <- array(, dim = c(locDims,
                                   dimtz, dimz))
@@ -1178,7 +1183,7 @@ read_netCDF_to_array <- function(x, locations) {
       }
 
     } else {
-      # if there is a time OR depth axis
+      # if there is a time OR vertical axis
       newArray <- array(, dim = c(locDims, dimtz))
 
       for(i in seq(dimtz)) {

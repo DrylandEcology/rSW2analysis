@@ -143,11 +143,9 @@ annual_time_bounds <- c(43737, 44102, 44102, 44467, 44467, 44832, 44833, 45197,
 
 The user must define the bounds and values for the depth dimension.
 
-For depth values, we use the maximum depth value.
-
 ```{r, depthD}
 ## depth vals
-depths_max <- c(5, 10, 15) # maximum depth of each layer of depth
+depths_max <- c(2.5, 7.5, 12.5) # midpoint  of each layer of depth
 
 ## depth bounds
 depth_bounds <- c(0, 5, 5, 10, 10, 15) # min and max of each nlayer of depth
@@ -204,7 +202,6 @@ be found [here](https://ncics.org/portfolio/other-resources/udunits2/).
 
 ```{r, TimeAtt, results = 'hide'}
 time_attributes <- list(
-  name = 'time',
   units = 'days since 1900-01-01',
   calendar = 'standard',
   unlim = 'TRUE',
@@ -223,7 +220,6 @@ of the third dimension if there is a time dimension).
 
 ```{r, VertAtt, results = 'hide'}
 vertical_attributes <- list(
-  name = 'depth',
   units = 'cm',
   positive = 'down', # depth is down, height is up
   vals = depths_max
