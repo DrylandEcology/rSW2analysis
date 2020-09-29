@@ -238,8 +238,12 @@ calc_extentwise_ensemble <- function(SFSW2_prj_meta, data, subset = NULL,
     stringsAsFactors = FALSE)
 
   for (k in seq_len(nrow(equivalent_p_f))) {
-    has_q <- abs(probs - equivalent_p_f[k, "probs"]) <= sqrt(.Machine$double.eps)
+    has_q <-
+      abs(probs - equivalent_p_f[k, "probs"]) <=
+      sqrt(.Machine$double.eps)
+
     has_f <- funs %in% equivalent_p_f[k, "funs"]
+
     if (any(has_f)) {
       funs <- funs[!has_f]
       if (!any(has_q)) {
@@ -589,5 +593,3 @@ calculate_ensembles <- function(meta, data, data_names = names(data), subset,
 
   dats_Ens
 }
-
-

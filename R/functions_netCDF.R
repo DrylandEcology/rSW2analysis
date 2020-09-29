@@ -178,6 +178,7 @@
 #' @seealso \url{http://cfconventions.org/cf-conventions/cf-conventions.html} # for defining attributes
 #'
 #' @export
+<<<<<<< HEAD
 
 create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
   has_Z_verticalAxis = FALSE, time_bounds, vert_bounds, var_attributes,
@@ -188,6 +189,9 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
   # ---------------------------------------------------------------------
   # Checks --------------------------------------------------------------
   # ---------------------------------------------------------------------
+=======
+create_netCDF_from_raster_with_time <- function(x, file, ...) { #nolint
+>>>>>>> master
   stopifnot(requireNamespace("ncdf4"))
   if (force_v4) {
     # avoid "_FillValue" error in older versions of `raster` package
@@ -219,6 +223,7 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
 
   nl <- NCOL(data)
 
+<<<<<<< HEAD
   if(has_T_timeAxis == TRUE) {
     tn <- length(time_attributes$vals)
 
@@ -229,6 +234,17 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
     if(tn * 2 != length(time_bounds) ){
       stop('Need to define bounds (min and max) for each time value in time attributes')
     }
+=======
+  xname <- "longitude"
+  yname <- "latitude"
+  zname <- "time"
+  varnames <- names(x)
+
+  # create netCDF file
+    raster::writeRaster(x,
+      filename = file, format = "CDF", xname = xname, yname = yname,
+      varname = varnames, zname = zname)
+>>>>>>> master
 
     if(tn > 1 && tn !=nl) {
       stop('number of values in time dimension should either be of length 1
@@ -256,6 +272,7 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
     data <- matrix(data, ncol = 1, dimnames = list(NULL, names(data)))
   }
 
+<<<<<<< HEAD
   ncdf4_datatype <- raster:::.getNetCDFDType(get_raster_datatype(data))
 
   NAflag <- switch(ncdf4_datatype,
@@ -316,6 +333,30 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
     }
 
     ns_att_crs <- names(crs_attributes)
+=======
+#' Convert raster where variables are organized in the third dimension to a
+#' \var{netCDF} file
+#'
+#' @param x A Raster* object.
+#' @param var_attributes A list of named character strings each of length
+#'   equal to the number of variables, i.e., the third dimension of \code{x}.
+#'   If not missing, then the variable attributes will be added to the
+#'   \var{netCDF} file. If no variable names are provided, then the names of
+#'   \code{x} are used; otherwise, these are added as \code{original_name}.
+#' @param global_attributes A list of named character strings. If not missing,
+#'   then the global attributes will be added to the \var{netCDF} file.
+#' @param file A character string. The file path of the \var{netCDF} file to be
+#'   created.
+#' @param overwrite A logical value. If \code{TRUE}, file will be overwritten
+#'   if it exists.
+#'
+#'  @return This function is used for the side-effect of creating a file.
+#'
+#' @export
+create_netCDF_from_raster_with_variables <- function(x, time_bounds,  #nolint
+  var_attributes, global_attributes, file, force_v4 = TRUE,
+  overwrite = FALSE) {
+>>>>>>> master
 
   }
 
@@ -829,6 +870,7 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
 #' @seealso Demonstration of netCDF functionality in rSW2analysis vignette
 #'
 #' @export
+<<<<<<< HEAD
 
 populate_netcdf_from_array <- function(file, data, var_names = NULL,
                                        has_T_timeAxis, has_Z_verticalAxis,
@@ -839,6 +881,11 @@ populate_netcdf_from_array <- function(file, data, var_names = NULL,
   # ---------------------------------------------------------------------
   # Set up and checks ---------------------------------------------------
   # ---------------------------------------------------------------------
+=======
+create_netCDF_from_array_with_variables <- function(x, locations, grid,  #nolint
+  time_bounds, var_attributes, global_attributes, file, force_v4 = TRUE,
+  overwrite = FALSE) {
+>>>>>>> master
 
   stopifnot(requireNamespace("ncdf4"))
 
@@ -1197,7 +1244,9 @@ read_netCDF_to_array <- function(x, locations) {
 #' @references CMIP6 Global Attributes, DRS, Filenames, Directory Structure, and CV’s
 #'   10 September 2018 (v6.2.7)
 #'   Appendix 2: Algorithms for Defining the "nominal_resolution" Attribute
+#nolint start
 #'   \url{https://docs.google.com/document/d/1h0r8RZr_f3-8egBMMh7aqLwy3snpD6_MrDz1q8n5XUk/edit#bookmark=id.ibeh7ad2gpdi}
+#nolint end
 #'
 #' @examples
 #' r <- raster::raster(

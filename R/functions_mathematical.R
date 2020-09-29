@@ -39,7 +39,10 @@ setMethod("span", signature(x = "factor"),
   })
 
 
-setGeneric("agreement", function(x, val = NULL, ...) standardGeneric("agreement"))
+setGeneric(
+  name = "agreement",
+  def = function(x, val = NULL, ...) standardGeneric("agreement")
+)
 
 setMethod("agreement", signature(x = "numeric"),
   function(x, val = NULL, ...) {
@@ -131,7 +134,9 @@ fun_central <- function(method = c("median", "mean"), area = NULL,
 #' @section Notes: The code is adapted from Bell & Schlaepfer 2015 (available
 #'   at \url{https://github.com/bellland/SDM.Virtual.Species_Bell.Schlaepfer})
 #'   which was based on a comment by Matthew Bayly made at
+#nolint start
 #'   \url{https://pvanb.wordpress.com/2014/05/13/a-new-method-and-tool-exdet-to-evaluate-novelty-environmental-conditions/}.
+#nolint end
 #'
 #' @export
 calc_NT1 <- function(refdat, prodat) {
@@ -147,8 +152,8 @@ calc_NT1 <- function(refdat, prodat) {
     byrow = TRUE)
 
   iud <- array(0, dim = c(dim(prodat), 3))
-  iud[, , 2] <- prodat - t(range_ref_arr["min", ,])
-  iud[, , 3] <- t(range_ref_arr["max", ,]) - prodat
+  iud[ , , 2] <- prodat - t(range_ref_arr["min", ,]) #nolint
+  iud[ , , 3] <- t(range_ref_arr["max", ,]) - prodat #nolint
 
   UDs <- apply(iud, 1:2, min) / diffs_ref_arr
   rowSums(UDs)
@@ -179,7 +184,9 @@ calc_NT1 <- function(refdat, prodat) {
 #' @section Notes: The code is adapted from Bell & Schlaepfer 2015 (available
 #'   at \url{https://github.com/bellland/SDM.Virtual.Species_Bell.Schlaepfer})
 #'   which was based on a comment by Matthew Bayly made at
+#nolint start
 #'   \url{https://pvanb.wordpress.com/2014/05/13/a-new-method-and-tool-exdet-to-evaluate-novelty-environmental-conditions/}.
+#nolint end
 #'
 #' @export
 calc_NT2 <- function(refdat, prodat) {
@@ -201,10 +208,18 @@ calc_NT2 <- function(refdat, prodat) {
 
 
 
-#' Whittaker, J. 1984. Model Interpretation from the Additive Elements of the Likelihood Function. Journal of the Royal Statistical Society. Series C (Applied Statistics) 33:52-64.
+#' Whittaker additive elements
+#'
+#' @references
+#'   Whittaker, J. 1984. Model Interpretation from the Additive Elements of
+#'   the Likelihood Function. Journal of the Royal Statistical Society.
+#'   Series C (Applied Statistics) 33:52-64.
+#'
+#' @section Details:
 #' Residual: G(:1234) = g_1234 = residual variation
 #' Primaries: G(1:234) = g1_234 = variation uniquely attributable to x1
-#' Secondaries: G(12:34) = g12_34 = variation attributable to x1 or x2 but not to both
+#' Secondaries: G(12:34) = g12_34 = variation attributable to x1 or x2 but
+#'   not to both
 #' 3rd order elements: G(123:4) = g123_4 =
 #' 4th order elements: G(1234:) = g1234_ =
 #'
@@ -257,7 +272,7 @@ whittaker_additive_elements <- function(data, y = "y", w = NULL,
   if (stats::var(ffdata[, y]) > 0) {
     # extract residual SS == residual deviance
 
-    op1 <- if (!is.null(X1)) "+" else NULL
+    op1 <- if (!is.null(X1)) "+" else NULL #nolint
     op2 <- if (!is.null(X2)) "+" else NULL
     op3 <- if (!is.null(X3)) "+" else NULL
     op4 <- if (!is.null(X4)) "+" else NULL

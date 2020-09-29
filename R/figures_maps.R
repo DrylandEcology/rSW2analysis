@@ -70,13 +70,11 @@ add_legend <- function(zlim, zextreme, col_desc, grid,
   temp2z <- atz <= zlim[1]
   if (any(temp2z)) {
     # adjust position(s) below the limit to one tickmark at the limit
-    ids_temp2z <- which(temp2z)
     atz <- c(zlim[1], atz[!temp2z])
   }
   temp2z <- atz >= zlim[2]
   if (any(temp2z)) {
     # adjust position(s) above the limit to one tickmark at the limit
-    ids_temp2z <- which(temp2z)
     atz <- c(atz[!temp2z], zlim[2])
   }
 
@@ -135,29 +133,58 @@ add_legend <- function(zlim, zextreme, col_desc, grid,
   if (tick) {
     lwd_seg <- max(0.5, min(1, cex)) * graphics::par("lwd")
     if (horiz) {
-      graphics::segments(x0 = xs_orig, x1 = xs_orig,
-        y0 = ext@ymax - (ext@ymax - ext@ymin) / 3, y1 = ext@ymax, lwd = lwd_seg)
+      graphics::segments(
+        x0 = xs_orig,
+        x1 = xs_orig,
+        y0 = ext@ymax - (ext@ymax - ext@ymin) / 3,
+        y1 = ext@ymax, lwd = lwd_seg
+      )
 
       if (col_desc[["added_below"]]) {
-        graphics::segments(x0 = ext@xmin, x1 = ext@xmin, y0 = ext@ymin, y1 = ext@ymax,
-          lwd = lwd_seg)
+        graphics::segments(
+          x0 = ext@xmin,
+          x1 = ext@xmin,
+          y0 = ext@ymin,
+          y1 = ext@ymax,
+          lwd = lwd_seg
+        )
       }
       if (col_desc[["added_above"]]) {
-        graphics::segments(x0 = ext@xmax, x1 = ext@xmax, y0 = ext@ymin,
-          y1 = ext@ymax, lwd = lwd_seg)
+        graphics::segments(
+          x0 = ext@xmax,
+          x1 = ext@xmax,
+          y0 = ext@ymin,
+          y1 = ext@ymax,
+          lwd = lwd_seg
+        )
       }
 
     } else {
-      graphics::segments(x0 = ext@xmax - (ext@xmax - ext@xmin) / 3,
-        x1 = ext@xmax, y0 = ys_orig, y1 = ys_orig, lwd = lwd_seg)
+      graphics::segments(
+        x0 = ext@xmax - (ext@xmax - ext@xmin) / 3,
+        x1 = ext@xmax,
+        y0 = ys_orig,
+        y1 = ys_orig,
+        lwd = lwd_seg
+      )
 
       if (col_desc[["added_below"]]) {
-        graphics::segments(x0 = ext@xmin, x1 = ext@xmax, y0 = ext@ymin,
-          y1 = ext@ymin, lwd = lwd_seg)
+        graphics::segments(
+          x0 = ext@xmin,
+          x1 = ext@xmax,
+          y0 = ext@ymin,
+          y1 = ext@ymin,
+          lwd = lwd_seg
+        )
       }
       if (col_desc[["added_above"]]) {
-        graphics::segments(x0 = ext@xmin, x1 = ext@xmax, y0 = ext@ymax,
-          y1 = ext@ymax, lwd = lwd_seg)
+        graphics::segments(
+          x0 = ext@xmin,
+          x1 = ext@xmax,
+          y0 = ext@ymax,
+          y1 = ext@ymax,
+          lwd = lwd_seg
+        )
       }
     }
   }
@@ -381,7 +408,10 @@ map_from_variable <- function(x, meta, subset, ..., beautify = TRUE) {
     id_dots_extend <- match("fextend", names(dots), nomatch = 0)
     if (isTRUE(id_dots_extend > 0)) {
       if (isTRUE(is.finite(dots[["fextend"]]))) {
-        rdata <- raster::extend(rdata, dots[["fextend"]] * raster::extent(rdata))
+        rdata <- raster::extend(
+          x = rdata,
+          y = dots[["fextend"]] * raster::extent(rdata)
+        )
       }
 
       dots <- dots[-id_dots_extend]

@@ -32,15 +32,16 @@ Thumbs.db
 
 
 # Package check files
+..Rcheck
+rSW2analysis.Rcheck
+tests/spelling.Rout.save
+
+# Package build files
 *tar.gz
 *.tgz
 *.zip
-
-# Package build files
 *-Ex.R
 inst/doc
-..Rcheck
-rSW2analysis.Rcheck
 Meta
 doc
 

@@ -52,7 +52,7 @@ add_contour_to_pointcloud <- function(x, y, alpha = 0.95, col = "red",
         cols <- rep_len(col, length(cl))
         for (cli in seq_along(cl)) {
           graphics::polygon(x = cl[[cli]]$x, y = cl[[cli]]$y, border = NA,
-            col = grDevices::adjustcolor(col[cli], alpha.f = 0.3), ...)
+            col = grDevices::adjustcolor(cols[cli], alpha.f = 0.3), ...)
         }
 
       } else {
@@ -124,6 +124,8 @@ add_loess <- function(x, y, xlim = NULL, res = 30L, col = "orange", lwd = 2) {
   }
 }
 
+#' Add a smoothed scatter plot to the current panel
+#'
 #' @export
 draw_smoothScatter_panel <- function(x, y, asp = NA, xlim = NULL, ylim = xlim,
   loess_lim = xlim, add_loess = TRUE, add_1to1 = FALSE,
@@ -178,5 +180,3 @@ draw_smoothScatter_panel <- function(x, y, asp = NA, xlim = NULL, ylim = xlim,
     )
   }
 }
-
-

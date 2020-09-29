@@ -129,7 +129,9 @@ calculate_cell_area <- function(sites, grid, tol = sqrt(.Machine$double.eps)) {
 #' Calculate the UTM zone based on geographic location
 #'
 #' @references Convert Latitude/Longitude to UTM
+#nolint start
 #'   \url{https://www.wavemetrics.com/code-snippet/convert-latitudelongitude-utm}
+#nolint end
 #'   (attributed to Chuck Gantz).
 #'
 #' @export
@@ -140,7 +142,7 @@ get_UTM_Zone <- function(longitude, latitude) {
   # Make sure longitude is between -180.00 .. 179.9
   LongTemp <- Long - floor((Long + 180) / 360) * 360
 
-  ZoneNumber <- floor((LongTemp + 180) / 6) + 1;
+  ZoneNumber <- floor((LongTemp + 180) / 6) + 1
 
   if (Lat >= 56 && Lat < 64 && LongTemp >= 3 && LongTemp < 12) {
     ZoneNumber <- 32
@@ -183,7 +185,8 @@ SREX2012_regions <- function(adjusted = FALSE) {
 
   #--- North America
   slist <- list()
-  #   3 WNA = (28.566N, 105.000W) (28.566N, 130.000W) (60.000N, 130.000W) (60.000N, 105.000W),
+  #   3 WNA = (28.566N, 105.000W) (28.566N, 130.000W) (60.000N, 130.000W)
+  #           (60.000N, 105.000W),
   slist[["3_WNA"]] <- sp::Polygon(matrix(c(
     -105.000, 28.566,
     -130.000, 28.566,
@@ -191,7 +194,8 @@ SREX2012_regions <- function(adjusted = FALSE) {
     -105.000, 60.000,
     -105.000, 28.566
   ), ncol = 2, byrow = TRUE))
-  #   4 CNA = (50.000N, 85.000W) (28.566N, 85.000W) (28.566N, 105.000W) (50.000N, 105.000W),
+  #   4 CNA = (50.000N, 85.000W) (28.566N, 85.000W) (28.566N, 105.000W)
+  #           (50.000N, 105.000W),
   slist[["4_CNA"]] <- sp::Polygon(matrix(c(
     -85.000, 50.000,
     -85.000, 28.566,
@@ -199,7 +203,8 @@ SREX2012_regions <- function(adjusted = FALSE) {
     -105.000, 50.000,
     -85.000, 50.000
   ), ncol = 2, byrow = TRUE))
-  #   6 CAM = (11.439N, 68.800W) (1.239S, 79.729W) (28.566N, 118.323W) (28.566N, 90.315W)
+  #   6 CAM = (11.439N, 68.800W) (1.239S, 79.729W) (28.566N, 118.323W)
+  #           (28.566N, 90.315W)
   slist[["6_CAM"]] <- sp::Polygon(matrix(c(
     -68.800, 11.439,
     -79.729, -1.239,
@@ -224,7 +229,8 @@ SREX2012_regions <- function(adjusted = FALSE) {
 
   #--- South America
   slist <- list()
-  #   7 AMZ = (20.000S, 66.377W) (1.239S, 79.729W) (11.439N, 68.800W) (11.439N, 50.000W) (20.000S, 50.000W),
+  #   7 AMZ = (20.000S, 66.377W) (1.239S, 79.729W) (11.439N, 68.800W)
+  #           (11.439N, 50.000W) (20.000S, 50.000W),
   slist[["7_AMZ"]] <- sp::Polygon(matrix(c(
     -66.377, -20.000,
     -79.729, -1.239,
@@ -233,7 +239,8 @@ SREX2012_regions <- function(adjusted = FALSE) {
     -50.000, -20.000,
     -66.377, -20.000
   ), ncol = 2, byrow = TRUE))
-  #   8 NEB = (20.000S, 34.000W) (20.000S, 50.000W) (0.000N, 50.000W) (0.000N, 34.000W),
+  #   8 NEB = (20.000S, 34.000W) (20.000S, 50.000W) (0.000N, 50.000W)
+  #           (0.000N, 34.000W),
   slist[["8_NEB"]] <- sp::Polygon(matrix(c(
     -34.000, -20.000,
     -50.000, -20.000,
@@ -241,7 +248,8 @@ SREX2012_regions <- function(adjusted = FALSE) {
     -34.000, 0.000,
     -34.000, -20.000
   ), ncol = 2, byrow = TRUE))
-  #   9 WSA = (1.239S, 79.729W) (20.000S, 66.377W) (50.000S, 72.141W) (56.704S, 67.348W) (56.704S, 82.022W) (0.530N, 82.022W),
+  #   9 WSA = (1.239S, 79.729W) (20.000S, 66.377W) (50.000S, 72.141W)
+  #           (56.704S, 67.348W) (56.704S, 82.022W) (0.530N, 82.022W),
   slist[["9_WSA"]] <- sp::Polygon(matrix(c(
     -79.729, -1.239,
     -66.377, -20.000,
@@ -251,7 +259,8 @@ SREX2012_regions <- function(adjusted = FALSE) {
     -82.022, 0.530,
     -79.729, -1.239
   ), ncol = 2, byrow = TRUE))
-  #  10 SSA = (20.000S, 39.376W) (56.704S, 39.376W) (56.704S, 67.348W) (50.000S, 72.141W) (20.000S, 66.377W)
+  #  10 SSA = (20.000S, 39.376W) (56.704S, 39.376W) (56.704S, 67.348W)
+  #           (50.000S, 72.141W) (20.000S, 66.377W)
   slist[["10_SSA"]] <- sp::Polygon(matrix(c(
     -39.376, -20.000,
     -39.376, -56.704,
@@ -276,7 +285,8 @@ SREX2012_regions <- function(adjusted = FALSE) {
 
   #--- Southern Africa
   slist <- list()
-  #   SREX region 17 SAF = (35.000S, 10.000W) (11.365S, 10.000W) (11.365S, 51.990E) (35.000S, 51.990E)
+  #   SREX region 17 SAF = (35.000S, 10.000W) (11.365S, 10.000W)
+  #                        (11.365S, 51.990E) (35.000S, 51.990E)
   slist[["17_SAF"]] <- sp::Polygon(matrix(c(
     -10.000, -35.000,
     -10.000, -11.365,
@@ -285,21 +295,27 @@ SREX2012_regions <- function(adjusted = FALSE) {
     -10.000, -35.000
   ), ncol = 2, byrow = TRUE))
 
-  slist_regions[["Southern Africa"]] <- sp::Polygons(slist, ID = "Southern Africa")
+  slist_regions[["Southern Africa"]] <- sp::Polygons(
+    srl = slist,
+    ID = "Southern Africa"
+  )
 
 
   #--- Sahara and subsaharan Africa
   slist <- list()
-  #   14 SAH = (15.000N, 20.000W) (30.000N, 20.000W) (30.000N, 40.000E) (15.000N, 40.000E),
+  #   14 SAH = (15.000N, 20.000W) (30.000N, 20.000W) (30.000N, 40.000E)
+  #            (15.000N, 40.000E),
   slist[["14_SAH"]] <- sp::Polygon(matrix(c(
-    # ADJUSTEMENT: add all of Marocco to Mediterranean instead of Subsaharan Africa
+    # ADJUSTEMENT: add all of Marocco to Mediterranean instead of
+    #   Subsaharan Africa
     -20.000, 15.000,
     -20.000, if (adjusted) 22.000 else 30.000,
     40.000, if (adjusted) 22.000 else 30.000,
     40.000, 15.000,
     -20.000, 15.000
   ), ncol = 2, byrow = TRUE))
-  #   15 WAF = (11.365S, 20.000W) (15.000N, 20.000W) (15.000N, 25.000E) (11.365S, 25.000E),
+  #   15 WAF = (11.365S, 20.000W) (15.000N, 20.000W) (15.000N, 25.000E)
+  #            (11.365S, 25.000E),
   slist[["15_WAF"]] <- sp::Polygon(matrix(c(
     -20.000, -11.365,
     -20.000, 15.000,
@@ -307,7 +323,8 @@ SREX2012_regions <- function(adjusted = FALSE) {
     25.000, -11.365,
     -20.000, -11.365
   ), ncol = 2, byrow = TRUE))
-  #   16 EAF = (11.365S, 25.000E) (15.000N, 25.000E) (15.000N, 51.990E) (11.365S, 51.990E)
+  #   16 EAF = (11.365S, 25.000E) (15.000N, 25.000E) (15.000N, 51.990E)
+  #            (11.365S, 51.990E)
   slist[["16_EAF"]] <- sp::Polygon(matrix(c(
     # ADJUSTEMENT: add Yemen to Western Asia instead of Subsaharan Africa
     25.000, -11.365,
@@ -320,14 +337,19 @@ SREX2012_regions <- function(adjusted = FALSE) {
     25.000, -11.365
   ), ncol = 2, byrow = TRUE))
 
-  slist_regions[["Subsaharan Africa"]] <- sp::Polygons(slist, ID = "Subsaharan Africa")
+  slist_regions[["Subsaharan Africa"]] <- sp::Polygons(
+    srl = slist,
+    ID = "Subsaharan Africa"
+  )
 
 
   #--- Mediterranean Basin
   slist <- list()
-  #   SREX region 13 MED = (30.000N, 10.000W) (45.000N, 10.000W) (45.000N, 40.000E) (30.000N, 40.000E)
+  #   SREX region 13 MED = (30.000N, 10.000W) (45.000N, 10.000W)
+  #                        (45.000N, 40.000E) (30.000N, 40.000E)
   slist[["13_MED"]] <- sp::Polygon(matrix(c(
-    # ADJUSTEMENT: add all of Marocco to Mediterranean instead of Subsaharan Africa
+    # ADJUSTEMENT: add all of Marocco to Mediterranean instead of
+    #   Subsaharan Africa
     -10.000, if (adjusted) 22.000 else 30.000,
     -10.000, 45.000,
     40.000, 45.000,
@@ -335,7 +357,8 @@ SREX2012_regions <- function(adjusted = FALSE) {
     -10.000, if (adjusted) 22.000 else 30.000
   ), ncol = 2, byrow = TRUE))
   if (adjusted) {
-    # ADJUSTEMENT: add Azores, Madeira, and Canary Islands to Mediterranean Basin
+    # ADJUSTEMENT: add Azores, Madeira, and Canary Islands to
+    #   Mediterranean Basin
     slist[["MB_Adj1"]] <- sp::Polygon(matrix(c(
       -32.000, 22.000,
       -32.000, 45.000,
@@ -343,7 +366,8 @@ SREX2012_regions <- function(adjusted = FALSE) {
       -10.000, 22.000,
       -32.000, 22.000
     ), ncol = 2, byrow = TRUE))
-    # ADJUSTEMENT: add areas just adjacent to the North to the Mediterranean Basin
+    # ADJUSTEMENT: add areas just adjacent to the North to the
+    #   Mediterranean Basin
     slist[["MB_Adj2"]] <- sp::Polygon(matrix(c(
       -10.000, 45.000,
       -10.000, 50.000,
@@ -358,7 +382,8 @@ SREX2012_regions <- function(adjusted = FALSE) {
 
   #--- Western Asia
   slist <- list()
-  #   SREX region 19 WAS = (15.000N, 40.000E) (50.000N, 40.000E) (50.000N, 60.000E) (15.000N, 60.000E)
+  #   SREX region 19 WAS = (15.000N, 40.000E) (50.000N, 40.000E)
+  #                        (50.000N, 60.000E) (15.000N, 60.000E)
   slist[["19_WAS"]] <- sp::Polygon(matrix(c(
     # ADJUSTEMENT: add Yemen to Western Asia instead of Subsaharan Africa
     40.000, if (adjusted) 17.150 else 15.000,
@@ -385,7 +410,8 @@ SREX2012_regions <- function(adjusted = FALSE) {
 
   #--- Central Asia
   slist <- list()
-  #   20 CAS = (30.000N, 60.000E) (50.000N, 60.000E) (50.000N, 75.000E) (30.000N, 75.000E)
+  #   20 CAS = (30.000N, 60.000E) (50.000N, 60.000E) (50.000N, 75.000E)
+  #            (30.000N, 75.000E)
   slist[["20_CAS"]] <- sp::Polygon(matrix(c(
     60.000, 30.000,
     60.000, 50.000,
@@ -393,7 +419,8 @@ SREX2012_regions <- function(adjusted = FALSE) {
     75.000, 30.000,
     60.000, 30.000
   ), ncol = 2, byrow = TRUE))
-  #   21 TIB = (30.000N, 75.000E) (50.000N, 75.000E) (50.000N, 100.000E) (30.000N, 100.000E)
+  #   21 TIB = (30.000N, 75.000E) (50.000N, 75.000E) (50.000N, 100.000E)
+  #            (30.000N, 100.000E)
   slist[["21_TIB"]] <- sp::Polygon(matrix(c(
     75.000, 30.000,
     75.000, 50.000,
@@ -417,7 +444,8 @@ SREX2012_regions <- function(adjusted = FALSE) {
 
   #--- East Asia
   slist <- list()
-  #   22 EAS = (20.000N, 100.000E) (50.000N, 100.000E) (50.000N, 145.000E) (20.000N, 145.000E)
+  #   22 EAS = (20.000N, 100.000E) (50.000N, 100.000E) (50.000N, 145.000E)
+  #            (20.000N, 145.000E)
   slist[["22_EAS"]] <- sp::Polygon(matrix(c(
     100.000, 20.000,
     100.000, 50.000,
@@ -458,7 +486,8 @@ SREX2012_regions <- function(adjusted = FALSE) {
 
   #--- Australia = SREX regions 25 NAU, 26 SAU
   slist <- list()
-  #   25 NAU = (30.000S, 110.000E) (10.000S, 110.000E) (10.000S, 155.000E) (30.000S, 155.000E)
+  #   25 NAU = (30.000S, 110.000E) (10.000S, 110.000E) (10.000S, 155.000E)
+  #            (30.000S, 155.000E)
   slist[["25_NAU"]] <- sp::Polygon(matrix(c(
     110.000, -30.000,
     110.000, -10.000,
@@ -466,7 +495,8 @@ SREX2012_regions <- function(adjusted = FALSE) {
     155.000, -30.000,
     110.000, -30.000
   ), ncol = 2, byrow = TRUE))
-  #   26 SAU = (50.000S, 110.000E) (30.000S, 110.000E) (30.000S, 180.000E) (50.000S, 180.000E)
+  #   26 SAU = (50.000S, 110.000E) (30.000S, 110.000E) (30.000S, 180.000E)
+  #            (50.000S, 180.000E)
   slist[["26_SAU"]] <- sp::Polygon(matrix(c(
     110.000, -50.000,
     110.000, -30.000,
@@ -506,5 +536,3 @@ SREX2012_regions <- function(adjusted = FALSE) {
 
   spoly_regions2
 }
-
-

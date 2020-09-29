@@ -129,10 +129,9 @@ project you agree to abide by its terms.
   * Package checks
     * Package checks are run with
       `devtools::check(cran = TRUE, env_vars = c(NOT_CRAN = "true"))` or
-      `R CMD build . && R CMD check *.tar.gz`
-      which will also run the unit tests
-    * Package checks additionally include code style and spelling
-    * These checks will be run on the continuous integration frameworks
+      `R CMD build . && NOT_CRAN = "true" R CMD check *.tar.gz`
+    * Package checks include unit tests, code style, and spelling
+    * Checks will be run on the continuous integration frameworks
       'travis' and 'appveyor' when commits are pushed
     * Development/feature branches can only be merged into master if they pass
       all checks

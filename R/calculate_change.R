@@ -45,7 +45,7 @@
 #'   provided.
 #'
 #' @export
-calc_response_change_from_reference <- function(data, ref_condition,
+calc_change_from_reference <- function(data, ref_condition,
   sc_hist = NULL, method = c("absolute", "relative", "direction", "rdirection"),
   ...) {
 
@@ -332,7 +332,6 @@ compare_direction_1rel2ref <- function(dx, dy, vars = NULL, cl = NULL,
   if (is.null(cl)) {
     cl <- define_direction_1rel()
   }
-  ncls <- seq_len(nrow(cl))
 
 
   # Prepare output container
@@ -368,5 +367,3 @@ compare_direction_1rel2ref <- function(dx, dy, vars = NULL, cl = NULL,
 
   res
 }
-
-

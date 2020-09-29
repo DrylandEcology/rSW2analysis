@@ -242,7 +242,7 @@ prepare_colors <- function(type, zlim, col_rev = FALSE, col_zero = "gray") {
   colred <- viridisLite::viridis(122, begin = 0.3, end = 0.8, direction = -1)
 
   switch(type,
-    span = ,
+    span = , #nolint
     agreement = define_value_colorramp(
       zlim = zlim,
       cols = if (col_rev) rev(c(col_zero, colmag)) else c(col_zero, colmag)
@@ -261,7 +261,7 @@ prepare_colors <- function(type, zlim, col_rev = FALSE, col_zero = "gray") {
       zlim = zlim,
       col_zero = col_zero, use_rev_cols = !col_rev
     ),
-    cats = ,
+    cats = , #nolint
     composite_cats = NA
   )
 }

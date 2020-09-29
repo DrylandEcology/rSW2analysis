@@ -2,12 +2,7 @@
 % Please edit documentation in R/functions_mathematical.R
 \name{whittaker_additive_elements}
 \alias{whittaker_additive_elements}
-\title{Whittaker, J. 1984. Model Interpretation from the Additive Elements of the Likelihood Function. Journal of the Royal Statistical Society. Series C (Applied Statistics) 33:52-64.
-Residual: G(:1234) = g_1234 = residual variation
-Primaries: G(1:234) = g1_234 = variation uniquely attributable to x1
-Secondaries: G(12:34) = g12_34 = variation attributable to x1 or x2 but not to both
-3rd order elements: G(123:4) = g123_4 =
-4th order elements: G(1234:) = g1234_ =}
+\title{Whittaker additive elements}
 \usage{
 whittaker_additive_elements(
   data,
@@ -21,13 +16,18 @@ whittaker_additive_elements(
 )
 }
 \description{
-Whittaker, J. 1984. Model Interpretation from the Additive Elements of the Likelihood Function. Journal of the Royal Statistical Society. Series C (Applied Statistics) 33:52-64.
+Whittaker additive elements
+}
+\section{Details}{
+
 Residual: G(:1234) = g_1234 = residual variation
 Primaries: G(1:234) = g1_234 = variation uniquely attributable to x1
-Secondaries: G(12:34) = g12_34 = variation attributable to x1 or x2 but not to both
+Secondaries: G(12:34) = g12_34 = variation attributable to x1 or x2 but
+  not to both
 3rd order elements: G(123:4) = g123_4 =
 4th order elements: G(1234:) = g1234_ =
 }
+
 \examples{
 ## Test code to match up with cement example of Whittaker 1984
 \dontrun{
@@ -57,4 +57,9 @@ if (requireNamespace("MuMIn")) {
 #                 13.5
 }
 
+}
+\references{
+Whittaker, J. 1984. Model Interpretation from the Additive Elements of
+  the Likelihood Function. Journal of the Royal Statistical Society.
+  Series C (Applied Statistics) 33:52-64.
 }
