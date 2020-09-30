@@ -3,9 +3,6 @@
 #'
 #' @param SFSW2_prj_meta An environment
 #' @param data A vector or two-dimensional object.
-#' @param locations A numeric matrix or data.frame with coordinates. Each row is
-#'   a point.
-#' @param crs A CRS object.
 #' @param filename A character string. Passed to \code{\link[raster]{brick}}.
 #'
 #' @return A \code{\link[raster:RasterLayer-class]{raster::RasterLayer}}
@@ -14,37 +11,18 @@
 #'   (if \code{data} is two-dimensional).
 #'
 #' @export
-create_raster_from_variables <- function(SFSW2_prj_meta = NULL, locations,
-                                         crs, data, filename = "") {
-                                           
-  ###############################################################################
-  #### Prepare location & spatial data -------------------------------------------
-  ###############################################################################
-  if(is.null(SFSW2_prj_meta) && missing(locations)){
-    stop('Missing both SFSW2_prj_meta and locations. Need one or the other to proceed')
+create_raster_from_variables <- function(SFSW2_prj_meta, data, filename = "") {
+
+  # prepare locations
+  loc <- SFSW2_prj_meta[["sim_space"]][["run_sites"]]
+  if (!raster::compareCRS(SFSW2_prj_meta[["sim_space"]][["crs_sites"]],
+    SFSW2_prj_meta[["sim_space"]][["sim_crs"]])) {
+
+    loc <- sp::spTransform(loc,
+      CRS = SFSW2_prj_meta[["sim_space"]][["sim_crs"]])
   }
 
-  # From SOILWAT2 SFSW2_prj_meta data ----------------
-  if(!is.null(SFSW2_prj_meta)) {
-    loc <- SFSW2_prj_meta[["sim_space"]][["run_sites"]]
-
-    # if not the same CRS spTransform
-    if (!raster::compareCRS(SFSW2_prj_meta[["sim_space"]][["crs_sites"]],
-      SFSW2_prj_meta[["sim_space"]][["sim_crs"]])) {
-        loc <- sp::spTransform(loc,
-          CRS = SFSW2_prj_meta[["sim_space"]][["sim_crs"]])
-    }
-  }
-
-  # From user supplied location and CRS ----------------
-  if(!missing(locations)) {
-    loc <- SpatialPoints(locations)
-    proj4string(loc) <- CRS(crs)
-  }
-
-  ############################################################################
-  #### Prepare and check data  -------------------------------------------
-  ############################################################################
+  # prepare data
   nl <- NCOL(data)
   cnames <- colnames(data)
 
@@ -74,10 +52,7 @@ create_raster_from_variables <- function(SFSW2_prj_meta = NULL, locations,
     data <- matrix(data, ncol = 1)
   }
 
-  ###############################################################################
-  #### Create raster, init with NAs, add data  ----------------------------------
-  ###############################################################################
-
+  # create raster, init with NAs, and add data
   ids <- NULL
   rl <- list()
   if (nl > 1) {
@@ -85,18 +60,12 @@ create_raster_from_variables <- function(SFSW2_prj_meta = NULL, locations,
   }
 
   for (k in seq_len(nl)) {
-    if(!is.null(SFSW2_prj_meta)) {
-      rk <- raster::raster(SFSW2_prj_meta[["sim_space"]][["sim_raster"]])
-    }
-    if(!missing(locations)) {
-      rk <- raster::raster(loc)
-      extent(rk) <- extent(loc)
-    }
+    rk <- raster::raster(SFSW2_prj_meta[["sim_space"]][["sim_raster"]])
     rk <- raster::init(rk, fun = function(x) rep(NA, x))
     if (k == 1) {
       ids <- raster::cellFromXY(rk, sp::coordinates(loc))
     }
-    # add values -------------------
+
     rk[ids] <- data[, k]
 
     if (nl > 1) {
