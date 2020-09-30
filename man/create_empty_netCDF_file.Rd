@@ -117,7 +117,8 @@ The user provides an array and specifies spatial information,
 
  For variable names, Use CMIP6 standard variable names where available.
  The variable names are contained in the
- [CMIP6-cmor-tables](https://github.com/PCMDI/cmip6-cmor-tables/tree/master/Tables).
+ [CMIP6-cmor-tables]
+ (https://github.com/PCMDI/cmip6-cmor-tables/tree/master/Tables).
 }
 \examples{
 #############################################################################

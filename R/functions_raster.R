@@ -16,8 +16,7 @@
 #' @export
 create_raster_from_variables <- function(SFSW2_prj_meta = NULL, locations,
                                          crs, data, filename = "") {
-  
-  
+                                           
   ###############################################################################
   #### Prepare location & spatial data -------------------------------------------
   ###############################################################################
@@ -88,7 +87,7 @@ create_raster_from_variables <- function(SFSW2_prj_meta = NULL, locations,
   for (k in seq_len(nl)) {
     if(!is.null(SFSW2_prj_meta)) {
       rk <- raster::raster(SFSW2_prj_meta[["sim_space"]][["sim_raster"]])
-    } 
+    }
     if(!missing(locations)) {
       rk <- raster::raster(loc)
       extent(rk) <- extent(loc)

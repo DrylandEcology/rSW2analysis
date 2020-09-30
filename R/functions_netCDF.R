@@ -34,7 +34,8 @@
 #'
 #'  For variable names, Use CMIP6 standard variable names where available.
 #'  The variable names are contained in the
-#'  [CMIP6-cmor-tables](https://github.com/PCMDI/cmip6-cmor-tables/tree/master/Tables).
+#'  [CMIP6-cmor-tables]
+#'  (https://github.com/PCMDI/cmip6-cmor-tables/tree/master/Tables).
 #'
 #' @param data A numeric array.
 #' @param has_T_timeAxis A logical value. Indicates that the netCDF created will
@@ -468,7 +469,8 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
                              units = "degrees_north", vals = yvals)
   } else {
     idim <- ncdf4::ncdim_def(name = "site", longname = "SOILWAT2 simulation
-                             sites", units = "site_id", vals = 1:nrow(data))
+                             sites", units = "site_id",
+                             vals = seq_len(nrow(data)))
   }
 
   # time dimension
