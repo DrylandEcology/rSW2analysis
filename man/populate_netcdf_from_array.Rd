@@ -26,27 +26,27 @@ populate_netcdf_from_array(
 has a third, time dimension.}
 
 \item{has_Z_verticalAxis}{A logical value. Indicates that the netCDF file
-has a veritical (e.g. soil profile depths) dimension. If \var{has_T_timeAxis}
-is set to \code{FALSE} then the Z axis will be the third dimension.
-If \var{has_T_timeAxis} is set to \code{TRUE} then the Z axis will be the
-fourth dimension.}
+has a vertical (e.g. soil profile depths) dimension. If
+ \var{has_T_timeAxis} is set to \code{FALSE} then the Z axis will be the
+ third dimension. If \var{has_T_timeAxis} is set to \code{TRUE} then the
+ Z axis will be the fourth dimension.}
 
 \item{isGridded}{A logical value. Represents whether the location data is on
 a regular grid or not.}
 
 \item{grid}{filename (character). File containing the grid information
-(i.e. resolution, extent) of the data. Supported file types are the 'native'
+(i.e. resolution, extent) of the data. Supported file types are the native
 raster package format and those that can be read via rgdal.}
 
 \item{locations}{A SpatialPoints object or a matrix or data.frame with two
-columns containing long and lat values. Data must be organized by long, lat.}
+columns containing long and lat values. Data must be organized by long, lat}
 
 \item{force_v4}{A logical value. Force version 4 of netCDF.}
 
-\item{var_name}{A character string equal to the length of the number of variables.
-The length of var_name should either be 1 if there is either a time and/or
-vertical dimension \emph{or} equal to the number of columns in the array if
-there is no time or vertical dimension.}
+\item{var_name}{A character string equal to the length of the number of
+variables. The length of var_name should either be 1 if there is either a
+time and/or vertical dimension \emph{or} equal to the number of columns
+in the array if there is no time or vertical dimension.}
 }
 \value{
 This function is used for the side-effect of filling a file.
@@ -69,51 +69,54 @@ someData <- rnorm(100, 7, 30)
 data <- array(someData, c(10, 10))
 
 locations <- data.frame(X_WGS84 = c(rep(-124.5938, 5), rep(-124.5312, 5)),
-                        Y_WGS84 = rep(c(47.90625, 47.96875, 48.03125, 48.09375,
-                                   48.15625), 2))
+                        Y_WGS84 = rep(c(47.90625, 47.96875, 48.03125,
+                        48.09375, 48.15625), 2))
 
-annual_time_bounds <- c(43737, 44102, 44102, 44467, 44467, 44832, 44832, 45197,
-                        45197, 45563, 45563, 45928, 45928, 46293, 46293, 46658,
-                        46658, 47024, 47024, 47389) # beginning and end of year
+annual_time_bounds <- c(43737, 44102, 44102, 44467, 44467, 44832, 44832,
+                        45197, 45197, 45563, 45563, 45928, 45928, 46293,
+                        46293, 46658, 46658, 47024, 47024, 47389)
 
-outFileName <- 'dummynetcdf.nc'
+outFileName <- "dummynetcdf.nc"
 
 # define attributes ---------------------------------------------------------
 
 # time attribute
 time_attributes <- list(
-   units = 'days since 1900-01-01',
-   calendar = 'standard',
-   unlim = 'TRUE',
-   vals = c(43554, 43920, 44285, 44650, 45015, 45381, 45746, 46111, 46476, 46842)# mid point of year
+   units = "days since 1900-01-01",
+   calendar = "standard",
+   unlim = "TRUE",
+   vals = c(43554, 43920, 44285, 44650, 45015, 45381, 45746, 46111, 46476,
+            46842)# mid point of year
    )
 
 # variable attributes
 var_attributes <- list(
-   name = 'JulyTemp',
-   long_name = 'Annual Mean July Temperature',
-   units = 'Celsius',
-   description = 'example data!'
+   name = "JulyTemp",
+   long_name = "Annual Mean July Temperature",
+   units = "Celsius",
+   description = "example data!"
    )
 
 # CRS attributes
 crs_attributes <- list(
- proj = '+init=epsg:4326',
- grid_mapping_name = 'latitude_longitude',
+ proj = "+init=epsg:4326",
+ grid_mapping_name = "latitude_longitude",
  longitude_of_prime_meridian = 0.0,
  semi_major_axis = 6378137.0,
  inverse_flattening = 298.257223563
  )
 
-locationsSP <- sp::SpatialPoints(coords = locations, proj4string = sp::CRS(crs_attributes$proj))
+locationsSP <- sp::SpatialPoints(coords = locations,
+                                 proj4string = sp::CRS(crs_attributes$proj))
 WKTex <- raster::wkt(locationsSP)
 crs_attributes[["crs_wkt"]] <- WKTex
 
 # global attributes
 global_attributes <- list(
    title = "",
-   institution = 'Southwest Biological Science Center, U.S. Geological Survey',
-   description = 'how this data was made',
+   institution = "Southwest Biological Science Center,
+                   U.S. Geological Survey",
+   description = "how this data was made",
    source = paste(
      "SOILWAT2 (v4.2.0);",
      "rSOILWAT2 (v2.3.2);",
@@ -126,15 +129,15 @@ global_attributes <- list(
    parent_source = "CanESM2",
    parent_variant_label = "r1i1p1f1",
    product = "model-output",
-   projection = 'Geographic',
-   grid = 'WGS84',
+   projection = "Geographic",
+   grid = "WGS84",
    grid_label = "gn",
    nominal_resolution = "10 km", # calculate_nominal_resolution
    further_info_url = "https://github.com/DrylandEcology/",
    contact = "you@email.com"
    )
 
-# run create_empty_netCDF_file function --------------------------------------
+# run create_empty_netCDF_file function -------------------------------------
 create_empty_netCDF_file(
      data = data,
      has_T_timeAxis = TRUE,
@@ -171,7 +174,7 @@ populate_netcdf_from_array(
 \seealso{
 \code{create_empty_netCDF_file}
 
-\url{http://cfconventions.org/cf-conventions/cf-conventions.html} # for defining attributes
+\url{http://cfconventions.org/cf-conventions/cf-conventions.html}
 
 Demonstration of netCDF functionality in rSW2analysis vignette
 }

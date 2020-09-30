@@ -30,27 +30,28 @@ create_empty_netCDF_file(
 \item{has_T_timeAxis}{A logical value. Indicates that the netCDF created will
 have a third, time dimension.}
 
-\item{has_Z_verticalAxis}{A logical value. Indicates that the netCDF created will
-have a veritical (e.g. soil profile depths) dimension. If \var{has_T_timeAxis}
-is set to \code{FALSE} then the Z axis will be the third dimension.
-If \var{has_T_timeAxis} is set to \code{TRUE} then the Z axis will be the
-fourth dimension.}
+\item{has_Z_verticalAxis}{A logical value. Indicates that the netCDF created
+will have a vertical (e.g. soil profile depths) dimension.
+If \var{has_T_timeAxis} is set to \code{FALSE} then the Z axis will be
+the third dimension. If \var{has_T_timeAxis} is set to \code{TRUE} then
+the Z axis will be the fourth dimension.}
 
-\item{time_bounds}{A numeric vector that continuously lists the lower and upper
-bounds of each time dimension value. In the absence of a time dimension,
-this argument can be used to define the calculation period of the variable(s).}
+\item{time_bounds}{A numeric vector that continuously lists the lower and
+upper bounds of each time dimension value. In the absence of a time
+dimension, this argument can be used to define the calculation period of
+the variable(s).}
 
-\item{vert_bounds}{A numeric vector that continuously lists the lower and upper
-bounds of each vertical dimension value.}
+\item{vert_bounds}{A numeric vector that continuously lists the lower and
+upper bounds of each vertical dimension value.}
 
-\item{var_attributes}{A list of named character strings defining the variables
-of the netCDF.}
+\item{var_attributes}{A list of named character strings defining the
+variables of the netCDF.}
 
 \item{time_attributes}{A list of named character strings defining the time
 dimension of the netCDF.}
 
-\item{vertical_attributes}{A list of named character strings defining the vertical
-dimension of the netCDF.}
+\item{vertical_attributes}{A list of named character strings defining the
+vertical dimension of the netCDF.}
 
 \item{global_attributes}{A list of named character strings defining the
 global attributes of the netCDF.}
@@ -81,43 +82,42 @@ if it already exists.}
 This function is used for the side-effect of creating a file.
 }
 \description{
-This function creates a strucutured netCDF follwing CF 1.8 standards with metadata
- from an array, but without data.
+This function creates a structured netCDF following CF 1.8 standards with
+ metadata from an array, but without data.
 }
 \details{
-The user provides an array and specifies spatial information, dimensionality,
- and metadata in order to create an empty netcdf.
+The user provides an array and specifies spatial information,
+ dimensionality, and metadata in order to create an empty netcdf.
 
  The netCDF always includes at least two dimensions: Latitude and Longitude.
  Information about these dimensions are taken from the \var{locations},
- \var{isGridded}, \var{crs_attributes}, and \var{grid} arguments. One of \var{locations}
- or \var{grid} needs to be provided, but not both.
+ \var{isGridded}, \var{crs_attributes}, and \var{grid} arguments. One of
+ \var{locations} or \var{grid} needs to be provided, but not both.
 
  Additional dimensions are added by setting \var{has_T_timeAxis} and/or
  \var{has_Z_verticalAxis} to \code{TRUE}. If both flags are set to
  \code{FALSE} then the netCDF is two dimensions with one or more variables.
- The number of variables is set in the \var{var_attributes} argument. If either
- \var{has_T_timeAxis} \emph{or} \var{has_Z_verticalAxis} is set to \code{TRUE} then a
- third dimension is added to the netCDF. If \emph{both} \var{has_T_timeAxis}
- and \var{has_Z_verticalAxis} are set to TRUE, then the netCDF will have four
- dimensions, with time as the third, and vertical as the fourth. Information about
- these dimensions is set in the respective \var{bounds} and \var{attributes} arguments.
- \var{has_T_timeAxis} and/or \var{has_Z_verticalAxis} is set to \code{TRUE}
- the netCDF can \emph{only} have one variable.
+ The number of variables is set in the \var{var_attributes} argument. If
+ either \var{has_T_timeAxis} \emph{or} \var{has_Z_verticalAxis} is set to
+ \code{TRUE} then a third dimension is added to the netCDF. If \emph{both}
+ \var{has_T_timeAxis} and \var{has_Z_verticalAxis} are set to TRUE, then the
+ netCDF will have four dimensions, with time as the third, and vertical as
+ the fourth. Information about these dimensions is set in the respective
+ \var{bounds} and \var{attributes} arguments. \var{has_T_timeAxis} and/or
+ \var{has_Z_verticalAxis} is set to \code{TRUE} the netCDF can \emph{only}
+ have one variable.
 
- The \var{data} object is used to set up the size and dataType in the netCDF. The metadata
- needs to match the data. This object contains the data that you intend to
- populate the netCDF wtih. The array should be set up so that each row is a site's info,
- and each column is a value for variables, time or vertical. If the netcdf is 4d
- (time and vertical == \code{TRUE}, then need to have a 3-d data array,
- where each additional dimension contains values for each vertical horizon.
+ The \var{data} object is used to set up the size and dataType in the netCDF.
+ The metadata needs to match the data. This object contains the data that you
+ intend to populate the netCDF with. The array should be set up so that each
+ row is a site's info, and each column is a value for variables, time or
+ vertical. If the netcdf is 4d (time and vertical == \code{TRUE}, then need
+ to have a 3-d data array, where each additional dimension contains values
+ for each vertical horizon.
 
  For variable names, Use CMIP6 standard variable names where available.
- The [day](https://github.com/PCMDI/cmip6-cmor-tables/blob/master/Tables/CMIP6_day.json)
- and [Eday](https://github.com/PCMDI/cmip6-cmor-tables/blob/master/Tables/CMIP6_Eday.json)
- tables for time-varying variables and [fx](https://github.com/PCMDI/cmip6-cmor-tables/blob/master/Tables/CMIP6_fx.json)
- and [Efx](https://github.com/PCMDI/cmip6-cmor-tables/blob/master/Tables/CMIP6_Efx.json)
- for time-invariant variables.
+ The variable names are contained in the
+ [CMIP6-cmor-tables](https://github.com/PCMDI/cmip6-cmor-tables/tree/master/Tables).
 }
 \examples{
 #############################################################################
@@ -130,50 +130,53 @@ someData <- rnorm(100, 7, 30)
 data <- array(someData, c(10, 10))
 
 locations <- data.frame(X_WGS84 = c(rep(-124.5938, 5), rep(-124.5312, 5)),
-                        Y_WGS84 = rep(c(47.90625, 47.96875, 48.03125, 48.09375,
-                                   48.15625), 2))
+                        Y_WGS84 = rep(c(47.90625, 47.96875, 48.03125,
+                                      48.09375, 48.15625), 2))
 
-annual_time_bounds <- c(43737, 44102, 44102, 44467, 44467, 44832, 44832, 45197,
-                        45197, 45563, 45563, 45928, 45928, 46293, 46293, 46658,
-                        46658, 47024, 47024, 47389) # beginning and end of year
+annual_time_bounds <- c(43737, 44102, 44102, 44467, 44467, 44832, 44832,
+                        45197, 45197, 45563, 45563, 45928, 45928, 46293,
+                        46293, 46658, 46658, 47024, 47024, 47389)
 
-outFileName <- 'dummynetcdf.nc'
+outFileName <- "dummynetcdf.nc"
 
 # define attributes ---------------------------------------------------------
 
 # time attribute
 time_attributes <- list(
-   units = 'days since 1900-01-01',
-   calendar = 'standard',
-   unlim = 'TRUE',
-   vals = c(43554, 43920, 44285, 44650, 45015, 45381, 45746, 46111, 46476, 46842)# mid point of year
+   units = "days since 1900-01-01",
+   calendar = "standard",
+   unlim = "TRUE",
+   vals = c(43554, 43920, 44285, 44650, 45015, 45381, 45746, 46111, 46476,
+            46842)# mid point of year
    )
 
 # variable attributes
 var_attributes <- list(
-   name = 'JulyTemp',
-   long_name = 'Annual Mean July Temperature',
-   units = 'Celsius',
-   description = 'example data!'
+   name = "JulyTemp",
+   long_name = "Annual Mean July Temperature",
+   units = "Celsius",
+   description = "example data!"
    )
 
 # CRS attributes
 crs_attributes <- list(
-  proj = '+init=epsg:4326',
+  proj = "+init=epsg:4326",
   longitude_of_prime_meridian = 0.0,
   semi_major_axis = 6378137.0,
   inverse_flattening = 298.257223563
 )
 
-locationsSP <- sp::SpatialPoints(coords = locations, proj4string = sp::CRS(crs_attributes$proj))
+locationsSP <- sp::SpatialPoints(coords = locations,
+                                 proj4string = sp::CRS(crs_attributes$proj))
 WKTex <- raster::wkt(locationsSP)
 crs_attributes[["crs_wkt"]] <- WKTex
 
 # global attributes
 global_attributes <- list(
    title = "",
-   institution = 'Southwest Biological Science Center, U.S. Geological Survey',
-   description = 'how this data was made',
+   institution = "Southwest Biological Science Center,
+                  U.S. Geological Survey",
+   description = "how this data was made",
    source = paste(
      "SOILWAT2 (v4.2.0);",
      "rSOILWAT2 (v2.3.2);",
@@ -186,8 +189,8 @@ global_attributes <- list(
    parent_source = "CanESM2",
    parent_variant_label = "r1i1p1",
    product = "model-output",
-   projection = 'Geographic',
-   grid = 'WGS84',
+   projection = "Geographic",
+   grid = "WGS84",
    grid_label = "gn",
    nominal_resolution = "10 km", # \code{calculate_nominal_resolution}
    further_info_url = "https://github.com/DrylandEcology/",
@@ -219,5 +222,5 @@ unlink(outFileName)
 \seealso{
 \code{populate_netcdf_from_array}
 
-\url{http://cfconventions.org/cf-conventions/cf-conventions.html} # for defining attributes
+\url{http://cfconventions.org/cf-conventions/cf-conventions.html}
 }

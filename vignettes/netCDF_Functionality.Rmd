@@ -14,8 +14,9 @@ vignette: >
 
 # Overview
 
-This vignette is an overview of how to use the functions in the rSW2analysis package to
-convert arrays of rSOILWAT2 and SOILWAT2 output data into netCDFs that adhere to
+This vignette is an overview of how to use the functions in the rSW2analysis 
+package to convert arrays of rSOILWAT2 and SOILWAT2 output data into netCDFs 
+that adhere to
 [CF conventions 1.8](http://cfconventions.org/Data/cf-conventions/cf-conventions-1.8/cf-conventions.html)
 and [CMIP6 conventions](https://docs.google.com/document/d/1h0r8RZr_f3-8egBMMh7aqLwy3snpD6_MrDz1q8n5XUk/edit#).
 
@@ -26,18 +27,18 @@ conventions in regards to naming, metadata, and netCDF structure.
 
 ## Variable Data
 
-The netCDF functions in this package expect an array, in which each row represents
-data for a site or a gridcell. Columns represent one of three things:
+The netCDF functions in this package expect an array, in which each row 
+represents data for a site or a gridcell. Columns represent one of three things:
 
 * multiple different variables for one site
 * one variable with multiple measurements (time series)
 * one variable with a vertical component, e.g., multiple soil depth measurements
 
-```{r, create1d, results = 'hide'}
+```{r, create1d, results = "hide"}
 # load rSW2analysis package
 library(rSW2analysis)
 
-# dummy data for 10 sites, 10 data points (could be 10 vars, 10 times, or 10 depths)
+# dummy data for 10 sites, 10 data points (could be 10 vars, times, or depths)
 someData <- rnorm(100, 7, 30)
 data2d <- array(someData, c(10, 10))
 str(data2d)
@@ -48,12 +49,12 @@ Additionally, it is possible to have data at multiple times *and* multiple depth
 In this case, time should be organized by column, and multiple depths should be organized
 sequentially in third dimension, forming a 3d array.
 
-```{r, create3d, results = 'hide'}
+```{r, create3d, results = "hide"}
 # dummy data for 10 sites, 10 times, 3 depths.
 data3d <- array(0, c(10, 10, 3))
-data3d[,,1] <- someData
-data3d[,,2] <- someData
-data3d[,,3] <- someData
+data3d[, , 1] <- someData
+data3d[, , 2] <- someData
+data3d[, , 3] <- someData
 ```
 
 ## Location Data
@@ -69,7 +70,7 @@ in the western hemisphere, xvals should be organized from west to east, yvals fr
 If the locations are gridded, the netCDF will be created with a lat and long dimension.
 
 
-```{r, createLocs, results = 'hide'}
+```{r, createLocs, results = "hide"}
 # points on a regular spaced grid in the WGS84 CRS
 locations <- data.frame(X_WGS84 = c(rep(-124.5938, 5), rep(-124.5312, 5)),
                         Y_WGS84 = rep(c(47.90625, 47.96875, 48.03125, 48.09375,
@@ -130,13 +131,15 @@ be found [here](https://ncics.org/portfolio/other-resources/udunits2/).
 
 ```{r, timeD}
 ## time vals
+# mid point in days since 1900-01-01
 time_midpoints <- c(43920, 44285, 44650, 45015, 45381, 45746, 46111,
-                    46476, 46842, 47207)# mid point of year n days since 1900-01-01
+                    46476, 46842, 47207)
 
 ## time bounds
+# beginning and end of year in days since 1900-01-01
 annual_time_bounds <- c(43737, 44102, 44102, 44467, 44467, 44832, 44833, 45197,
                         45197, 45563, 45563, 45928, 45928, 46293, 46293, 46658,
-                        46658, 47024, 47024, 47389) # beginning and end of year in days since 1900-01-01
+                        46658, 47024, 47024, 47389)
 ```
 
 ### Depth (z) Dimension
@@ -168,31 +171,31 @@ A named list describing the variable data. The *name* and *units* fields are req
 
 The length of the "name" and "units" fields must be the same and must match the number
 of columns in the data. For example, if you have a netcdf with 10 variables,
-the array should have 10 columns, and the "name" and "unit" field ashould each
+the array should have 10 columns, and the "name" and "unit" field should each
 have 10 values.
 
 Use CMIP6 standard variable names where available. The variable names are contained in the [CMIP6-cmor-tables](https://github.com/PCMDI/cmip6-cmor-tables/tree/master/Tables).
 
-```{r, VarAtt, results = 'hide'}
+```{r, VarAtt, results = "hide"}
 # single variable
 var_attributes <- list(
-  name = 'WatYrWDD',
-  long_name = 'Water Year Wet Degree Days',
-  units = 'number of days'
+  name = "WatYrWDD",
+  long_name = "Water Year Wet Degree Days",
+  units = "number of days"
 )
 
 # multiple variables
 var_attributes2 <- list(
-    name = paste0('VarDD_', 1:10),
-    units = rep('number of days', 10)
+    name = paste0("VarDD_", 1:10),
+    units = rep("number of days", 10)
 )
 
 ```
 
 ### Time Attributes
 
-A named list describing the time dimension. The *name*, *units*, *calender*, and *vals*
-fields are required here.
+A named list describing the time dimension. The *name*, *units*, *calendar*, and
+ *vals* fields are required here.
 
 The length "vals" in the time_attribute list needs to be the same values as the
 number of columns in the array.
@@ -200,11 +203,11 @@ number of columns in the array.
 A common unit for netCDF is days since 1900. A full list of accepted time units can
 be found [here](https://ncics.org/portfolio/other-resources/udunits2/).
 
-```{r, TimeAtt, results = 'hide'}
+```{r, TimeAtt, results = "hide"}
 time_attributes <- list(
-  units = 'days since 1900-01-01',
-  calendar = 'standard',
-  unlim = 'TRUE',
+  units = "days since 1900-01-01",
+  calendar = "standard",
+  unlim = "TRUE",
   vals = time_midpoints # mid point of year
   )
 ```
@@ -218,10 +221,10 @@ The length of the "vals" in the vertical_attribute list need to match the inform
 in the array passed (either the number of cols if there is no time dimension, or the length
 of the third dimension if there is a time dimension).
 
-```{r, VertAtt, results = 'hide'}
+```{r, VertAtt, results = "hide"}
 vertical_attributes <- list(
-  units = 'cm',
-  positive = 'down', # depth is down, height is up
+  units = "cm",
+  positive = "down", # depth is down, height is up
   vals = depths_max
 )
 ```
@@ -230,34 +233,35 @@ vertical_attributes <- list(
 
 The CRS attributes describe the coordinate reference system (CRS).
 
-The only required field in the CRS attribute list is the 'proj' field. The proj
+The only required field in the CRS attribute list is the "proj" field. The proj
 field is the the CRS is proj4string from the PROJ.4 library.
 
 Additionally, we strongly recommend defining the CRS in the crs_wkt format, which
 is preferred by [netCDF convention] (http://cfconventions.org/cf-conventions/cf-conventions.html#use-of-the-crs-well-known-text-format).
 
-The *wkt* function in the raster package can be used to generate wkts, or functionality
+The *wkt* function in the raster package can be used to generate wkt, or functionality
 in the sf and sp packages (see examples below):
 * raster: raster::wkt()
 * sf package: cat(sf::st_crs(4326)$wkt, "\n")
 * sp package: cat(sp::wkt(sp::CRS(SRS_string = "EPSG:4326")), "\n") -- if rgdal is build against PROJ >= 6 and GDAL >= 3
 
 
-```{r, CRSAtt, results = 'hide'}
+```{r, CRSAtt, results = "hide"}
 
 crs_attributes <- list(
- proj = '+init=epsg:4326',
+ proj = "+init=epsg:4326",
   grid_mapping_name = "latitude_longitude",
   longitude_of_prime_meridian = 0.0,
   semi_major_axis = 6378137.0,
   inverse_flattening = 298.257223563
 )
 
-locationsSP <- sp::SpatialPoints(coords = locations, proj4string = sp::CRS(crs_attributes$proj))
+locationsSP <- sp::SpatialPoints(coords = locations,
+                                 proj4string = sp::CRS(crs_attributes$proj))
 WKTex <- raster::wkt(locationsSP)
 crs_attributes[["crs_wkt"]] <- WKTex
 
-# other ways to access wkts
+# other ways to access wkt
 sp::CRS(crs_attributes$proj)
 
 ```
@@ -271,11 +275,11 @@ what climate models were used to create the data, etc.
 The *title*, *institution*, *description*, *source_id*, *realm*, *product*, and
 *contact* fields are required.
 
-```{r, GlobalAtt, results = 'hide'}
+```{r, GlobalAtt, results = "hide"}
 global_attributes <- list(
     title = "Project Name Annual Wet Degree Days",
-    institution = 'Southwest Biological Science Center, U.S. Geological Survey',
-    description = 'methods on how this data was made',
+    institution = "Southwest Biological Science Center, U.S. Geological Survey",
+    description = "methods on how this data was made",
     source = paste(
       "SOILWAT2 (v4.2.0);",
       "rSOILWAT2 (v2.3.2);",
@@ -288,10 +292,10 @@ global_attributes <- list(
     parent_source = "CanESM2",
     parent_variant_label = "r1i1p1",
     product = "model-output",
-    projection = 'Geographic',
-    grid = 'WGS84',
+    projection = "Geographic",
+    grid = "WGS84",
     grid_label = "gn",
-    nominal_resolution = "10 km", # calculated with function calculate_nominal_resolution
+    nominal_resolution = "10 km", # calculated with calculate_nominal_resolution
     further_info_url = "https://github.com/DrylandEcology/",
     contact = "you@email.com"
     )
@@ -305,11 +309,11 @@ The function \code{calculate_nominal_resolution} will calculate the nominal reso
 of your gridded data for you. However, you need to provide a raster of the grid,
 the lat/long coordinate pairs, and the area that each cell in the grid represents.
 
-```{r, Nominal, results = 'hide'}
+```{r, Nominal, results = "hide"}
 r <- raster::raster(
   xmn = -120, xmx = -90,
   ymn = 30, ymx = 50,
-  crs ="+init=epsg:4326",
+  crs = "+init=epsg:4326",
   resolution = c(0.5, 0.5)
 )
 r[] <- seq_len(prod(dim(r)))
@@ -342,13 +346,13 @@ where:
     * LorAorE – Land (L) or atmospheric (A) or extended (E) data
       * Note: Variables (var) fall into particular categories: L, A, or E. In many cases the variables our lab generates will not be listed in the tables presented here. In this case *use E* for extended.
     * timestep – The time-step of the data contained (i.e. the units of the time dimension (e.g. year, month)).
-      * use 'fx' if data is fixed and does not have a timestp
+      * use "fx" if data is fixed and does not have a timestp
 * Project – Project Name (i.e. SEUG or RangeResil, etc.)
 * SOILWAT2 – Keep as is. Denotes that SOILWAT2 was used to generate these results
 * GCM – Name of the GCM climate data used to drive the SOILWAT2 model (e.g. IPSL5, CCSM2-1)
 * RCP – Name of experiment under which the GCM was run (e.g. RCP4.5, RCP8.5)
-* variantLabel – Variant of the GCM used (e.g. r1i1p1 (CMIP5 format), r1i1p1f1 (CCMIP6 format))
-* gn - grid_label. 'gn' is the "native grid", which should only be used if the SOILWAT2 output resolution has not been modified.
+* variantLabel – Variant of the GCM used (e.g. r1i1p1 (CMIP5 format), r1i1p1f1 (CMIP6 format))
+* gn - grid_label. "gn" is the "native grid", which should only be used if the SOILWAT2 output resolution has not been modified.
 * startT – lower time bound or start of the time period contained. Units should be the date (YearMonthDay, XXXXYYZZ).
 * endT – upper time bound or end of the time period contained. Units should be the date (YearMonthDay, XXXXYYZZ).
 
@@ -361,10 +365,10 @@ The two functions work in conjunction with one another. First, an empty netcdf i
 Then, it is filled with data.
 
 ## Example 1 - Create a 3 dimension netCDF (lat, long, time) from gridded data
-```{r, 3dGridExample, results = 'hide'}
+```{r, 3dGridExample, results = "hide"}
 library(ncdf4)
 ## locations
-outFileName <- 'dummynetcdf.nc'
+outFileName <- "dummynetcdf.nc"
 
 # create
 create_empty_netCDF_file(
@@ -399,7 +403,7 @@ populate_netcdf_from_array(
 )
 
 # check data
-data2d_2 <- read_netCDF_to_array('dummynetcdf.nc', locations)
+data2d_2 <- read_netCDF_to_array("dummynetcdf.nc", locations)
 all.equal(data2d, data2d_2)
 
 # check coords, times
@@ -412,7 +416,7 @@ lat <- c(ncvar_get(tmp, varid = "lat"))
 identical(lat, sort(unique(locations$Y_WGS84), decreasing = TRUE))
 
 timeVals <- c(ncvar_get(tmp, varid = "time"))
-identical(timeVals, time_attributes[['vals']])
+identical(timeVals, time_attributes[["vals"]])
 
 timeBnds <- c(ncvar_get(tmp, varid = "time_bnds"))
 identical(timeBnds, annual_time_bounds)
@@ -423,7 +427,7 @@ unlink(outFileName)
 ```
 ## Example 2 - Create a 2 dimension netCDF (lat, long) from gridded data
 
-```{r, 2dExample, results = 'hide'}
+```{r, 2dExample, results = "hide"}
 
 # create
 create_empty_netCDF_file(
@@ -457,7 +461,7 @@ populate_netcdf_from_array(
 )
 
 # check data
-data2d_2 <- read_netCDF_to_array('dummynetcdf.nc', locations)
+data2d_2 <- read_netCDF_to_array("dummynetcdf.nc", locations)
 all.equal(data2d, data2d_2)
 
 # check coords
@@ -476,7 +480,7 @@ unlink(outFileName)
 
 ## Example 3 - Create a 3 dimension netCDF (lat, long, time) from non-gridded data
 
-```{r, 3dNoGridExample, results = 'hide'}
+```{r, 3dNoGridExample, results = "hide"}
 
 # Set isGridded to FALSE. A site dimension will be created and have affiliated
 # lat and long coordinates
@@ -513,7 +517,7 @@ populate_netcdf_from_array(
 )
 
 # check data
-data2d_2 <- read_netCDF_to_array('dummynetcdf.nc', locations)
+data2d_2 <- read_netCDF_to_array("dummynetcdf.nc", locations)
 all.equal(data2d, data2d_2)
 
 # check coords, times
@@ -526,7 +530,7 @@ lat <- c(ncvar_get(tmp, varid = "lat"))
 identical(lat, locations$Y_WGS84)
 
 timeVals <- c(ncvar_get(tmp, varid = "time"))
-identical(timeVals, time_attributes[['vals']])
+identical(timeVals, time_attributes[["vals"]])
 
 timeBnds <- c(ncvar_get(tmp, varid = "time_bnds"))
 identical(timeBnds, annual_time_bounds)
@@ -537,7 +541,7 @@ unlink(outFileName)
 
 ## Example 4 - Create a 4 dimension netCDF (lat, long, time, depth) from gridded data
 
-```{r, 4dGridExample, results = 'hide'}
+```{r, 4dGridExample, results = "hide"}
 
 create_empty_netCDF_file(
   data = data3d,
@@ -570,7 +574,7 @@ populate_netcdf_from_array(
 )
 
 # check data
-data3d_2 <- read_netCDF_to_array('dummynetcdf.nc', locations)
+data3d_2 <- read_netCDF_to_array("dummynetcdf.nc", locations)
 all.equal(data3d, data3d_2)
 
 # check coords, times, depth
@@ -583,13 +587,13 @@ lat <- c(ncvar_get(tmp, varid = "lat"))
 identical(lat, sort(unique(locations$Y_WGS84), decreasing = TRUE))
 
 timeVals <- c(ncvar_get(tmp, varid = "time"))
-identical(timeVals, time_attributes[['vals']])
+identical(timeVals, time_attributes[["vals"]])
 
 timeBnds <- c(ncvar_get(tmp, varid = "time_bnds"))
 identical(timeBnds, annual_time_bounds)
 
 depthVals <- c(ncvar_get(tmp, varid = "vertical"))
-identical(depthVals, vertical_attributes[['vals']])
+identical(depthVals, vertical_attributes[["vals"]])
 
 depthBnds <- c(ncvar_get(tmp, varid = "vertical_bnds"))
 identical(depthBnds, depth_bounds)

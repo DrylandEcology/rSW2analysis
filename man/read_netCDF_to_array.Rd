@@ -7,7 +7,7 @@
 read_netCDF_to_array(x, locations)
 }
 \arguments{
-\item{x}{a netCDF fiile}
+\item{x}{a netCDF file}
 }
 \value{
 an array
