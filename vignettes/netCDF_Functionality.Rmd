@@ -14,8 +14,8 @@ vignette: >
 
 # Overview
 
-This vignette is an overview of how to use the functions in the rSW2analysis 
-package to convert arrays of rSOILWAT2 and SOILWAT2 output data into netCDFs 
+This vignette is an overview of how to use the functions in the rSW2analysis
+package to convert arrays of rSOILWAT2 and SOILWAT2 output data into netCDFs
 that adhere to
 [CF conventions 1.8](http://cfconventions.org/Data/cf-conventions/cf-conventions-1.8/cf-conventions.html)
 and [CMIP6 conventions](https://docs.google.com/document/d/1h0r8RZr_f3-8egBMMh7aqLwy3snpD6_MrDz1q8n5XUk/edit#).
@@ -27,7 +27,7 @@ conventions in regards to naming, metadata, and netCDF structure.
 
 ## Variable Data
 
-The netCDF functions in this package expect an array, in which each row 
+The netCDF functions in this package expect an array, in which each row
 represents data for a site or a gridcell. Columns represent one of three things:
 
 * multiple different variables for one site

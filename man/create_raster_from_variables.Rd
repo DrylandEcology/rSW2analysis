@@ -4,21 +4,10 @@
 \alias{create_raster_from_variables}
 \title{Converts values into a Raster*}
 \usage{
-create_raster_from_variables(
-  SFSW2_prj_meta = NULL,
-  locations,
-  crs,
-  data,
-  filename = ""
-)
+create_raster_from_variables(SFSW2_prj_meta, data, filename = "")
 }
 \arguments{
 \item{SFSW2_prj_meta}{An environment}
-
-\item{locations}{A numeric matrix or data.frame with coordinates. Each row is
-a point.}
-
-\item{crs}{A CRS object.}
 
 \item{data}{A vector or two-dimensional object.}
 
