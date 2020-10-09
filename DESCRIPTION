@@ -12,14 +12,15 @@ Encoding: UTF-8
 LazyData: true
 Depends:
     R (>= 3.5.0),
-    rSW2utils
+    methods
 Imports:
     rSFSW2 (>= 4.0.0),
+    rSW2utils,
     rSW2st,
     RSQLite (>= 2.1.1),
     raster (>= 2.5.8),
+    sf (>= 0.9.6),
     sp (>= 1.2.3),
-    methods,
     utils
 Suggests:
     automap,
@@ -47,5 +48,8 @@ Suggests:
     lintr,
     MuMIn,
     colorspace
+Remotes:
+    github::DrylandEcology/rSW2utils,
+    github::DrylandEcology/rSW2st
 Language: en-US
 RoxygenNote: 7.1.1
