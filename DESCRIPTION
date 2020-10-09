@@ -15,6 +15,7 @@ Depends:
     rSW2utils
 Imports:
     rSFSW2 (>= 4.0.0),
+    rSW2st,
     RSQLite (>= 2.1.1),
     raster (>= 2.5.8),
     sp (>= 1.2.3),

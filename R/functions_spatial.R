@@ -25,7 +25,7 @@ variogram_range <- function(x, project_to_utm = TRUE,
     # if region, then project to UTM coordinates with distance units of km
     # --> variogram will calculate Euclidean distances in map units
     xytemp <- sp::coordinates(points)
-    utm_zone <- get_UTM_Zone(xytemp[, 1], xytemp[, 2])
+    utm_zone <- rSW2st::get_UTM_Zone(xytemp[, 1], xytemp[, 2])
     utm_NS <- if (mean(xytemp[, 2]) > 0) " +north" else " +south"
     points_prj <- sp::spTransform(points,
       CRSobj = sp::CRS(paste0("+proj=utm +zone=", utm_zone, utm_NS,

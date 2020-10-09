@@ -126,47 +126,6 @@ calculate_cell_area <- function(sites, grid, tol = sqrt(.Machine$double.eps)) {
 }
 
 
-#' Calculate the UTM zone based on geographic location
-#'
-#' @references Convert Latitude/Longitude to UTM
-#nolint start
-#'   \url{https://www.wavemetrics.com/code-snippet/convert-latitudelongitude-utm}
-#nolint end
-#'   (attributed to Chuck Gantz).
-#'
-#' @export
-get_UTM_Zone <- function(longitude, latitude) {
-  Long <- mean(longitude)
-  Lat <- mean(latitude)
-
-  # Make sure longitude is between -180.00 .. 179.9
-  LongTemp <- Long - floor((Long + 180) / 360) * 360
-
-  ZoneNumber <- floor((LongTemp + 180) / 6) + 1
-
-  if (Lat >= 56 && Lat < 64 && LongTemp >= 3 && LongTemp < 12) {
-    ZoneNumber <- 32
-  }
-
-  # Special zones for Svalbard
-  if (Lat >= 72 && Lat < 84) {
-    if (LongTemp >= 0 && LongTemp < 9) {
-      ZoneNumber <- 31
-    } else if (LongTemp >= 9 && LongTemp < 21) {
-      ZoneNumber <- 33
-    } else if (LongTemp >= 21 && LongTemp < 33) {
-      ZoneNumber <- 35
-    } else if (LongTemp >= 33 && LongTemp < 42) {
-      ZoneNumber <- 37
-    }
-  }
-
-  ZoneNumber
-}
-
-
-
-
 #' Define (adjusted) analysis regions based on IPCC 2012 SREX
 #' Figure 3-1 and Table 3.A-1
 #'
