@@ -467,8 +467,10 @@ SREX2012_regions <- function(adjusted = FALSE) {
   slist_regions[["Australia"]] <- sp::Polygons(slist, ID = "Australia")
 
   #--- Convert to SpatialPolygons
-  wgs84 <- sp::CRS("+init=epsg:4326")
-  spoly_regions <- sp::SpatialPolygons(slist_regions, proj4string = wgs84)
+  spoly_regions <- sp::SpatialPolygons(
+    slist_regions,
+    proj4string = as(sf::st_crs(4326), "CRS")
+  )
 
   region_names <- names(spoly_regions)
   spoly_regions2 <- NULL
