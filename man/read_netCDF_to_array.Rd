@@ -2,7 +2,7 @@
 % Please edit documentation in R/functions_netCDF.R
 \name{read_netCDF_to_array}
 \alias{read_netCDF_to_array}
-\title{Read data from a netcdf into an array or matrix}
+\title{Read data from a netCDF into an array or matrix}
 \usage{
 read_netCDF_to_array(x, locations)
 }
@@ -13,5 +13,5 @@ read_netCDF_to_array(x, locations)
 an array
 }
 \description{
-Read data from a netcdf into an array or matrix
+Read data from a netCDF into an array or matrix
 }

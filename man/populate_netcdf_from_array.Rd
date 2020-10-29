@@ -2,7 +2,7 @@
 % Please edit documentation in R/functions_netCDF.R
 \name{populate_netcdf_from_array}
 \alias{populate_netcdf_from_array}
-\title{Populate an empty netcdf with values stored in an array}
+\title{Populate an empty netCDF with values stored in an array}
 \usage{
 populate_netcdf_from_array(
   file,
@@ -60,7 +60,7 @@ One of \var{locations} or \var{grid} needs to be provided, but not both.
 }
 \examples{
 #############################################################################
-# example - create an empty netcdf with a three dimensions (lat, long, time)
+# example - create an empty netCDF with a three dimensions (lat, long, time)
 #############################################################################
 
 # create dummy data ---------------------------------------------------------
@@ -127,7 +127,7 @@ global_attributes <- list(
    parent_mip_era = "CMIP5",
    parent_experiment_id = "RCP45",
    parent_source = "CanESM2",
-   parent_variant_label = "r1i1p1f1",
+   parent_variant_label = "r1i1p1",
    product = "model-output",
    projection = "Geographic",
    grid = "WGS84",

@@ -1,10 +1,10 @@
-#'  Create a structured, empty netcdf file
+#'  Create a structured, empty netCDF file
 #'
 #'  This function creates a structured netCDF following CF 1.8 standards with
 #'  metadata from an array, but without data.
 #'
 #'  The user provides an array and specifies spatial information,
-#'  dimensionality, and metadata in order to create an empty netcdf.
+#'  dimensionality, and metadata in order to create an empty netCDF.
 #'
 #'  The netCDF always includes at least two dimensions: Latitude and Longitude.
 #'  Information about these dimensions are taken from the \var{locations},
@@ -28,7 +28,7 @@
 #'  The metadata needs to match the data. This object contains the data that you
 #'  intend to populate the netCDF with. The array should be set up so that each
 #'  row is a site's info, and each column is a value for variables, time or
-#'  vertical. If the netcdf is 4d (time and vertical == \code{TRUE}, then need
+#'  vertical. If the netCDF is 4d (time and vertical == \code{TRUE}, then need
 #'  to have a 3-d data array, where each additional dimension contains values
 #'  for each vertical horizon.
 #'
@@ -79,7 +79,7 @@
 #'
 #' @examples
 #' #############################################################################
-#' # example - create an empty netcdf with a three dimensions (lat, long, time)
+#' # example - create an empty netCDF with a three dimensions (lat, long, time)
 #' #############################################################################
 #'
 #' # create dummy data ---------------------------------------------------------
@@ -151,7 +151,7 @@
 #'    projection = "Geographic",
 #'    grid = "WGS84",
 #'    grid_label = "gn",
-#'    nominal_resolution = "10 km", # \code{calculate_nominal_resolution}
+#'    nominal_resolution = "10 km",
 #'    further_info_url = "https://github.com/DrylandEcology/",
 #'    contact = "you@email.com"
 #'    )
@@ -291,7 +291,7 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
     }
   }
 
-  # Note: xvals should be organized from west to east, yvals from north to south
+  # Note: xvals should be organized from west to east, yvals from south to north
   if (!is.null(grid)) {
     xvals <- raster::xFromCol(grid, seq_len(raster::ncol(grid)))
     yvals <- raster::yFromRow(grid, seq_len(raster::nrow(grid)))
@@ -299,7 +299,7 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
   } else {
     if (inherits(loc, "Spatial")) {
       xvals <- sort(unique(loc@coords[, 1]))
-      yvals <- sort(unique(loc@coords[, 2]), decreasing = TRUE)
+      yvals <- sort(unique(loc@coords[, 2]))
       if (isGridded) grid_halfres <- loc@grid@cellsize / 2
     }
     if (inherits(loc, "sf")) {
@@ -488,7 +488,7 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
                               vals = vert_vals)
   }
 
-  # define dimensionality of netcdf variables ----------------------------------
+  # define dimensionality of netCDF variables ----------------------------------
   var_dims <- if (isGridded) list(xdim, ydim) else list(idim)
 
   if (has_T_timeAxis) {
@@ -525,7 +525,7 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
   crsdef <- ncdf4::ncvar_def(name = "crs", units = "", dim = list(),
     missval = NULL, prec = "integer")
 
-  # define dimension bands -----------------------------------------------------
+  # define dimension bounds ----------------------------------------------------
   if (isGridded) {
     lonbnddef <- ncdf4::ncvar_def(name = "lon_bnds", units = "",
                                   dim = list(bnddim, xdim), missval = NULL,
@@ -662,9 +662,6 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
 
   ncdf4::ncatt_put(nc, varid = 0, attname = "created_by",
     attval = paste0(R.version[["version.string"]], ", R packages ",
-      if (requireNamespace("rSW2analysis")) {
-        paste0("rSW2analysis v", utils::packageVersion("rSW2analysis"), " and ")
-      },
       "ncdf4 v", utils::packageVersion("ncdf4"),
       ", and ", system2("nc-config", "--version", stdout = TRUE, stderr = TRUE))
   )
@@ -698,7 +695,7 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
   invisible(TRUE)
 }
 
-#' Populate an empty netcdf with values stored in an array
+#' Populate an empty netCDF with values stored in an array
 #'
 #' This function add values to a structured netCDF created with the
 #' \code{create_empty_netCDF_file} function.
@@ -732,7 +729,7 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
 #'
 #' @examples
 #' #############################################################################
-#' # example - create an empty netcdf with a three dimensions (lat, long, time)
+#' # example - create an empty netCDF with a three dimensions (lat, long, time)
 #' #############################################################################
 #'
 #' # create dummy data ---------------------------------------------------------
@@ -799,7 +796,7 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
 #'    parent_mip_era = "CMIP5",
 #'    parent_experiment_id = "RCP45",
 #'    parent_source = "CanESM2",
-#'    parent_variant_label = "r1i1p1f1",
+#'    parent_variant_label = "r1i1p1",
 #'    product = "model-output",
 #'    projection = "Geographic",
 #'    grid = "WGS84",
@@ -866,8 +863,8 @@ populate_netcdf_from_array <- function(file, data, var_names = NULL,
   nc <- ncdf4::nc_open(file, write = TRUE)
   on.exit(ncdf4::nc_close(nc))
 
-  # check  netcdf against data and inputs ---------------------------
-  nc_dims <-  attributes(nc$dim)$names #dims of netcdf
+  # check  netCDF against data and inputs ---------------------------
+  nc_dims <-  attributes(nc$dim)$names #dims of netCDF
   nn <- NCOL(data) # number of cols of data
   data_dims <- length(dim(data)) # ndim of data
   nvars <- length(var_names) #  vars names set by user
@@ -1091,7 +1088,7 @@ read_netCDF_to_raster <- function(x, ...) {
   r
 }
 
-#' Read data from a netcdf into an array or matrix
+#' Read data from a netCDF into an array or matrix
 #'
 #' @param x a netCDF file
 #' @return an array
@@ -1104,7 +1101,7 @@ read_netCDF_to_array <- function(x, locations) {
   on.exit(ncdf4::nc_close(nc))
 
   # figure out dimensionality
-  nc_dims <-  attributes(nc$dim)$names #dims of netcdf
+  nc_dims <-  attributes(nc$dim)$names #dims of netCDF
 
   if ("site" %in% nc_dims) isGridded <- FALSE
   if ("lat" %in% nc_dims) isGridded <- TRUE

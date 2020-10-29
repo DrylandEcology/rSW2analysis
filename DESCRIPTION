@@ -47,7 +47,7 @@ Suggests:
     MuMIn,
     colorspace,
     knitr,
-    rmarkdwon,
+    rmarkdown,
     sf
 VignetteBuilder: knitr
 Language: en-US

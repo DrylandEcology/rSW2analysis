@@ -2,7 +2,7 @@
 % Please edit documentation in R/functions_netCDF.R
 \name{create_empty_netCDF_file}
 \alias{create_empty_netCDF_file}
-\title{Create a structured, empty netcdf file}
+\title{Create a structured, empty netCDF file}
 \usage{
 create_empty_netCDF_file(
   data,
@@ -87,7 +87,7 @@ This function creates a structured netCDF following CF 1.8 standards with
 }
 \details{
 The user provides an array and specifies spatial information,
- dimensionality, and metadata in order to create an empty netcdf.
+ dimensionality, and metadata in order to create an empty netCDF.
 
  The netCDF always includes at least two dimensions: Latitude and Longitude.
  Information about these dimensions are taken from the \var{locations},
@@ -111,7 +111,7 @@ The user provides an array and specifies spatial information,
  The metadata needs to match the data. This object contains the data that you
  intend to populate the netCDF with. The array should be set up so that each
  row is a site's info, and each column is a value for variables, time or
- vertical. If the netcdf is 4d (time and vertical == \code{TRUE}, then need
+ vertical. If the netCDF is 4d (time and vertical == \code{TRUE}, then need
  to have a 3-d data array, where each additional dimension contains values
  for each vertical horizon.
 
@@ -122,7 +122,7 @@ The user provides an array and specifies spatial information,
 }
 \examples{
 #############################################################################
-# example - create an empty netcdf with a three dimensions (lat, long, time)
+# example - create an empty netCDF with a three dimensions (lat, long, time)
 #############################################################################
 
 # create dummy data ---------------------------------------------------------
@@ -193,7 +193,7 @@ global_attributes <- list(
    projection = "Geographic",
    grid = "WGS84",
    grid_label = "gn",
-   nominal_resolution = "10 km", # \code{calculate_nominal_resolution}
+   nominal_resolution = "10 km",
    further_info_url = "https://github.com/DrylandEcology/",
    contact = "you@email.com"
    )
