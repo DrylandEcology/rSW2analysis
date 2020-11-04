@@ -118,7 +118,7 @@
 #'
 #' # CRS attributes
 #' crs_attributes <- list(
-#'   proj = "+init=epsg:4326",
+#'   crs_wkt = sp::wkt(sp::CRS(SRS_string = "EPSG:4326")),
 #    grid_mapping_name = "latitude_longitude",
 #'   longitude_of_prime_meridian = 0.0,
 #'   semi_major_axis = 6378137.0,
@@ -126,9 +126,7 @@
 #' )
 #'
 #' locationsSP <- sp::SpatialPoints(coords = locations,
-#'                                  proj4string = sp::CRS(crs_attributes$proj))
-#' WKTex <- raster::wkt(locationsSP)
-#' crs_attributes[["crs_wkt"]] <- WKTex
+#'                                proj4string = sp::CRS(crs_attributes$crs_wkt))
 #'
 #' # global attributes
 #' global_attributes <- list(
@@ -203,7 +201,7 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
   }
 
   # find CRS definition
-  crs <- crs_attributes[["proj"]]
+  crs <- crs_attributes[["crs_wkt"]]
   if (is.null(crs) & inherits(locations, "Spatial"))
     crs <- locations@proj4string
   if (is.null(crs) & inherits(locations, "sf"))
@@ -211,7 +209,7 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
 
   if (!missing(locations) && is.null(crs)) {
     stop("Error: If you are giving locations and not a grid, need to define the
-         CRS in the crs_attribute[['proj']] argument")
+         CRS in the crs_attribute[['crs_wkt']] argument")
   }
 
   if (file.exists(file)) {
@@ -317,11 +315,11 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
   # crs attributes setup & info ------------------------------------------------
   if (!missing(crs_attributes)) {
 
-    if ("proj" %in% names(crs_attributes)) {
-      proj <- crs_attributes[["proj"]]
-      crs_attributes[["proj"]] <- NULL
+    if ("crs_wkt" %in% names(crs_attributes)) {
+      crs_wkt <- crs_attributes[["crs_wkt"]]
+      crs_attributes[["crs_wkt"]] <- NULL
     } else {
-      stop("Need 'proj' in crs_attributes")
+      stop("Need 'crs_wkt' in crs_attributes")
     }
 
     ns_att_crs <- names(crs_attributes)
@@ -648,14 +646,19 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
                        attval = var_attributes[[natt]][k])
     }
   }
+  
+  if(isGridded) {
+    ncdf4::ncatt_put(nc, varid = var_names[k], attname = 'grid_mapping',
+                     attval = "crs: latitude, longitude")
+  }
 
   # add coordinate system attributes -------------------------------------------
-  ncdf4::ncatt_put(nc, "crs", attname = "proj", proj)
-
-   for (natt in ns_att_crs) {
+  for (natt in ns_att_crs) {
      ncdf4::ncatt_put(nc, varid = "crs", attname = natt,
                       attval = crs_attributes[[natt]])
-  }
+   }
+  
+  ncdf4::ncatt_put(nc, "crs", attname = "crs_wkt", crs_wkt)
 
   # add global attributes ------------------------------------------------------
   ncdf4::ncatt_put(nc, varid = 0, attname = "Conventions", attval = "CF-1.8")
@@ -768,7 +771,7 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
 #'
 #' # CRS attributes
 #' crs_attributes <- list(
-#'  proj = "+init=epsg:4326",
+#'  crs_wkt = sp::wkt(sp::CRS(SRS_string = "EPSG:4326")),
 #'  grid_mapping_name = "latitude_longitude",
 #'  longitude_of_prime_meridian = 0.0,
 #'  semi_major_axis = 6378137.0,
@@ -776,9 +779,7 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
 #'  )
 #'
 #' locationsSP <- sp::SpatialPoints(coords = locations,
-#'                                  proj4string = sp::CRS(crs_attributes$proj))
-#' WKTex <- raster::wkt(locationsSP)
-#' crs_attributes[["crs_wkt"]] <- WKTex
+#'                                proj4string = sp::CRS(crs_attributes$crs_wkt))
 #'
 #' # global attributes
 #' global_attributes <- list(
@@ -886,7 +887,7 @@ populate_netcdf_from_array <- function(file, data, var_names = NULL,
   #  Locations and spatial info  ----------------------------------------
   # ---------------------------------------------------------------------
 
-  crs <- ncdf4::ncatt_get(nc, varid = "crs")[["proj"]]
+  crs <- ncdf4::ncatt_get(nc, varid = "crs")[["crs_wkt"]]
 
   if (!inherits(locations, "Spatial") & is.null(crs)) {
     stop("Need CRS for locations data")
@@ -1073,7 +1074,7 @@ read_netCDF_to_raster <- function(x, ...) {
 
   if (!r_has_crs) {
     nc <- RNetCDF::open.nc(x)
-    nc_crs <- RNetCDF::att.get.nc(nc, variable = "crs", attribute = "proj4")
+    nc_crs <- RNetCDF::att.get.nc(nc, variable = "crs", attribute = "crs_wkt")
     RNetCDF::close.nc(nc)
 
     nc_crs <- raster::crs(nc_crs)

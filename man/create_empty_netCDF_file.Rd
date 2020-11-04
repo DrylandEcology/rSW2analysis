@@ -161,16 +161,14 @@ var_attributes <- list(
 
 # CRS attributes
 crs_attributes <- list(
-  proj = "+init=epsg:4326",
+  crs_wkt = sp::wkt(sp::CRS(SRS_string = "EPSG:4326")),
   longitude_of_prime_meridian = 0.0,
   semi_major_axis = 6378137.0,
   inverse_flattening = 298.257223563
 )
 
 locationsSP <- sp::SpatialPoints(coords = locations,
-                                 proj4string = sp::CRS(crs_attributes$proj))
-WKTex <- raster::wkt(locationsSP)
-crs_attributes[["crs_wkt"]] <- WKTex
+                               proj4string = sp::CRS(crs_attributes$crs_wkt))
 
 # global attributes
 global_attributes <- list(

@@ -233,23 +233,19 @@ vertical_attributes <- list(
 
 The CRS attributes describe the coordinate reference system (CRS).
 
-The only required field in the CRS attribute list is the "proj" field. The proj
-field is the the CRS is proj4string from the PROJ.4 library.
+The only required field in the CRS attribute list is the "crs_wkt" field. Defining
+the CRS using the well known text (WKT) is preferred by [netCDF convention](http://cfconventions.org/cf-conventions/cf-conventions.html#use-of-the-crs-well-known-text-format), and is a recent (10/2020) transition incorporated into rgdal, sp, and sf.
 
-Additionally, we strongly recommend defining the CRS in the crs_wkt format, which
-is preferred by [netCDF convention] (http://cfconventions.org/cf-conventions/cf-conventions.html#use-of-the-crs-well-known-text-format).
+Multiple functions exists to retrieve the WKT format from different CRS classes:
 
-The *wkt* function in the raster package can be used to generate wkt, or functionality
-in the sf and sp packages (see examples below):
-* raster: raster::wkt()
-* sf package: cat(sf::st_crs(4326)$wkt, "\n")
-* sp package: cat(sp::wkt(sp::CRS(SRS_string = "EPSG:4326")), "\n") -- if rgdal is build against PROJ >= 6 and GDAL >= 3
-
+* raster package: raster::wkt() #  proj4string -> WKT
+* sf package: sf::st_crs(4326)$wkt #"EPSG:4326" or "WGS84" or a proj4string -> WKT
+* sp package: sp::wkt(sp::CRS(SRS_string = "EPSG:4326"))
 
 ```{r, CRSAtt, results = "hide"}
 
 crs_attributes <- list(
- proj = "+init=epsg:4326",
+  crs_wkt = sp::wkt(sp::CRS(SRS_string = "EPSG:4326")),
   grid_mapping_name = "latitude_longitude",
   longitude_of_prime_meridian = 0.0,
   semi_major_axis = 6378137.0,
@@ -257,12 +253,7 @@ crs_attributes <- list(
 )
 
 locationsSP <- sp::SpatialPoints(coords = locations,
-                                 proj4string = sp::CRS(crs_attributes$proj))
-WKTex <- raster::wkt(locationsSP)
-crs_attributes[["crs_wkt"]] <- WKTex
-
-# other ways to access wkt
-sp::CRS(crs_attributes$proj)
+                                 proj4string = sp::CRS(crs_attributes$crs_wkt))
 
 ```
 
@@ -413,7 +404,7 @@ lon <- c(ncvar_get(tmp, varid = "lon"))
 identical(lon, sort(unique(locations$X_WGS84)))
 
 lat <- c(ncvar_get(tmp, varid = "lat"))
-identical(lat, sort(unique(locations$Y_WGS84), decreasing = TRUE))
+identical(lat, sort(unique(locations$Y_WGS84)))
 
 timeVals <- c(ncvar_get(tmp, varid = "time"))
 identical(timeVals, time_attributes[["vals"]])
@@ -471,7 +462,7 @@ lon <- c(ncvar_get(tmp, varid = "lon"))
 identical(lon, sort(unique(locations$X_WGS84)))
 
 lat <- c(ncvar_get(tmp, varid = "lat"))
-identical(lat, sort(unique(locations$Y_WGS84), decreasing = TRUE))
+identical(lat, sort(unique(locations$Y_WGS84)))
 
 ncdf4::nc_close(tmp)
 unlink(outFileName)
@@ -584,7 +575,7 @@ lon <- c(ncvar_get(tmp, varid = "lon"))
 identical(lon, sort(unique(locations$X_WGS84)))
 
 lat <- c(ncvar_get(tmp, varid = "lat"))
-identical(lat, sort(unique(locations$Y_WGS84), decreasing = TRUE))
+identical(lat, sort(unique(locations$Y_WGS84)))
 
 timeVals <- c(ncvar_get(tmp, varid = "time"))
 identical(timeVals, time_attributes[["vals"]])
