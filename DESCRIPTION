@@ -17,7 +17,7 @@ Imports:
     rSFSW2 (>= 4.0.0),
     RSQLite (>= 2.1.1),
     raster (>= 2.5.8),
-    sp (>= 1.2.3),
+    sp (>= 1.4.2),
     methods,
     utils
 Suggests:
@@ -48,7 +48,8 @@ Suggests:
     colorspace,
     knitr,
     rmarkdown,
-    sf
+    sf,
+    rSW2st
 VignetteBuilder: knitr
 Language: en-US
 RoxygenNote: 7.1.1

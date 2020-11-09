@@ -156,7 +156,8 @@ var_attributes <- list(
    name = "JulyTemp",
    long_name = "Annual Mean July Temperature",
    units = "Celsius",
-   description = "example data!"
+   description = "example data!",
+   grid_mapping = 'grid_mapping = "crs: lat lon"'
    )
 
 # CRS attributes
@@ -166,9 +167,6 @@ crs_attributes <- list(
   semi_major_axis = 6378137.0,
   inverse_flattening = 298.257223563
 )
-
-locationsSP <- sp::SpatialPoints(coords = locations,
-                               proj4string = sp::CRS(crs_attributes$crs_wkt))
 
 # global attributes
 global_attributes <- list(

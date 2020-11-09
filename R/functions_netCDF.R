@@ -113,7 +113,8 @@
 #'    name = "JulyTemp",
 #'    long_name = "Annual Mean July Temperature",
 #'    units = "Celsius",
-#'    description = "example data!"
+#'    description = "example data!",
+#'    grid_mapping = 'grid_mapping = "crs: lat lon"'
 #'    )
 #'
 #' # CRS attributes
@@ -124,9 +125,6 @@
 #'   semi_major_axis = 6378137.0,
 #'   inverse_flattening = 298.257223563
 #' )
-#'
-#' locationsSP <- sp::SpatialPoints(coords = locations,
-#'                                proj4string = sp::CRS(crs_attributes$crs_wkt))
 #'
 #' # global attributes
 #' global_attributes <- list(
@@ -200,16 +198,29 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
          least one of these arguments to the function.")
   }
 
-  # find CRS definition
+  # check for CRS definition
   crs <- crs_attributes[["crs_wkt"]]
-  if (is.null(crs) & inherits(locations, "Spatial"))
-    crs <- locations@proj4string
-  if (is.null(crs) & inherits(locations, "sf"))
-    crs <- sf::st_crs(locations)[[1]]
-
   if (!missing(locations) && is.null(crs)) {
     stop("Error: If you are giving locations and not a grid, need to define the
          CRS in the crs_attribute[['crs_wkt']] argument")
+  }
+
+  # check that CRS definition matches CRS of locations.
+  if(inherits(locations, "Spatial")) {
+    crsL <- sp::wkt(raster::crs(locations))
+  }
+
+  if(inherits(locations, "sf")) {
+    crsL <- sf::st_crs(locations)
+  }
+
+  if(exists("crsL")) {
+    if(crsL != crs) {
+      stop(paste0("Error: The CRS given in crs_attributes[[crs_wkt]] needs to
+                  match the CRS of the locations objects. Currently,
+                  crs_attributes[[crs_wkt]] is ", crs, "and the CRS of the
+                  locations arguments is", crsL))
+    }
   }
 
   if (file.exists(file)) {
@@ -270,24 +281,10 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
 
   # location and spatial info  ------------------------------------------------
   if (!missing(locations)) {
-    if (inherits(locations, "sf")) {
-      loc <- sf::st_geometry(locations)
-      sf::st_crs(loc) <- crs
-    } else { # assume spatial or turn to spatial
-      loc <- sp::SpatialPoints(locations)
-      sp::proj4string(loc) <- sp::CRS(crs)
-      if (isGridded) sp::gridded(loc) <- TRUE
-    }
+    loc <- rSW2st::as_points(locations, to_class = "sf", crs = crs)
   }
 
-  if (!isGridded) {
-    if (inherits(loc, "Spatial")) {
-      nloc <- dim(loc@coords)[1]
-    }
-    if (inherits(loc, "sf")) {
-      nloc <- dim(locations)[1]
-    }
-  }
+  if (!isGridded) nloc <- dim(loc)[1]
 
   # Note: xvals should be organized from west to east, yvals from south to north
   if (!is.null(grid)) {
@@ -295,21 +292,14 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
     yvals <- raster::yFromRow(grid, seq_len(raster::nrow(grid)))
     grid_halfres <- raster::res(grid) / 2
   } else {
-    if (inherits(loc, "Spatial")) {
-      xvals <- sort(unique(loc@coords[, 1]))
-      yvals <- sort(unique(loc@coords[, 2]))
-      if (isGridded) grid_halfres <- loc@grid@cellsize / 2
-    }
-    if (inherits(loc, "sf")) {
-      xvals <- sort(unique(sf::st_coordinates(locations)[, 1]))
-      yvals <- sort(unique(sf::st_coordinates(locations)[, 2]))
+    xvals <- sort(unique(sf::st_coordinates(loc)[, 1]))
+    yvals <- sort(unique(sf::st_coordinates(loc)[, 2]))
 
-      if (isGridded) {
-        loc <- as(loc, Class = "Spatial")
-        sp::gridded(loc) <- TRUE
-        grid_halfres <- loc@grid@cellsize / 2
-      }
-      }
+    if (isGridded) {
+      loc <- as(loc, Class = "Spatial")
+      sp::gridded(loc) <- TRUE
+      grid_halfres <- loc@grid@cellsize / 2
+    }
   }
 
   # crs attributes setup & info ------------------------------------------------
@@ -423,8 +413,18 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
       stop("Need unit attribute in variable attribute list")
     }
 
+    if(isGridded) {
+        if ("grid_mapping" %in% names(var_attributes)) {
+          grid_mapping <- var_attributes[["grid_mapping"]]
+          var_attributes[["grid_mapping"]] <- NULL
+        } else {
+          stop("Need grid_mapping attribute in variable attribute list")
+        }
+    }
+
     ns_att_vars <- names(var_attributes)
-  }
+
+    }
 
   # ----------------------------------------------------------------------------
   # -- Setup info for netCDF file ----------------------------------------------
@@ -468,7 +468,7 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
   } else {
     idim <- ncdf4::ncdim_def(name = "site", longname = "SOILWAT2 simulation
                              sites", units = "site_id",
-                             vals = seq_len(nrow(data)))
+                             vals = seq_len(nloc))
   }
 
   # time dimension
@@ -579,13 +579,9 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
                          start = c(1, 1), count = c(2L, var_chunksizes[2])))
   } else {
 
-    if (inherits(loc, "Spatial")) {
-      xLocs <- sp::coordinates(locations)[, 1]
-      yLocs <- sp::coordinates(locations)[, 2]
-    }
     if (inherits(loc, "sf")) {
-      xLocs <- sf::st_coordinates(locations)[, 1]
-      yLocs <- sf::st_coordinates(locations)[, 2]
+      xLocs <- sf::st_coordinates(loc)[, 1]
+      yLocs <- sf::st_coordinates(loc)[, 2]
     }
 
     try(ncdf4::ncvar_put(nc, varid = "lon",
@@ -646,18 +642,13 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
                        attval = var_attributes[[natt]][k])
     }
   }
-  
-  if(isGridded) {
-    ncdf4::ncatt_put(nc, varid = var_names[k], attname = 'grid_mapping',
-                     attval = "crs: latitude, longitude")
-  }
 
   # add coordinate system attributes -------------------------------------------
   for (natt in ns_att_crs) {
      ncdf4::ncatt_put(nc, varid = "crs", attname = natt,
                       attval = crs_attributes[[natt]])
    }
-  
+
   ncdf4::ncatt_put(nc, "crs", attname = "crs_wkt", crs_wkt)
 
   # add global attributes ------------------------------------------------------
@@ -766,7 +757,8 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
 #'    name = "JulyTemp",
 #'    long_name = "Annual Mean July Temperature",
 #'    units = "Celsius",
-#'    description = "example data!"
+#'    description = "example data!",
+#'    grid_mapping = 'grid_mapping = "crs: lat lon"'
 #'    )
 #'
 #' # CRS attributes
@@ -777,9 +769,6 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
 #'  semi_major_axis = 6378137.0,
 #'  inverse_flattening = 298.257223563
 #'  )
-#'
-#' locationsSP <- sp::SpatialPoints(coords = locations,
-#'                                proj4string = sp::CRS(crs_attributes$crs_wkt))
 #'
 #' # global attributes
 #' global_attributes <- list(
@@ -889,18 +878,27 @@ populate_netcdf_from_array <- function(file, data, var_names = NULL,
 
   crs <- ncdf4::ncatt_get(nc, varid = "crs")[["crs_wkt"]]
 
-  if (!inherits(locations, "Spatial") & is.null(crs)) {
-    stop("Need CRS for locations data")
+  # check that CRS definition matches CRS of locations.
+  if(inherits(locations, "Spatial")) {
+    crsL <- sp::wkt(raster::crs(locations))
   }
 
-  if (isGridded) {
-    if (inherits(locations, "sf")) {
-      loc <- sf::st_geometry(locations)
-      sf::st_crs(loc) <- crs
-      loc <- as(loc, Class = "Spatial")
-    } else { # either assumes its spatial class or data.frame
-      loc <- sp::SpatialPoints(locations, proj4string = sp::CRS(crs))
+  if(inherits(locations, "sf")) {
+    crsL <- sf::st_crs(locations)
+  }
+
+  if(exists("crsL")) {
+    if(crsL != crs) {
+      stop(paste0("Error: The CRS of the netCDF needs to
+                  match the CRS of the locations objects. Currently,
+                  the crs_wkt of the netCDF is ", crs, "and the CRS of the
+                  locations arguments is", crsL))
     }
+  }
+
+  # if gridded, get grid ids for inserting values into netCDF
+  if (isGridded) {
+    loc <- rSW2st::as_points(locations, to_class = "sp", crs = crs)
 
     if (is.null(grid)) {       # make grid
       sp::gridded(loc) <- TRUE
@@ -911,7 +909,6 @@ populate_netcdf_from_array <- function(file, data, var_names = NULL,
     }
 
     val_grid_ids <- raster::cellFromXY(grid_template, loc)
-
   }
 
   # ---------------------------------------------------------------------
@@ -1117,19 +1114,15 @@ read_netCDF_to_array <- function(x, locations) {
 
   if (isGridded) {
 
-    # location stuff  ---------------------------------------------------------
-    if (inherits(locations, "sf")) {
-      loc <- sf::st_geometry(locations)
-      loc <- as(loc, Class = "Spatial")
-    } else { # either assumes its spatial class or data.frame
-      loc <- sp::SpatialPoints(locations)
-    }
+    crs <- ncdf4::ncatt_get(nc, varid = "crs")[["crs_wkt"]]
+    loc <- rSW2st::as_points(locations, to_class = "sp", crs = crs)
+
     # Create grid from location values ----------------------------------------
     sp::gridded(loc) <- TRUE
     grid_template <- raster::raster(loc)
     raster::extent(grid_template) <- raster::extent(loc)
 
-    val_ids <- raster::cellFromXY(grid_template, locations)
+    val_ids <- raster::cellFromXY(grid_template, loc)
 
     nc_var <- ncdf4::ncvar_get(nc, nc_var_names[1])
     nc_var_dims <- dim(nc_var)
@@ -1137,7 +1130,6 @@ read_netCDF_to_array <- function(x, locations) {
     locDims <- nc_var_dims[1] * nc_var_dims[2]
     dimtz <- nc_var_dims[3]
     dimz <- if (has_T_timeAxis && has_Z_verticalAxis) nc_var_dims[4]
-
 
   } else {
 

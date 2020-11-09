@@ -177,18 +177,28 @@ have 10 values.
 Use CMIP6 standard variable names where available. The variable names are contained in the [CMIP6-cmor-tables](https://github.com/PCMDI/cmip6-cmor-tables/tree/master/Tables).
 
 ```{r, VarAtt, results = "hide"}
-# single variable
+# single variable, gridded
 var_attributes <- list(
+  name = "WatYrWDD",
+  long_name = "Water Year Wet Degree Days",
+  units = "number of days",
+  grid_mapping = 'grid_mapping = "crs: lat lon"'
+)
+
+# multiple variables, gridded
+var_attributes2 <- list(
+    name = paste0("VarDD_", 1:10),
+    units = rep("number of days", 10),
+    grid_mapping = 'grid_mapping = "crs: lat lon"'
+)
+
+# single variable,  not gridded
+var_attributes3 <- list(
   name = "WatYrWDD",
   long_name = "Water Year Wet Degree Days",
   units = "number of days"
 )
 
-# multiple variables
-var_attributes2 <- list(
-    name = paste0("VarDD_", 1:10),
-    units = rep("number of days", 10)
-)
 
 ```
 
@@ -251,10 +261,6 @@ crs_attributes <- list(
   semi_major_axis = 6378137.0,
   inverse_flattening = 298.257223563
 )
-
-locationsSP <- sp::SpatialPoints(coords = locations,
-                                 proj4string = sp::CRS(crs_attributes$crs_wkt))
-
 ```
 
 ### Global Attributes
