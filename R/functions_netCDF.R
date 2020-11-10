@@ -204,24 +204,22 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
     stop("Error: If you are giving locations and not a grid, need to define the
          CRS in the crs_attribute[['crs_wkt']] argument")
   }
-  
   # check that CRS is valid
   tmp <- try(sf::st_crs(crs), silent = TRUE)
   if (!inherits(tmp, "crs") || tmp == sf::NA_crs_) {
     stop("`crs_attributes[[\"crs_wkt\"]]` does not represent a valid CRS.")
   }
-  
   # check that CRS definition matches CRS of locations.
-  if(inherits(locations, "Spatial")) {
+  if (inherits(locations, "Spatial")) {
     crsL <- sp::wkt(raster::crs(locations))
   }
 
-  if(inherits(locations, "sf")) {
+  if (inherits(locations, "sf")) {
     crsL <- sf::st_crs(locations)
   }
 
-  if(exists("crsL")) {
-    if(sf::st_crs(crsL) != sf::st_crs(crs)) {
+  if (exists("crsL")) {
+    if (sf::st_crs(crsL) != sf::st_crs(crs)) {
       stop(paste0("Error: The CRS given in crs_attributes[[crs_wkt]] needs to
                   match the CRS of the locations objects. Currently,
                   crs_attributes[[crs_wkt]] is ", crs, "and the CRS of the
@@ -419,11 +417,8 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
       stop("Need unit attribute in variable attribute list")
     }
 
-    if(isGridded) {
-        if ("grid_mapping" %in% names(var_attributes)) {
-          grid_mapping <- var_attributes[["grid_mapping"]]
-          var_attributes[["grid_mapping"]] <- NULL
-        } else {
+    if (isGridded) {
+        if (!"grid_mapping" %in% names(var_attributes)) {
           stop("Need grid_mapping attribute in variable attribute list")
         }
     }
@@ -885,16 +880,16 @@ populate_netcdf_from_array <- function(file, data, var_names = NULL,
   crs <- ncdf4::ncatt_get(nc, varid = "crs")[["crs_wkt"]]
 
   # check that CRS definition matches CRS of locations.
-  if(inherits(locations, "Spatial")) {
+  if (inherits(locations, "Spatial")) {
     crsL <- sp::wkt(raster::crs(locations))
   }
 
-  if(inherits(locations, "sf")) {
+  if (inherits(locations, "sf")) {
     crsL <- sf::st_crs(locations)
   }
 
-  if(exists("crsL")) {
-    if(sf::st_crs(crsL) != sf::st_crs(crs)) {
+  if (exists("crsL")) {
+    if (sf::st_crs(crsL) != sf::st_crs(crs)) {
       stop(paste0("Error: The CRS of the netCDF needs to
                   match the CRS of the locations objects. Currently,
                   the crs_wkt of the netCDF is ", crs, "and the CRS of the
