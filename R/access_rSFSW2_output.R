@@ -173,7 +173,7 @@ extract_dbOut_to_array <- function(meta, fname_dbOut = NULL,
       # Load variables that have already been extracted for this unit of
       # "scenario x experiment" and compile list of variables that still
       # need to be extracted from dbOut
-      vars_for_isc_x_ie <- NULL
+      vars_for_isc_x_ie <- list()
 
       for (iv in seq_along(variables)) {
         if (!is.null(file)) {
@@ -192,6 +192,8 @@ extract_dbOut_to_array <- function(meta, fname_dbOut = NULL,
 
       # Extract variables from dbOut and store in rds file
       if (length(vars_for_isc_x_ie) > 0) {
+        vars_for_isc_x_ie <- unlist(vars_for_isc_x_ie)
+
         if (verbose) {
           print(paste(Sys.time(), scenarios[isc], experiments[ie]))
         }

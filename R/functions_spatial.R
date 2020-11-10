@@ -24,19 +24,19 @@ variogram_range <- function(x, project_to_utm = TRUE,
   if (project_to_utm) {
     # if region, then project to UTM coordinates with distance units of km
     # --> variogram will calculate Euclidean distances in map units
-    xytemp <- sp::coordinates(points)
-    utm_zone <- get_UTM_Zone(xytemp[, 1], xytemp[, 2])
-    utm_NS <- if (mean(xytemp[, 2]) > 0) " +north" else " +south"
-    points_prj <- sp::spTransform(points,
-      CRSobj = sp::CRS(paste0("+proj=utm +zone=", utm_zone, utm_NS,
-        " +datum=WGS84 +units=km +no_defs")))
+    points_prj <- sp::spTransform(
+      points,
+      CRSobj = as(sf::st_crs(rSW2st::epsg_for_utm(points)), "CRS")
+    )
 
   } else {
     # if global, then don't project, i.e. use long/lat with WGS84 datum
     # and distance units of meters
     # --> variogram will calculate great circle distances in kilometers(!)
-    points_prj <- sp::spTransform(points,
-      CRSobj = sp::CRS("+proj=longlat +datum=WGS84 +units=m +no_defs"))
+    points_prj <- sp::spTransform(
+      points,
+      CRSobj = as(sf::st_crs(4326), "CRS")
+    )
   }
 
   names(points_prj) <- "target"
