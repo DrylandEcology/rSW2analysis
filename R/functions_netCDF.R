@@ -198,13 +198,19 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
          least one of these arguments to the function.")
   }
 
-  # check for CRS definition
+  # check that CRS is present
   crs <- crs_attributes[["crs_wkt"]]
   if (!missing(locations) && is.null(crs)) {
     stop("Error: If you are giving locations and not a grid, need to define the
          CRS in the crs_attribute[['crs_wkt']] argument")
   }
-
+  
+  # check that CRS is valid
+  tmp <- try(sf::st_crs(crs), silent = TRUE)
+  if (!inherits(tmp, "crs") || tmp == sf::NA_crs_) {
+    stop("`crs_attributes[[\"crs_wkt\"]]` does not represent a valid CRS.")
+  }
+  
   # check that CRS definition matches CRS of locations.
   if(inherits(locations, "Spatial")) {
     crsL <- sp::wkt(raster::crs(locations))
