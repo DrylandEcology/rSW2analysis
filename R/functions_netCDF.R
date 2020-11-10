@@ -215,7 +215,7 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
   }
 
   if(exists("crsL")) {
-    if(crsL != crs) {
+    if(sf::st_crs(crsL) != sf::st_crs(crs)) {
       stop(paste0("Error: The CRS given in crs_attributes[[crs_wkt]] needs to
                   match the CRS of the locations objects. Currently,
                   crs_attributes[[crs_wkt]] is ", crs, "and the CRS of the
@@ -888,7 +888,7 @@ populate_netcdf_from_array <- function(file, data, var_names = NULL,
   }
 
   if(exists("crsL")) {
-    if(crsL != crs) {
+    if(sf::st_crs(crsL) != sf::st_crs(crs)) {
       stop(paste0("Error: The CRS of the netCDF needs to
                   match the CRS of the locations objects. Currently,
                   the crs_wkt of the netCDF is ", crs, "and the CRS of the
