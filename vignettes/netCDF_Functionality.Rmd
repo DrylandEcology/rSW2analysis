@@ -10,7 +10,6 @@ vignette: >
   %\VignetteIndexEntry{Demonstration of netCDF functionality in rSW2analysis}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
----
 
 # Overview
 
@@ -181,22 +180,22 @@ Use CMIP6 standard variable names where available. The variable names are contai
 var_attributes <- list(
   name = "WatYrWDD",
   long_name = "Water Year Wet Degree Days",
-  units = "number of days",
-  grid_mapping = 'grid_mapping = "crs: lat lon"'
+  units = "day",
+  grid_mapping = "crs: lat lon"
 )
 
 # multiple variables, gridded
 var_attributes2 <- list(
     name = paste0("VarDD_", 1:10),
-    units = rep("number of days", 10),
-    grid_mapping = 'grid_mapping = "crs: lat lon"'
+    units = rep("day", 10),
+    grid_mapping = rep("crs: lat lon", 10)
 )
 
 # single variable,  not gridded
 var_attributes3 <- list(
   name = "WatYrWDD",
   long_name = "Water Year Wet Degree Days",
-  units = "number of days"
+  units = "day"
 )
 
 

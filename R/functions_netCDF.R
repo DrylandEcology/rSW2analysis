@@ -399,16 +399,9 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
       stop("Need name attribute in variable attribute list")
     }
 
-    if ("long_name" %in% names(var_attributes)) {
-      var_longnames <- var_attributes[["long_name"]]
-      var_attributes[["long_name"]] <- NULL
-    } else {
-      var_longnames <- NULL
-    }
-
-    if (is.null(var_longnames) && !is.null(var_names)) {
-      var_longnames <- var_names
-    }
+    if (!"long_name" %in% names(var_attributes)) {
+      var_attributes[["long_name"]] <- var_names
+    } 
 
     if ("units" %in% names(var_attributes)) {
       var_units <- var_attributes[["units"]]
@@ -468,7 +461,7 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
                              units = "degrees_north", vals = yvals)
   } else {
     idim <- ncdf4::ncdim_def(name = "site", longname = "SOILWAT2 simulation
-                             sites", units = "site_id",
+                             sites", units = 1,
                              vals = seq_len(nloc))
   }
 
@@ -503,7 +496,7 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
   var_defs <- lapply(seq_len(nn), function(k)
     ncdf4::ncvar_def(name = var_names[k], units = var_units[k],
       dim = var_dims, chunksizes = var_chunksizes, missval = NAflag,
-      longname = var_longnames[k], prec = ncdf4_datatype))
+      prec = ncdf4_datatype))
 
   # add lat and long as variables if not gridded
   if (!isGridded) {
