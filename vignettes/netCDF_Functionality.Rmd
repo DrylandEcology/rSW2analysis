@@ -198,7 +198,6 @@ var_attributes3 <- list(
   units = "day"
 )
 
-
 ```
 
 ### Time Attributes
@@ -488,7 +487,7 @@ create_empty_netCDF_file(
   has_Z_verticalAxis = FALSE,
   time_bounds = annual_time_bounds,
   vert_bounds = NULL,
-  var_attributes = var_attributes,
+  var_attributes = var_attributes3,
   time_attributes  = time_attributes,
   vertical_attributes = NULL,
   crs_attributes = crs_attributes,
@@ -571,10 +570,11 @@ populate_netcdf_from_array(
 
 # check data
 data3d_2 <- read_netCDF_to_array("dummynetcdf.nc", locations)
+
 all.equal(data3d, data3d_2)
 
 # check coords, times, depth
-tmp <- ncdf4::nc_open(outFileName)
+tmp <- ncdf4::nc_open(outFileName) 
 
 lon <- c(ncvar_get(tmp, varid = "lon"))
 identical(lon, sort(unique(locations$X_WGS84)))
@@ -597,3 +597,4 @@ identical(depthBnds, depth_bounds)
 ncdf4::nc_close(tmp)
 unlink(outFileName)
 ```
+

@@ -95,7 +95,7 @@ var_attributes <- list(
    long_name = "Annual Mean July Temperature",
    units = "Celsius",
    description = "example data!",
-   grid_mapping = 'grid_mapping = "crs: lat lon"'
+   grid_mapping = "crs: lat lon"
    )
 
 # CRS attributes

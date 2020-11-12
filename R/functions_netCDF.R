@@ -114,7 +114,7 @@
 #'    long_name = "Annual Mean July Temperature",
 #'    units = "Celsius",
 #'    description = "example data!",
-#'    grid_mapping = 'grid_mapping = "crs: lat lon"'
+#'    grid_mapping = "crs: lat lon"
 #'    )
 #'
 #' # CRS attributes
@@ -401,7 +401,7 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
 
     if (!"long_name" %in% names(var_attributes)) {
       var_attributes[["long_name"]] <- var_names
-    } 
+    }
 
     if ("units" %in% names(var_attributes)) {
       var_units <- var_attributes[["units"]]
@@ -418,7 +418,7 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
 
     ns_att_vars <- names(var_attributes)
 
-    }
+  }
 
   # ----------------------------------------------------------------------------
   # -- Setup info for netCDF file ----------------------------------------------
@@ -430,20 +430,20 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
       var_chunksizes <- c(length(xvals), length(yvals))
       } else {
         var_chunksizes <- c(raster::ncol(grid), raster::nrow(grid))
-    }
+        }
     var_start <- c(1, 1)
     } else { # locations aren't gridded
-    var_chunksizes <- c(nloc)
-    var_start <- 1
+      var_chunksizes <- c(nloc)
+      var_start <- 1
+      }
+
+  if (has_Z_verticalAxis) {
+    var_chunksizes <- c(var_chunksizes, z_chunksize)
+    var_start <- c(var_start, 1)
   }
 
   if (has_T_timeAxis) {
     var_chunksizes <- c(var_chunksizes, t_chunksize)
-    var_start <- c(var_start, 1)
-  }
-
-  if (has_Z_verticalAxis) {
-    var_chunksizes <- c(var_chunksizes, z_chunksize)
     var_start <- c(var_start, 1)
   }
 
@@ -461,8 +461,15 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
                              units = "degrees_north", vals = yvals)
   } else {
     idim <- ncdf4::ncdim_def(name = "site", longname = "SOILWAT2 simulation
-                             sites", units = 1,
+                             sites", units = "1",
                              vals = seq_len(nloc))
+  }
+
+  # vertical dimension
+  if (has_Z_verticalAxis) {
+    zdim <-  ncdf4::ncdim_def(name = "vertical",
+                              units = vert_units,
+                              vals = vert_vals)
   }
 
   # time dimension
@@ -473,22 +480,15 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
                                 vals = time_vals)
   }
 
-  # vertical dimension
-  if (has_Z_verticalAxis) {
-    zdim <-  ncdf4::ncdim_def(name = "vertical",
-                              units = vert_units,
-                              vals = vert_vals)
-  }
-
   # define dimensionality of netCDF variables ----------------------------------
   var_dims <- if (isGridded) list(xdim, ydim) else list(idim)
 
-  if (has_T_timeAxis) {
-    var_dims <- c(var_dims, list(tdim))
-  }
-
   if (has_Z_verticalAxis) {
     var_dims <- c(var_dims, list(zdim))
+  }
+
+  if (has_T_timeAxis) {
+    var_dims <- c(var_dims, list(tdim))
   }
 
   if (length(time_vals) > 1 || length(vert_vals) > 1) nn <- 1 else nn <- nl
@@ -542,11 +542,12 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
 
   nc_dimvars <- if (isGridded) list(lonbnddef, latbnddef) else list()
 
-  if (has_T_timeAxis) {
-    nc_dimvars <- c(nc_dimvars, list(tbnddef))
-  }
   if (has_Z_verticalAxis) {
     nc_dimvars <- c(nc_dimvars, list(vertbnddef))
+  }
+
+  if (has_T_timeAxis) {
+    nc_dimvars <- c(nc_dimvars, list(tbnddef))
   }
 
   # ----------------------------------------------------------------------------
@@ -587,27 +588,37 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
                          start = 1, count = var_chunksizes[1]))
   }
 
+  if (has_Z_verticalAxis) {# top and bottom of each soil layer
+    try(ncdf4::ncvar_put(nc, varid = "vertical_bnds",
+                         vals = vert_bounds,
+                         start = c(1, 1), count = c(2L, z_chunksize)))
+  }
+
   if (has_T_timeAxis) { # beginning and end of each TP
         try(ncdf4::ncvar_put(nc, varid = "time_bnds",
                              vals = time_bounds,
                              start = c(1, 1), count = c(2, t_chunksize)))
-    }
-
-  if (has_Z_verticalAxis) { # top and bottom of each soil layer
-      try(ncdf4::ncvar_put(nc, varid = "vertical_bnds",
-                           vals = vert_bounds,
-                           start = c(1, 1), count = c(2L, z_chunksize)))
   }
 
   #--- add attributes ----------------------------------------------------------
 
   # add dimension attributes --------------------------------
- if (isGridded) {
+  if (isGridded) {
    ncdf4::ncatt_put(nc, "lon", "axis", "X")
    ncdf4::ncatt_put(nc, "lon", "bounds", "lon_bnds")
    ncdf4::ncatt_put(nc, "lat", "axis", "Y")
    ncdf4::ncatt_put(nc, "lat", "bounds", "lat_bnds")
    }
+
+  if (has_Z_verticalAxis) {
+    ncdf4::ncatt_put(nc, "vertical", "axis", "Z")
+    ncdf4::ncatt_put(nc, "vertical", "bounds", "vertical_bnds")
+
+    for (natt in ns_att_vert) {
+      ncdf4::ncatt_put(nc, varid = "vertical", attname = natt,
+                         attval = vertical_attributes[[natt]])
+    }
+  }
 
   if (has_T_timeAxis) {
     ncdf4::ncatt_put(nc, "time", "axis", "T")
@@ -616,16 +627,6 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
     for (natt in ns_att_time) {
       ncdf4::ncatt_put(nc, varid = "time", attname = natt,
                        attval = time_attributes[[natt]])
-    }
-  }
-
-  if (has_Z_verticalAxis) {
-    ncdf4::ncatt_put(nc, "vertical", "axis", "Z")
-    ncdf4::ncatt_put(nc, "vertical", "bounds", "vertical_bnds")
-
-    for (natt in ns_att_vert) {
-      ncdf4::ncatt_put(nc, varid = "vertical", attname = natt,
-                       attval = vertical_attributes[[natt]])
     }
   }
 
@@ -752,7 +753,7 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
 #'    long_name = "Annual Mean July Temperature",
 #'    units = "Celsius",
 #'    description = "example data!",
-#'    grid_mapping = 'grid_mapping = "crs: lat lon"'
+#'    grid_mapping = "crs: lat lon"
 #'    )
 #'
 #' # CRS attributes
@@ -853,8 +854,8 @@ populate_netcdf_from_array <- function(file, data, var_names = NULL,
   data_dims <- length(dim(data)) # ndim of data
   nvars <- length(var_names) #  vars names set by user
 
-  if (has_T_timeAxis) stopifnot("time" %in% nc_dims)
   if (has_Z_verticalAxis) stopifnot("vertical" %in% nc_dims)
+  if (has_T_timeAxis) stopifnot("time" %in% nc_dims)
   # if have both T and Z, data should be 3 dims
   if (has_T_timeAxis & has_Z_verticalAxis) stopifnot(data_dims == 3)
   # if org by vars names should be equal to nl
@@ -960,7 +961,7 @@ populate_netcdf_from_array <- function(file, data, var_names = NULL,
 
               try(ncdf4::ncvar_put(nc, varid = var_names[k],
                                    vals = vals,
-                                   start = c(1, t, z), #x-y-t-z
+                                   start = c(1, z, t), #x-y-z-t
                                    count = c(var_chunksizes, 1, 1)))
             }
           }
@@ -1020,7 +1021,7 @@ populate_netcdf_from_array <- function(file, data, var_names = NULL,
 
               try(ncdf4::ncvar_put(nc, varid = var_names[k],
                                    vals = vals,
-                                   start = c(1, 1, t, z), #x-y-t-z
+                                   start = c(1, 1, z, t), #x-y-z-t
                                    count = c(var_chunksizes, 1, 1)))
             }
           }
@@ -1123,7 +1124,7 @@ read_netCDF_to_array <- function(x, locations) {
 
     locDims <- nc_var_dims[1] * nc_var_dims[2]
     dimtz <- nc_var_dims[3]
-    dimz <- if (has_T_timeAxis && has_Z_verticalAxis) nc_var_dims[4]
+    dimt <- if (has_T_timeAxis && has_Z_verticalAxis) nc_var_dims[4]
 
   } else {
 
@@ -1134,7 +1135,7 @@ read_netCDF_to_array <- function(x, locations) {
 
     locDims <- nc_var_dims[1]
     dimtz <- nc_var_dims[2]
-    dimz <- if (has_T_timeAxis && has_Z_verticalAxis) nc_var_dims[3]
+    dimt <- if (has_T_timeAxis && has_Z_verticalAxis) nc_var_dims[3]
 
   }
 
@@ -1165,14 +1166,14 @@ read_netCDF_to_array <- function(x, locations) {
       # if there is a time AND vertical axis
 
       newArray <- array(, dim = c(locDims,
-                                  dimtz, dimz))
+                                  dimt, dimtz))
 
-      for (z in seq(dimz)) {
+      for (t in seq(dimt)) {
 
         for (i in seq(dimtz)) {
 
-          if (isGridded) v <- c(nc_var[, , i, z]) else v <- c(nc_var[, i, z])
-          newArray[, i, z] <- v[val_ids]
+          if (isGridded) v <- c(nc_var[, , i, t]) else v <- c(nc_var[, i, t])
+          newArray[, t, i] <- v[val_ids]
 
         }
       }
