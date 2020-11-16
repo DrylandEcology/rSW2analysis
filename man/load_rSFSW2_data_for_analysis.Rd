@@ -49,6 +49,7 @@ from a \var{sqlite3} database or from \var{netCDF} files.
 }
 \seealso{
 \code{\link{extract_dbOut_to_array}} for extraction from
-  \var{dbOut} database, \code{\link{create_netCDF_from_array_with_variables}}
+  \var{dbOut} database, \code{\link{create_empty_netCDF_file}} and
+  \code{\link{populate_netcdf_from_array}}
   for writing/extracting from \var{netCDF} files
 }

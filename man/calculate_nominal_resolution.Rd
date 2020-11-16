@@ -6,6 +6,15 @@
 \usage{
 calculate_nominal_resolution(grid, sites, cell_areas_km2)
 }
+\arguments{
+\item{grid}{A raster object}
+
+\item{sites}{A raster object. A numeric array, matrix, or data.frame where
+each row is a site and the columns contain values for long and lat.}
+
+\item{cell_areas_km2}{A string of numeric values. Equal in length to the
+length of sites. Area each cell represents in km2.}
+}
 \description{
 Calculate "nominal resolution" of grid
 }
@@ -28,8 +37,8 @@ calculate_nominal_resolution(
 
 }
 \references{
-\var{CMIP6 Global Attributes, DRS, Filenames, Directory Structure, and CV's}
-  10 September 2018 (v6.2.7)
+CMIP6 Global Attributes, DRS, Filenames, Directory Structure,
+  and CV’s 10 September 2018 (v6.2.7)
   Appendix 2: Algorithms for Defining the "nominal_resolution" Attribute
   \url{https://docs.google.com/document/d/1h0r8RZr_f3-8egBMMh7aqLwy3snpD6_MrDz1q8n5XUk/edit#bookmark=id.ibeh7ad2gpdi}
 }
