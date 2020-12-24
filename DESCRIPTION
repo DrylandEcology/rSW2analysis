@@ -2,8 +2,12 @@ Package: rSW2analysis
 Title: Analysis Tools for Dryland Ecology Simulation Frameworks
 Version: 0.0.0.9000
 Authors@R:
-  person("Daniel", "Schlaepfer", email = "daniel.schlaepfer@yale.edu",
+  c(person("Daniel", "Schlaepfer", email = "daniel.schlaepfer@yale.edu",
     comment = c(ORCID = "0000-0001-9973-2065"), role = c("aut", "cre")
+    ),
+    person("Caitlin", "Andrews", email = "candrews@usgs.gov",
+    role = c("aut")
+    )
   )
 Description: Tools to support analysis and access of outputs of
   a simulation experiment that was executed by rSFSW2 or rSFSTEP2.
@@ -52,6 +56,7 @@ Suggests:
     rmarkdown
 Remotes:
     github::DrylandEcology/rSW2utils,
-    github::DrylandEcology/rSW2st
+    github::DrylandEcology/rSW2st,
+    github::DrylandEcology/rSFSW2
 Language: en-US
 RoxygenNote: 7.1.1
