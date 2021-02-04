@@ -20,10 +20,20 @@
 #'   for which ensembles are calculated across participating models.
 #'
 #' @export
-calc_cellwise_ensemble <- function(data, subset = NULL,
-  funs = c("mean", "min", "max"), ..., variables = NULL,
-  sc_historical = NULL, add_historical = FALSE, dim_ens = 3L,
-  req_scens = NULL, req_dtimes = NULL, req_downs = NULL, verbose = FALSE) {
+calc_cellwise_ensemble <- function(
+  data,
+  subset = NULL,
+  funs = c("mean", "min", "max"),
+  ...,
+  variables = NULL,
+  sc_historical = NULL,
+  add_historical = FALSE,
+  dim_ens = 3L,
+  req_scens = NULL,
+  req_dtimes = NULL,
+  req_downs = NULL,
+  verbose = FALSE
+) {
 
   # Prepare functions
   funnames <- funs
@@ -64,14 +74,22 @@ calc_cellwise_ensemble <- function(data, subset = NULL,
   }
 
   # Put together ensemble grid
-  xt <- expand.grid(dn = req_downs, dt = req_dtimes, sc = req_scens,
-    stringsAsFactors = FALSE, KEEP.OUT.ATTRS = FALSE)
+  xt <- expand.grid(
+    dn = req_downs,
+    dt = req_dtimes,
+    sc = req_scens,
+    stringsAsFactors = FALSE,
+    KEEP.OUT.ATTRS = FALSE
+  )
   xt_labels <- apply(xt, 1, paste, collapse = ".")
   xtN <- length(xt_labels)
 
   # Handle historical condition
-  add_historical <- add_historical && !is.null(sc_historical) &&
+  add_historical <-
+    add_historical &&
+    !is.null(sc_historical) &&
     (sc_historical %in% has_sim_scens_id)
+
   if (add_historical) {
     xt_labels2 <- c(sc_historical, xt_labels)
   } else {
@@ -89,19 +107,36 @@ calc_cellwise_ensemble <- function(data, subset = NULL,
   }
 
   # Prepare ensemble data object
-  data_ens <- array(NA,
+  data_ens <- array(
+    data = NA,
     dim = c(nfuns, dim_data[1], length(variables), xtN2, dim_data[-dims_fix]),
-    dimnames = c(list(funnames), list(NULL), list(variables), list(xt_labels2),
-      dimnames(data)[-dims_fix]))
+    dimnames = c(
+      list(funnames),
+      list(NULL),
+      list(variables),
+      list(xt_labels2),
+      dimnames(data)[-dims_fix]
+    )
+  )
 
   # Copy historical values
   if (add_historical) {
+    ndim <- length(dim_data)
+
     for (k in seq_len(nfuns)) {
-      data_ens[k, subset, , sc_historical, ] <- data[subset, , sc_historical, ]
+      if (ndim == 4) {
+        data_ens[k, subset, , sc_historical, ] <- data[subset, , sc_historical, ]
+      } else if (ndim == 3) {
+        data_ens[k, subset, , sc_historical] <- data[subset, , sc_historical]
+      } else {
+        stop("Data object with ", ndim, " not implemented.")
+      }
     }
   }
 
   # Calculate ensemble values
+  k_offset <- if (add_historical) 1 else 0
+
   for (k in seq_len(xtN)) {
     if (verbose) {
       msg <- paste(Sys.time(), "'calc_cellwise_ensemble':", xt_labels[k])
@@ -116,21 +151,42 @@ calc_cellwise_ensemble <- function(data, subset = NULL,
 
       # Prepare to slice data/data_ens arrays by indexing matrices
       # so that we can handle an arbitrary number of dimensions
-      ils_data <- c(list(subset), list(ivariables), list(iuse),
-        lapply(dim_data[-dims_fix], seq_len))
-      mid_data <- as.matrix(expand.grid(ils_data,
-        stringsAsFactors = FALSE, KEEP.OUT.ATTRS = FALSE))
+      ils_data <- c(
+        list(subset),
+        list(ivariables),
+        list(iuse),
+        lapply(dim_data[-dims_fix], seq_len)
+      )
+      mid_data <- as.matrix(
+        expand.grid(
+          ils_data,
+          stringsAsFactors = FALSE,
+          KEEP.OUT.ATTRS = FALSE
+        )
+      )
 
-      ils_ens <- c(list(seq_len(nfuns)), list(subset), list(ivariables),
-        list(as.integer(k)), lapply(dim_data[-dims_fix], seq_len))
-      mid_ens <- as.matrix(expand.grid(ils_ens,
-        stringsAsFactors = FALSE, KEEP.OUT.ATTRS = FALSE))
+      ils_ens <- c(
+        list(seq_len(nfuns)),
+        list(subset),
+        list(ivariables),
+        list(as.integer(k_offset + k)),
+        lapply(dim_data[-dims_fix], seq_len)
+      )
+
+      mid_ens <- as.matrix(
+        expand.grid(
+          ils_ens,
+          stringsAsFactors = FALSE,
+          KEEP.OUT.ATTRS = FALSE
+        )
+      )
 
       # Apply functions
       data_ens[mid_ens] <- apply(
         array(data[mid_data], dim = lengths(ils_data)),
         MARGIN = dims_margin,
-        function(x, ...) sapply(funs, do.call, args = list(x = x, ...)))
+        function(x, ...) sapply(funs, do.call, args = list(x = x, ...))
+      )
 
     } else {
       if (verbose) {
@@ -480,12 +536,19 @@ calc_regionwise_ensemble <- function(SFSW2_prj_meta, data, subset = NULL,
 #'   Inflated Uncertainty in Multimodel-Based Regional Climate Projections.
 #'   Geophysical Research Letters 44:11606–11613.
 #'
-calculate_ensembles <- function(meta, data, data_names = names(data), subset,
-  cell_area_km2, id_region,
+calculate_ensembles <- function(
+  meta,
+  data,
+  data_names = names(data),
+  subset,
+  cell_area_km2,
+  id_region,
   sc_historical, req_Downs, req_dTime,
   ens_wises = c("EnsCW", "EnsRW", "EnsGW"),
   ens_funs = c("min", "mean", "median", "max", "span", "agreement", "majority"),
-  path, ftag) {
+  path,
+  ftag
+) {
 
   ens_wises <- match.arg(ens_wises, several.ok = TRUE)
   ens_funs <- match.arg(ens_funs, several.ok = TRUE)
@@ -504,7 +567,8 @@ calculate_ensembles <- function(meta, data, data_names = names(data), subset,
     req_Downs = as.character(req_Downs),
     req_dTime = as.character(req_dTime),
     ens_wises = as.character(ens_wises),
-    ens_funs = as.character(ens_funs))
+    ens_funs = as.character(ens_funs)
+  )
   cid <- digest::digest(temp, algo = "sha1")
 
   # Output container
@@ -518,8 +582,10 @@ calculate_ensembles <- function(meta, data, data_names = names(data), subset,
     for (k in seq_along(data_names)) {
       print(paste(Sys.time(), dQuote(ew), "ensembles for", data_names[k]))
 
-      temp <- list(data = data[[data_names[k]]],
-        data_names = as.character(data_names[k]))
+      temp <- list(
+        data = data[[data_names[k]]],
+        data_names = as.character(data_names[k])
+      )
       fid <- digest::digest(temp, algo = "sha1")
 
       fname_EnsW <- file.path(path, paste0(ftag, "_", cid, "_", fid, ".rds"))
@@ -533,44 +599,75 @@ calculate_ensembles <- function(meta, data, data_names = names(data), subset,
             # (i) cell-wise ensembles: for each cell, foo across GCMs are
             # extracted from the GCM with the foo-rank based on values for each
             # cell independently
-            calc_cellwise_ensemble(meta,
-              data = data[[data_names[k]]], subset = subset, funs = ens_funs,
-              na.rm = TRUE, verbose = TRUE)
+            calc_cellwise_ensemble(
+              data = data[[data_names[k]]],
+              subset = subset,
+              add_historical = TRUE,
+              sc_historical = sc_historical,
+              funs = ens_funs,
+              na.rm = TRUE,
+              verbose = TRUE
+            )
 
           } else if (ew == "EnsRW") {
             # (ii) region-wise ensembles: for each cell, foo across GCMs are
             # extracted from the GCM with the foo-rank based on their regional
             # mean values
-            calc_regionwise_ensemble(meta,
-              data = data[[data_names[k]]], subset = subset, region = id_region,
-              area = cell_area_km2, fcentral = "median", funs = ens_funs,
-              na.rm = TRUE, verbose = TRUE)
+            calc_regionwise_ensemble(
+              SFSW2_prj_meta = meta,
+              data = data[[data_names[k]]],
+              subset = subset,
+              add_historic = TRUE,
+              region = id_region,
+              area = cell_area_km2,
+              fcentral = "median",
+              funs = ens_funs,
+              na.rm = TRUE,
+              verbose = TRUE
+            )
 
           } else if (ew == "EnsGW") {
             # (iii) global ensembles: for each cell, foo across GCMs are
             # extracted from the GCM with the foo-rank based on their global
             # mean values
-            calc_extentwise_ensemble(meta,
-              data = data[[data_names[k]]], subset = subset,
-              area = cell_area_km2, fcentral = "median", funs = ens_funs,
-              na.rm = TRUE, verbose = TRUE)[["ensemble_values"]]
+            calc_extentwise_ensemble(
+              SFSW2_prj_meta = meta,
+              data = data[[data_names[k]]],
+              subset = subset,
+              add_historic = TRUE,
+              area = cell_area_km2,
+              fcentral = "median",
+              funs = ens_funs,
+              na.rm = TRUE,
+              verbose = TRUE
+            )[["ensemble_values"]]
           }
 
         # Cast to same structure as `data`:
         # (i) fold 1st into 4th dimension
-        dats_Ens[[ew]][[data_names[k]]] <- reshape2::acast(reshape2::melt(temp),
-          Var2 ~ Var3 ~ Var4 + Var1)
+        dats_Ens[[ew]][[data_names[k]]] <- reshape2::acast(
+          reshape2::melt(temp),
+          Var2 ~ Var3 ~ Var4 + Var1
+        )
         # (ii) fix naming scheme of scenario/3rd dimension
         sctemp <- dimnames(dats_Ens[[ew]][[data_names[k]]])[[3]]
         sctemp2 <- strsplit(sctemp, split = "_")
         itemp <- grep(sc_historical, sctemp)
         for (k2 in itemp) {
-          sctemp[k2] <- paste(req_Downs, req_dTime[1], sctemp2[[k2]][1],
-            sctemp2[[k2]][2], sep = ".")
+          sctemp[k2] <- paste(
+            req_Downs,
+            req_dTime[1],
+            sctemp2[[k2]][1],
+            sctemp2[[k2]][2],
+            sep = "."
+          )
         }
         for (k2 in seq_along(sctemp)[-itemp]) {
-          sctemp[k2] <- paste(req_Downs, req_dTime[2], sctemp2[[k2]][1],
-            sctemp2[[k2]][2], sep = ".")
+          sctemp[k2] <- paste(
+            sctemp2[[k2]][1],
+            sctemp2[[k2]][2],
+            sep = "."
+          )
         }
         dimnames(dats_Ens[[ew]][[data_names[k]]])[[3]] <- sctemp
 
@@ -580,14 +677,19 @@ calculate_ensembles <- function(meta, data, data_names = names(data), subset,
 
 
     # Make sure that we didn't introduce NAs
-    hasNAs <- sapply(dats_Ens[[ew]], function(x) {
-      temp <- grep(sc_historical, dimnames(x)[[3]])
-      anyNA(x[subset, , -temp])
-    })
+    hasNAs <- sapply(
+      dats_Ens[[ew]],
+      function(x) {
+        temp <- grep(sc_historical, dimnames(x)[[3]])
+        anyNA(x[subset, , -temp])
+      }
+    )
 
     if (any(hasNAs)) {
-      stop("We have NAs in: ", paste(shQuote(names(hasNAs)[hasNAs]),
-        collapse = ", "))
+      stop(
+        "We have NAs in: ",
+        paste(shQuote(names(hasNAs)[hasNAs]), collapse = ", ")
+      )
     }
   }
 
