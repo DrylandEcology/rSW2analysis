@@ -267,8 +267,8 @@ plot_matrix_of_panels <- function(n_panels,
     grDevices::dev.off()
   })
 
-  # Panel count
-  i <- 1
+  # Panel count / panel identifier
+  i <- c(1, 1)
 
   # Panels
   for (k1 in seq_len(n_panels[1])) for (k2 in seq_len(n_panels[2])) {
@@ -276,7 +276,7 @@ plot_matrix_of_panels <- function(n_panels,
 
     if (all(is.na(x)) || is.null(x)) {
       graphics::plot.new()
-      i <- i + 1
+      i[1] <- i[1] + 1
       next
     }
 
@@ -286,29 +286,38 @@ plot_matrix_of_panels <- function(n_panels,
         type = type_matrix[k1, k2][[1]],
         zlim = zlim_matrix[k1, k2][[1]],
         col_zero = col_zero,
-        col_rev = col_rev)
+        col_rev = col_rev
+      )
 
       # Plot map
-      rdata <- draw_GISSM_map(x, meta, fextend, map_xlim, map_ylim,
+      rdata <- draw_GISSM_map(
+        x,
+        meta,
+        fextend,
+        map_xlim,
+        map_ylim,
         col_desc = ctemp,
-        annx = i %in% id_ticks1,
-        anny = i %in% id_ticks2,
+        annx = i[1] %in% id_ticks1,
+        anny = i[1] %in% id_ticks2,
         fexp_axis = fexp_axis,
-        pborders = pborders)
+        pborders = pborders
+      )
 
     } else if (isTRUE(is_smoothScatter[k1, k2])) {
-      draw_smoothScatter_panel(x = x[, 1], y = x[, 2],
+      draw_smoothScatter_panel(
+        x = x[, 1], y = x[, 2],
         asp = dots[["asp"]],
         add_loess = dots[["add_loess"]],
         add_1to1 = dots[["add_1to1"]],
         xlim = xlim_matrix[k1, k2][[1]],
         ylim = ylim_matrix[k1, k2][[1]],
-        annx = i %in% id_ticks1,
-        anny = i %in% id_ticks2,
+        annx = i[1] %in% id_ticks1,
+        anny = i[1] %in% id_ticks2,
         xlab = label_axis_matrix[k1, k2][[1]][1],
         ylab = label_axis_matrix[k1, k2][[1]][2],
         is_plotmath = c(FALSE, FALSE),
-        fexp_axis = fexp_axis)
+        fexp_axis = fexp_axis
+      )
 
     }
 
@@ -323,22 +332,27 @@ plot_matrix_of_panels <- function(n_panels,
 
     # Add map legend
     if (isTRUE(is_map[k1, k2]) && add_legend[k1, k2]) {
-      add_legend_to_GISSM_map(rdata, dbox,
+      add_legend_to_GISSM_map(
+        rdata,
+        dbox,
         col_desc = ctemp,
         label = label_title_matrix[k1, k2][[1]],
         is_plotmath = is_plotmath_matrix[k1, k2],
         label_str = label_title_str_matrix[k1, k2][[1]],
         add_title = use_labels == "legend_title",
-        fexp_legend = fexp_legend)
+        fexp_legend = fexp_legend
+      )
     }
 
     # Add panel identifier
     if (N_prj > 1) {
-      add_panel_identifier(i,
+      add_panel_identifier(
+        i[2],
         add_label = use_labels == "panel_identifier",
         label = label_title_matrix[k1, k2][[1]],
         is_plotmath = is_plotmath_matrix[k1, k2],
-        fexp = fexp)
+        fexp = fexp
+      )
     }
 
     i <- i + 1
