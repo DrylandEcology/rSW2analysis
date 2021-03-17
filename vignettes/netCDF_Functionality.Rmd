@@ -388,7 +388,7 @@ create_empty_netCDF_file(
 populate_netcdf_from_array(
   file = outFileName,
   data = data2d,
-  var_names <- var_attributes$name,
+  var_names = var_attributes$name,
   has_T_timeAxis = TRUE,
   has_Z_verticalAxis = FALSE,
   isGridded = TRUE,
@@ -574,7 +574,7 @@ data3d_2 <- read_netCDF_to_array("dummynetcdf.nc", locations)
 all.equal(data3d, data3d_2)
 
 # check coords, times, depth
-tmp <- ncdf4::nc_open(outFileName) 
+tmp <- ncdf4::nc_open(outFileName)
 
 lon <- c(ncvar_get(tmp, varid = "lon"))
 identical(lon, sort(unique(locations$X_WGS84)))

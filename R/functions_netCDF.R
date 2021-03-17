@@ -284,25 +284,37 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
                    float = -3.4e+38, double = -1.7e+308)
 
   # location and spatial info  ------------------------------------------------
-  if (!missing(locations)) {
-    loc <- rSW2st::as_points(locations, to_class = "sf", crs = crs)
-  }
-
-  if (!isGridded) nloc <- dim(loc)[1]
 
   # Note: xvals should be organized from west to east, yvals from south to north
   if (!is.null(grid)) {
+    # coordinates of cell centers
     xvals <- raster::xFromCol(grid, seq_len(raster::ncol(grid)))
     yvals <- raster::yFromRow(grid, seq_len(raster::nrow(grid)))
     grid_halfres <- raster::res(grid) / 2
-  } else {
-    xvals <- sort(unique(sf::st_coordinates(loc)[, 1]))
-    yvals <- sort(unique(sf::st_coordinates(loc)[, 2]))
 
+  } else {
     if (isGridded) {
-      loc <- as(loc, Class = "Spatial")
-      sp::gridded(loc) <- TRUE
-      grid_halfres <- loc@grid@cellsize / 2
+      if (is(locations, "SpatialGrid")) {
+        loc <- locations
+      } else {
+        loc <- rSW2st::as_points(locations, to_class = "sp", crs = crs)
+        sp::gridded(loc) <- TRUE # Converts to SpatialGrid or SpatialPixel
+        loc <- as(loc, Class = "SpatialGrid") # Make sure this is SpatialGrid
+      }
+
+      tmp1 <- sp::gridparameters(loc)
+      grid_halfres <- tmp1[, "cellsize"] / 2
+      tmp_coord <- sp::coordinates(loc) # coordinates of cell centers
+      stopifnot(nrow(tmp_coord) == prod(tmp1[, "cells.dim"]))
+      xvals <- sort(unique(tmp_coord[, 1]))
+      yvals <- sort(unique(tmp_coord[, 2]))
+
+    } else {
+      loc <- rSW2st::as_points(locations, to_class = "sf", crs = crs)
+      nloc <- nrow(loc)
+      tmp_coord <- sf::st_coordinates(loc) # coordinates of point locations
+      xvals <- tmp_coord[, 1]
+      yvals <- tmp_coord[, 2]
     }
   }
 
@@ -428,14 +440,17 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
   if (isGridded) {
     if (is.null(grid)) {
       var_chunksizes <- c(length(xvals), length(yvals))
-      } else {
-        var_chunksizes <- c(raster::ncol(grid), raster::nrow(grid))
-        }
+    } else {
+      var_chunksizes <- c(raster::ncol(grid), raster::nrow(grid))
+    }
+
     var_start <- c(1, 1)
-    } else { # locations aren't gridded
-      var_chunksizes <- c(nloc)
-      var_start <- 1
-      }
+
+  } else {
+    # locations aren't gridded
+    var_chunksizes <- nloc
+    var_start <- 1
+  }
 
   if (has_Z_verticalAxis) {
     var_chunksizes <- c(var_chunksizes, z_chunksize)
@@ -574,17 +589,12 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
                          start = c(1, 1), count = c(2L, var_chunksizes[2])))
   } else {
 
-    if (inherits(loc, "sf")) {
-      xLocs <- sf::st_coordinates(loc)[, 1]
-      yLocs <- sf::st_coordinates(loc)[, 2]
-    }
-
     try(ncdf4::ncvar_put(nc, varid = "lon",
-                         vals = xLocs,
-                         start = 1, count = c(var_chunksizes[1])))
+                         vals = xvals,
+                         start = 1, count = var_chunksizes[1]))
 
     try(ncdf4::ncvar_put(nc, varid = "lat",
-                         vals = yLocs,
+                         vals = yvals,
                          start = 1, count = var_chunksizes[1]))
   }
 
