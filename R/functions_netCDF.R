@@ -914,6 +914,9 @@ populate_netcdf_from_array <- function(file, data, var_names = NULL,
   # ---------------------------------------------------------------------
   # Add data ------------------------------------------------------------
   # ---------------------------------------------------------------------
+  if (NCOL(data) == 1 && is.null(dim(data))) {
+    data <- matrix(data, ncol = 1, dimnames = list(NULL, names(data)))
+  }
 
   for (k in seq(nvars)) {
 
