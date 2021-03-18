@@ -181,7 +181,14 @@
 create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
   has_Z_verticalAxis = FALSE, time_bounds, vert_bounds, var_attributes,
   time_attributes, vertical_attributes, global_attributes,
-  crs_attributes, isGridded = TRUE, grid = NULL, locations,
+  crs_attributes,
+  xy_attributes = list(
+    name = c("lon", "lat"),
+    standard_name = c("longitude", "latitude"),
+    long_name = c("Longitude", "Latitude"),
+    units = c("degrees_east", "degrees_north")
+  ),
+  isGridded = TRUE, grid = NULL, locations,
   file, force_v4 = TRUE, overwrite = FALSE, verbose = FALSE) {
 
   # ---------------------------------------------------------------------
@@ -463,12 +470,21 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
   bnddim <- ncdf4::ncdim_def(name = "bnds", units = "", vals = seq_len(2L),
                                            create_dimvar = FALSE)
 
-  # lat and long dimension
+  # x and y dimension
   if (isGridded) {
-    xdim <- ncdf4::ncdim_def(name = "lon", longname = "Longitude",
-                             units = "degrees_east", vals = xvals)
-    ydim <- ncdf4::ncdim_def(name = "lat", longname = "Latitude",
-                             units = "degrees_north", vals = yvals)
+    xdim <- ncdf4::ncdim_def(
+      name = xy_attributes[["name"]][1],
+      longname = xy_attributes[["long_name"]][1],
+      units = xy_attributes[["units"]][1],
+      vals = xvals
+    )
+    ydim <- ncdf4::ncdim_def(
+      name = xy_attributes[["name"]][2],
+      longname = xy_attributes[["long_name"]][2],
+      units = xy_attributes[["units"]][2],
+      vals = yvals
+    )
+
   } else {
     idim <- ncdf4::ncdim_def(name = "site", longname = "SOILWAT2 simulation
                              sites", units = "1",
@@ -508,19 +524,28 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
       dim = var_dims, chunksizes = var_chunksizes, missval = NAflag,
       prec = ncdf4_datatype))
 
-  # add lat and long as variables if not gridded
+  # add x and y as variables if not gridded
   if (!isGridded) {
-   latvar <-  ncdf4::ncvar_def(name = "lat", units = "degrees_north",
-                               dim = list(idim), chunksizes = var_chunksizes[1],
-                               missval = NAflag, longname = "latitude",
-                               prec = "double")
+    xvar <- ncdf4::ncvar_def(
+      name = xy_attributes[["name"]][1],
+      longname = xy_attributes[["long_name"]][1],
+      units = xy_attributes[["units"]][1],
+      dim = list(idim),
+      chunksizes = var_chunksizes[1],
+      missval = NAflag,
+      prec = "double"
+    )
+    yvar <- ncdf4::ncvar_def(
+      name = xy_attributes[["name"]][2],
+      longname = xy_attributes[["long_name"]][2],
+      units = xy_attributes[["units"]][2],
+      dim = list(idim),
+      chunksizes = var_chunksizes[1],
+      missval = NAflag,
+      prec = "double"
+    )
 
-   longvar <- ncdf4::ncvar_def(name = "lon", units = "degrees_east",
-                               dim = list(idim), chunksizes = var_chunksizes[1],
-                               missval = NAflag, longname = "longitude",
-                               prec = "double")
-
-   var_defs <- c(var_defs, list(latvar, longvar))
+    var_defs <- c(var_defs, list(yvar, xvar))
   }
 
   # CRS defintion --------------------------------------------------------------
@@ -529,15 +554,25 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
 
   # define dimension bounds ----------------------------------------------------
   if (isGridded) {
-    lonbnddef <- ncdf4::ncvar_def(name = "lon_bnds", units = "",
-                                  dim = list(bnddim, xdim), missval = NULL,
-                                  chunksizes = c(2L, var_chunksizes[1]),
-                                  prec = "double")
+    bnds_name <- paste0(xy_attributes[["name"]][1:2], "_bnds")
 
-    latbnddef <- ncdf4::ncvar_def(name = "lat_bnds", units = "",
-                                  dim = list(bnddim, ydim), missval = NULL,
-                                  chunksizes = c(2L, var_chunksizes[2]),
-                                  prec = "double")
+    xbnddef <- ncdf4::ncvar_def(
+      name = bnds_name[1],
+      units = "",
+      dim = list(bnddim, xdim),
+      missval = NULL,
+      chunksizes = c(2L, var_chunksizes[1]),
+      prec = "double"
+    )
+
+    ybnddef <- ncdf4::ncvar_def(
+      name = bnds_name[2],
+      units = "",
+      dim = list(bnddim, ydim),
+      missval = NULL,
+      chunksizes = c(2L, var_chunksizes[2]),
+      prec = "double"
+    )
   }
 
   if (has_T_timeAxis) {
@@ -552,7 +587,7 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
                                     chunksizes = c(2L, 1L), prec = "double")
   }
 
-  nc_dimvars <- if (isGridded) list(lonbnddef, latbnddef) else list()
+  nc_dimvars <- if (isGridded) list(xbnddef, ybnddef) else list()
 
   if (has_Z_verticalAxis) {
     nc_dimvars <- c(nc_dimvars, list(vertbnddef))
@@ -575,22 +610,22 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
 
  #--- write values of dimension bounds -----------------------------------------
   if (isGridded) {
-    try(ncdf4::ncvar_put(nc, varid = "lon_bnds",
+    try(ncdf4::ncvar_put(nc, varid = bnds_name[1],
                         vals = rbind(xvals - grid_halfres[1],
                                      xvals + grid_halfres[1]),
                         start = c(1, 1), count = c(2L, var_chunksizes[1])))
 
-    try(ncdf4::ncvar_put(nc, varid = "lat_bnds",
+    try(ncdf4::ncvar_put(nc, varid = bnds_name[2],
                          vals = rbind(yvals + grid_halfres[2],
                                       yvals - grid_halfres[2]),
                          start = c(1, 1), count = c(2L, var_chunksizes[2])))
   } else {
 
-    try(ncdf4::ncvar_put(nc, varid = "lon",
+    try(ncdf4::ncvar_put(nc, varid = xy_attributes[["name"]][1],
                          vals = xvals,
                          start = 1, count = var_chunksizes[1]))
 
-    try(ncdf4::ncvar_put(nc, varid = "lat",
+    try(ncdf4::ncvar_put(nc, varid = xy_attributes[["name"]][2],
                          vals = yvals,
                          start = 1, count = var_chunksizes[1]))
   }
@@ -609,12 +644,24 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
 
   #--- add attributes ----------------------------------------------------------
 
+  # add standard_name attribute of x/y variables
+  if ("standard_name" %in% names(xy_attributes)) {
+    for (k in seq_len(2)) {
+      ncdf4::ncatt_put(
+        nc,
+        varid = xy_attributes[["name"]][k],
+        attname = "standard_name",
+        attval = xy_attributes[["standard_name"]][k]
+      )
+    }
+  }
+
   # add dimension attributes --------------------------------
   if (isGridded) {
-   ncdf4::ncatt_put(nc, "lon", "axis", "X")
-   ncdf4::ncatt_put(nc, "lon", "bounds", "lon_bnds")
-   ncdf4::ncatt_put(nc, "lat", "axis", "Y")
-   ncdf4::ncatt_put(nc, "lat", "bounds", "lat_bnds")
+   ncdf4::ncatt_put(nc, xy_attributes[["name"]][1], "axis", "X")
+   ncdf4::ncatt_put(nc, xy_attributes[["name"]][1], "bounds", bnds_name[1])
+   ncdf4::ncatt_put(nc, xy_attributes[["name"]][2], "axis", "Y")
+   ncdf4::ncatt_put(nc, xy_attributes[["name"]][2], "bounds", bnds_name[2])
    }
 
   if (has_Z_verticalAxis) {
