@@ -438,12 +438,7 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
 
   # Starts and chunksizes ------------------------------------------------------
   if (isGridded) {
-    if (is.null(grid)) {
-      var_chunksizes <- c(length(xvals), length(yvals))
-    } else {
-      var_chunksizes <- c(raster::ncol(grid), raster::nrow(grid))
-    }
-
+    var_chunksizes <- c(length(xvals), length(yvals))
     var_start <- c(1, 1)
 
   } else {
