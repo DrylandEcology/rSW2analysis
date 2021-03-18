@@ -513,12 +513,12 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
    latvar <-  ncdf4::ncvar_def(name = "lat", units = "degrees_north",
                                dim = list(idim), chunksizes = var_chunksizes[1],
                                missval = NAflag, longname = "latitude",
-                               prec = ncdf4_datatype)
+                               prec = "double")
 
    longvar <- ncdf4::ncvar_def(name = "lon", units = "degrees_east",
                                dim = list(idim), chunksizes = var_chunksizes[1],
                                missval = NAflag, longname = "longitude",
-                               prec = ncdf4_datatype)
+                               prec = "double")
 
    var_defs <- c(var_defs, list(latvar, longvar))
   }
@@ -531,23 +531,25 @@ create_empty_netCDF_file <- function(data, has_T_timeAxis = FALSE,
   if (isGridded) {
     lonbnddef <- ncdf4::ncvar_def(name = "lon_bnds", units = "",
                                   dim = list(bnddim, xdim), missval = NULL,
-                                  chunksizes = c(2L, var_chunksizes[1]))
+                                  chunksizes = c(2L, var_chunksizes[1]),
+                                  prec = "double")
 
     latbnddef <- ncdf4::ncvar_def(name = "lat_bnds", units = "",
                                   dim = list(bnddim, ydim), missval = NULL,
-                                  chunksizes = c(2L, var_chunksizes[2]))
+                                  chunksizes = c(2L, var_chunksizes[2]),
+                                  prec = "double")
   }
 
   if (has_T_timeAxis) {
       tbnddef <- ncdf4::ncvar_def(name = "time_bnds", units = "",
                                 dim = list(bnddim, tdim), missval = NULL,
-                                chunksizes = c(2L, 1L))
+                                chunksizes = c(2L, 1L), prec = "double")
   }
 
   if (has_Z_verticalAxis) {
       vertbnddef <- ncdf4::ncvar_def(name = "vertical_bnds", units = "",
                                     dim = list(bnddim, zdim), missval = NULL,
-                                    chunksizes = c(2L, 1L))
+                                    chunksizes = c(2L, 1L), prec = "double")
   }
 
   nc_dimvars <- if (isGridded) list(lonbnddef, latbnddef) else list()
