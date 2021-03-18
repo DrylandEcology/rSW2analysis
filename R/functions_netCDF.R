@@ -905,7 +905,7 @@ populate_netcdf_from_array <- function(file, data, var_names = NULL,
       grid_template <- raster::raster(loc)
       raster::extent(grid_template) <- raster::extent(loc)
     } else {
-      grid_template <- rep(NA, raster::ncell(grid))
+      grid_template <- raster::init(grid, fun = function(x) rep(NA, x))
     }
 
     val_grid_ids <- raster::cellFromXY(grid_template, loc)
