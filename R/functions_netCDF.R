@@ -495,9 +495,12 @@ create_empty_netCDF_file <- function(
     )
 
   } else {
-    idim <- ncdf4::ncdim_def(name = "site", longname = "SOILWAT2 simulation
-                             sites", units = "1",
-                             vals = seq_len(nloc))
+    idim <- ncdf4::ncdim_def(
+      name = "site",
+      longname = "SOILWAT2 simulation sites",
+      units = "1",
+      vals = seq_len(nloc)
+    )
   }
 
   # vertical dimension
