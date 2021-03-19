@@ -159,7 +159,6 @@ get_isoline_polygon <- function(x, site_locations, grid, subset, alpha) {
   }
 
   rtmp <- create_raster_from_variables(
-    SFSW2_prj_meta = SFSW2_prj_meta,
     data = x,
     site_locations = site_locations,
     grid = grid
