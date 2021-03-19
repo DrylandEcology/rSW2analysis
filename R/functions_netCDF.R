@@ -1134,20 +1134,36 @@ read_netCDF_to_raster <- function(x, ...) {
 
   # Check whether projection was read correctly
   r_crs <- raster::crs(r)
-  r_has_crs <- inherits(r_crs, "CRS") && !is.na(r_crs) &&
-    rgdal::checkCRSArgs(raster::crs(r, asText = TRUE))[[1]]
+  r_has_crs <-
+    inherits(r_crs, "CRS") &&
+    !is.na(r_crs) &&
+    isTRUE(try(
+      rgdal::checkCRSArgs_ng(raster::crs(r, asText = TRUE))[[1]]
+    ))
 
   if (!r_has_crs) {
-    nc <- RNetCDF::open.nc(x)
-    nc_crs <- RNetCDF::att.get.nc(nc, variable = "crs", attribute = "crs_wkt")
-    RNetCDF::close.nc(nc)
+    nc <- ncdf4::nc_open(x)
+    on.exit(ncdf4::nc_close(nc))
 
+    nc_crs <- ncdf4::ncatt_get(
+      nc,
+      varid = "crs",
+      attname = "crs_wkt"
+    )[["value"]]
+
+    # TODO: update to use WKT2
+    # once `raster` internal workflow is updated to use WKT2 instead of PROJ.4
     nc_crs <- raster::crs(nc_crs)
-    if (inherits(nc_crs, "CRS") && !is.na(nc_crs) &&
-        rgdal::checkCRSArgs(raster::crs(nc_crs, asText = TRUE))[[1]]) {
+    if (
+      inherits(nc_crs, "CRS") &&
+      !is.na(nc_crs) &&
+      isTRUE(try(
+        rgdal::checkCRSArgs_ng(raster::crs(nc_crs, asText = TRUE))[[1]]
+      ))
+    ) {
       raster::crs(r) <- nc_crs
     } else {
-      warning("'read_netCDF_to_raster': could not locate a valid projection.")
+      warning("'read_netCDF_to_raster': could not locate a valid crs.")
     }
   }
 
