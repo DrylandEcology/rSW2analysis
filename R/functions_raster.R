@@ -1,8 +1,12 @@
 
-#' Converts values into a Raster*
+#' Converts values associated with geographic locations into a \var{Raster*}
 #'
-#' @param SFSW2_prj_meta An environment
 #' @param data A vector or two-dimensional object.
+#' @param site_locations An object that described geographic locations of
+#'   \code{data} that can be sent to \code{\link[rSW2st]{as_points}}
+#' @param site_crs The \code{crs} of \code{site_locations}.
+#' @param grid A \var{Raster*} object used as template.
+#' @param grid_crs The \code{crs} of \code{grid}.
 #' @param filename A character string. Passed to \code{\link[raster]{brick}}.
 #'
 #' @return A \code{\link[raster:RasterLayer-class]{raster::RasterLayer}}
@@ -11,16 +15,22 @@
 #'   (if \code{data} is two-dimensional).
 #'
 #' @export
-create_raster_from_variables <- function(SFSW2_prj_meta, data, filename = "") {
+create_raster_from_variables <- function(
+  data,
+  site_locations,
+  grid,
+  site_crs = sf::st_crs(site_locations),
+  filename = ""
+) {
 
   # prepare locations
-  loc <- SFSW2_prj_meta[["sim_space"]][["run_sites"]]
-  if (!raster::compareCRS(SFSW2_prj_meta[["sim_space"]][["crs_sites"]],
-    SFSW2_prj_meta[["sim_space"]][["sim_crs"]])) {
+  loc <- rSW2st::as_points(site_locations, to_class = "sf", crs = site_crs)
 
-    loc <- sp::spTransform(loc,
-      CRS = SFSW2_prj_meta[["sim_space"]][["sim_crs"]])
+  if (sf::st_crs(loc) != sf::st_crs(grid)) {
+    loc <- sf::st_transform(loc, crs = sf::st_crs(grid))
   }
+
+  coords <- sf::st_coordinates(loc)
 
   # prepare data
   nl <- NCOL(data)
@@ -29,21 +39,21 @@ create_raster_from_variables <- function(SFSW2_prj_meta, data, filename = "") {
   if (!is.numeric(data)) {
     if (nl > 1) {
       for (k in seq_len(nl)) {
-        temp <- try(if (is.factor(data[, k])) {
-            as.integer(data[, k])
-          } else {
-            as.double(data[, k])
-          })
-        stopifnot(!inherits(temp, "try-error"))
-        data[, k] <- temp
+        tmp <- try(if (is.factor(data[, k])) {
+          as.integer(data[, k])
+        } else {
+          as.double(data[, k])
+        })
+        stopifnot(!inherits(tmp, "try-error"))
+        data[, k] <- tmp
       }
 
     } else {
       data <- try(if (is.factor(data)) {
-          as.integer(data)
-        } else {
-          as.double(data)
-        })
+        as.integer(data)
+      } else {
+        as.double(data)
+      })
       stopifnot(!inherits(data, "try-error"))
     }
   }
@@ -60,10 +70,9 @@ create_raster_from_variables <- function(SFSW2_prj_meta, data, filename = "") {
   }
 
   for (k in seq_len(nl)) {
-    rk <- raster::raster(SFSW2_prj_meta[["sim_space"]][["sim_raster"]])
-    rk <- raster::init(rk, fun = function(x) rep(NA, x))
+    rk <- raster::init(grid, fun = function(x) rep(NA, x))
     if (k == 1) {
-      ids <- raster::cellFromXY(rk, sp::coordinates(loc))
+      ids <- raster::cellFromXY(rk, xy = coords)
     }
 
     rk[ids] <- data[, k]
@@ -133,28 +142,33 @@ find_siteIDs <- function(meta, xy, proj4string = NULL) {
 
 #' Creates an isoline-polygon from data where values are larger than alpha
 #'
-#' Function converts data to a raster object and then extracts draws a
+#' Function converts data to a raster object and then draws a
 #' polygon around those gridcells with a value larger than alpha
 #'
 #' @param x A numeric vector
-#' @param SFSW2_prj_meta An environment
+#' @inheritParams create_raster_from_variables
 #' @param subset A logical vector of length equal to \code{x}
 #' @param alpha A numeric value
 #'
 #' @return A \code{\link[sp]{SpatialPolygons}} object.
 #'
 #' @export
-get_isoline_polygon <- function(x, SFSW2_prj_meta, subset, alpha) {
+get_isoline_polygon <- function(x, site_locations, grid, subset, alpha) {
   if (!missing(subset)) {
     x[!subset] <- NA
   }
 
   rtmp <- create_raster_from_variables(
     SFSW2_prj_meta = SFSW2_prj_meta,
-    data = x)
+    data = x,
+    site_locations = site_locations,
+    grid = grid
+  )
 
-  rtmp <- raster::calc(rtmp,
-    fun = function(x) ifelse(x >= alpha, 1L, NA))
+  rtmp <- raster::calc(
+    rtmp,
+    fun = function(x) ifelse(x >= alpha, 1L, NA)
+  )
 
   raster::rasterToPolygons(rtmp, dissolve = TRUE)
 }

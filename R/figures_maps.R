@@ -392,7 +392,11 @@ map_from_variable <- function(x, meta, subset, ..., beautify = TRUE) {
 
   if (is.numeric(x)) {
     # Create raster
-    rdata <- create_raster_from_variables(meta, data = x)
+    rdata <- create_raster_from_variables(
+      data = x,
+      site_locations = meta[["sim_space"]][["run_sites"]],
+      grid = meta[["sim_space"]][["sim_raster"]]
+    )
 
     # Trim raster
     id_dots_trim <- match("trim", names(dots), nomatch = 0)
@@ -443,7 +447,11 @@ map_from_variable <- function(x, meta, subset, ..., beautify = TRUE) {
       # Create raster
       tmp <- rep(NA, length(x))
       tmp[x_isnotna] <- seq_len(sum(x_isnotna))
-      rdata <- create_raster_from_variables(meta, data = tmp)
+      rdata <- create_raster_from_variables(
+        data = tmp,
+        site_locations = meta[["sim_space"]][["run_sites"]],
+        grid = meta[["sim_space"]][["sim_raster"]]
+      )
       bb <- as.vector(t(sp::bbox(rdata)))
 
       # Extract add plot argument

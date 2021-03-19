@@ -4,12 +4,15 @@
 \alias{get_isoline_polygon}
 \title{Creates an isoline-polygon from data where values are larger than alpha}
 \usage{
-get_isoline_polygon(x, SFSW2_prj_meta, subset, alpha)
+get_isoline_polygon(x, site_locations, grid, subset, alpha)
 }
 \arguments{
 \item{x}{A numeric vector}
 
-\item{SFSW2_prj_meta}{An environment}
+\item{site_locations}{An object that described geographic locations of
+\code{data} that can be sent to \code{\link[rSW2st]{as_points}}}
+
+\item{grid}{A \var{Raster*} object used as template.}
 
 \item{subset}{A logical vector of length equal to \code{x}}
 
@@ -19,6 +22,6 @@ get_isoline_polygon(x, SFSW2_prj_meta, subset, alpha)
 A \code{\link[sp]{SpatialPolygons}} object.
 }
 \description{
-Function converts data to a raster object and then extracts draws a
+Function converts data to a raster object and then draws a
 polygon around those gridcells with a value larger than alpha
 }
