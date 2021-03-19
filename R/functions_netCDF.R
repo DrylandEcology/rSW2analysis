@@ -926,8 +926,14 @@ populate_netcdf_from_array <- function(file, data, var_names = NULL,
 
   if (has_Z_verticalAxis) stopifnot("vertical" %in% nc_dims)
   if (has_T_timeAxis) stopifnot("time" %in% nc_dims)
-  # if have both T and Z, data should be 3 dims
-  if (has_T_timeAxis & has_Z_verticalAxis) stopifnot(data_dims == 3)
+  if (has_T_timeAxis & has_Z_verticalAxis) {
+    stopifnot(
+      # if have both T and Z, data should be 3 dims
+      data_dims == 3,
+      # code can only handle one variable if time/vertical axis
+      nvars == 1
+    )
+  }
   # if org by vars names should be equal to nl
   if (!has_T_timeAxis & !has_Z_verticalAxis) stopifnot(nvars == nn)
 
@@ -983,140 +989,109 @@ populate_netcdf_from_array <- function(file, data, var_names = NULL,
     data <- matrix(data, ncol = 1, dimnames = list(NULL, names(data)))
   }
 
-  for (k in seq(nvars)) {
+  if (has_Z_verticalAxis && has_T_timeAxis) {
+    z_chunksize <- dim(data)[3]
+  }
 
-    nc_names <- attributes(nc$var)$names
+
+  ndims <- if (isGridded) 2 else 1
+  nc_names <- attributes(nc$var)$names
+
+
+  for (k in seq_len(nvars)) {
     stopifnot(var_names[k] %in% nc_names)
-    var_nc_index <- grep(var_names[k], nc_names)[1]
 
-    nc_var <- ncdf4::ncvar_get(nc, attributes(nc$var)$names[var_nc_index])
-    nc_var_dims <- dim(nc_var) # lon, lat, then vars time or vertical of gridded
+    nc_var <- ncdf4::ncvar_get(nc, varid = var_names[k])
+    nc_var_dims <- dim(nc_var) # x, y, then vars time or vertical of gridded
 
     if (verbose) {
-      message(paste("The dimensionality of variable", var_names[k], "is",
-                    paste(nc_var_dims, collapse = ",")))
+      message(paste(
+        "The dimensionality of variable", var_names[k], "is",
+        paste(nc_var_dims, collapse = ",")
+      ))
     }
 
-    # Set up chunksizes  ---------------------------------------------------
-    if (has_Z_verticalAxis) {
-      if (has_T_timeAxis) {
-        z_chunksize <- dim(data)[3]
-      }
-    }
 
-    # ---------------------------------------------------------------------
-    # NOT GRIDDED ---------------------------------------------------------
-    # ---------------------------------------------------------------------
-    if (!isGridded) {
+    start_dims <- rep(1, ndims)
+    count_dims <- nc_var_dims[seq_len(ndims)] # x, y OR site
 
-      var_chunksizes <- nc_var_dims[1] # site
+    # Three situations:
+    #   i) one variable and time and vertical axis
+    #   ii) one variable and time OR vertical axis
+    #   iii) one or multiple variables and no time/vertical axis
 
-      #  -----------------------------------------------------------------------
-      # add variable values ! --------------------------------------------------
-      # ------------------------------------------------------------------------
-      if (nvars > 1) {
+    if (has_T_timeAxis && has_Z_verticalAxis) {
+      #--- Situation (i) one variable and time and vertical axis
+      for (z in seq(z_chunksize)) {
+        # by Z axis
+        if (verbose) message("Adding vertical layer ", z)
 
-        vals <- data[, k]
+        for (t in seq_len(nn)) {
+          # col by col - always time in this case
+          vals <- if (isGridded) {
+            temp <- grid_template
+            temp[val_grid_ids] <- data[, t, z]
+            vals <- matrix(temp, ncol = count_dims[2])
 
-        try(ncdf4::ncvar_put(nc, varid = var_names[k],
-                             vals = vals,
-                             start = 1,
-                             count = var_chunksizes))
-
-      } else {
-        if (has_T_timeAxis && has_Z_verticalAxis) {
-
-          for (z in seq(z_chunksize)) { # by Z axis
-            if (verbose) message("Adding vertical layer ", z)
-            for (t in seq_len(nn)) { # col by col - always time in this case
-
-              vals <- data[, t, z]
-
-              try(ncdf4::ncvar_put(nc, varid = var_names[k],
-                                   vals = vals,
-                                   start = c(1, z, t), #x-y-z-t
-                                   count = c(var_chunksizes, 1, 1)))
-            }
+          } else {
+            data[, t, z]
           }
-        } else {
-          # write values, col by col - n values can rep dif. vals, time, or vert
-          for (n in seq_len(nn)) {
 
-            vals <-  data[, n] # by time chunk or var chunk
-
-            var_start <-  c(1, n)
-
-            try(ncdf4::ncvar_put(nc, varid = var_names[k],
-                                 vals = vals,
-                                 start = var_start,
-                                 count = c(var_chunksizes, 1)))
-          }
+          try(ncdf4::ncvar_put(
+            nc,
+            varid = var_names[k],
+            vals = vals,
+            start = c(start_dims, z, t), #x-y-z-t
+            count = c(count_dims, 1, 1)
+          ))
         }
       }
-    }
 
-    #  GRIDDED --------------------------------------------------------------
-    if (isGridded) {
 
-      # more checks based on dim of var ----------------------------------------
-
-      if (isTRUE(xor(has_T_timeAxis, has_Z_verticalAxis)))
+    } else if (isTRUE(xor(has_T_timeAxis, has_Z_verticalAxis))) {
+      #--- Situation (ii) one variable and time OR vertical axis
+      if (isGridded) {
         stopifnot(nc_var_dims[3] == nn)
+      }
 
-      var_chunksizes <- c(nc_var_dims[1], nc_var_dims[2]) # lon, lat
+      # write values, col by col -- n values can rep dif. time, or verticals
+      for (n in seq_len(nn)) {
+        vals <- if (isGridded) {
+          temp <- grid_template
+          temp[val_grid_ids] <- data[, n]
+          matrix(temp, ncol = count_dims[2])
 
-      #  -----------------------------------------------------------------------
-      # add variable values ! --------------------------------------------------
-      # ------------------------------------------------------------------------
-      if (nvars > 1) {
+        } else {
+          data[, n]
+        }
+
+        try(ncdf4::ncvar_put(
+          nc,
+          varid = var_names[k],
+          vals = vals,
+          start = c(start_dims, n),
+          count = c(count_dims, 1)
+        ))
+      }
+
+    } else {
+      #--- Situation (iii) one or multiple variables and no time/vertical axis
+      vals <- if (isGridded) {
         temp <- grid_template
         temp[val_grid_ids] <- data[, k]
-        vals <- matrix(temp,  ncol = var_chunksizes[2])
-
-        var_start <-  c(1, 1)
-
-        try(ncdf4::ncvar_put(nc, varid = var_names[k],
-                             vals = vals,
-                             start = var_start,
-                             count = var_chunksizes))
+        matrix(temp, ncol = count_dims[2])
 
       } else {
-        if (has_T_timeAxis && has_Z_verticalAxis) {
-
-          temp <- grid_template
-
-          for (z in seq(z_chunksize)) { # by Z axis
-           if (verbose) message("Adding vertical layer ", z)
-            for (t in seq_len(nn)) { # col by col - always time in this case
-
-              temp[val_grid_ids] <- data[, t, z]
-              vals <- matrix(temp, ncol = as.numeric(var_chunksizes[2]))
-
-              try(ncdf4::ncvar_put(nc, varid = var_names[k],
-                                   vals = vals,
-                                   start = c(1, 1, z, t), #x-y-z-t
-                                   count = c(var_chunksizes, 1, 1)))
-            }
-          }
-        } else {
-          # write values, col by col -- n values can rep dif. time, or verticals
-          for (n in seq_len(nn)) {
-
-            temp <- grid_template
-            temp[val_grid_ids] <- data[, n]
-            vals <- matrix(temp,  ncol = var_chunksizes[2])
-
-            var_start <-  c(1, 1, n)
-
-            try(ncdf4::ncvar_put(nc, varid = var_names[k],
-                                 vals = vals,
-                                 start = var_start,
-                                 count = c(var_chunksizes, 1)))
-
-          }
-        }
+        data[, k]
       }
 
+      try(ncdf4::ncvar_put(
+        nc,
+        varid = var_names[k],
+        vals = vals,
+        start = start_dims,
+        count = count_dims
+      ))
     }
 
   }
