@@ -419,34 +419,54 @@ create_empty_netCDF_file <- function(
   }
 
   # Variable info  -------------------------------------------------------------
-  if (!missing(var_attributes)) {
-    if ("name" %in% names(var_attributes)) {
-      var_names <- var_attributes[["name"]]
-      var_attributes[["name"]] <- NULL
-    } else {
-      stop("Need name attribute in variable attribute list")
-    }
-
-    if (!"long_name" %in% names(var_attributes)) {
-      var_attributes[["long_name"]] <- var_names
-    }
-
-    if ("units" %in% names(var_attributes)) {
-      var_units <- var_attributes[["units"]]
-      var_attributes[["units"]] <- NULL
-    } else {
-      stop("Need unit attribute in variable attribute list")
-    }
-
-    if (isGridded) {
-        if (!"grid_mapping" %in% names(var_attributes)) {
-          stop("Need grid_mapping attribute in variable attribute list")
-        }
-    }
-
-    ns_att_vars <- names(var_attributes)
-
+  if (missing(var_attributes)) {
+    var_attributes <- list(
+      name = "variable",
+      units = ""
+    )
   }
+
+  if ("name" %in% names(var_attributes)) {
+    var_names <- var_attributes[["name"]]
+    var_attributes[["name"]] <- NULL
+  } else {
+    stop("Need name attribute in variable attribute list")
+  }
+
+  if (!"long_name" %in% names(var_attributes)) {
+    var_attributes[["long_name"]] <- var_names
+  }
+
+  if ("units" %in% names(var_attributes)) {
+    var_units <- var_attributes[["units"]]
+    var_attributes[["units"]] <- NULL
+  } else {
+    stop("Need unit attribute in variable attribute list")
+  }
+
+  if (!"grid_mapping" %in% names(var_attributes)) {
+    # This function creates only one grid_mapping and
+    # the grid_mapping variable name is hard-coded to be "crs"
+    var_attributes[["grid_mapping"]] <- paste(
+      "crs:",
+      # here, guessing axis order to be 1, 2
+      # (but that would be incorrect, e.g., for EPSG:4326)
+      xy_attributes[["name"]][1],
+      xy_attributes[["name"]][2]
+    )
+
+  } else {
+    if (isTRUE(!grepl("\\<crs", var_attributes[["grid_mapping"]]))) {
+      warning(
+        "Variable attribute for `grid_mapping` should be 'crs: ...', but is ",
+        shQuote(var_attributes[["grid_mapping"]])
+      )
+    }
+  }
+
+  ns_att_vars <- names(var_attributes)
+
+
 
   # ----------------------------------------------------------------------------
   # -- Setup info for netCDF file ----------------------------------------------
@@ -560,7 +580,7 @@ create_empty_netCDF_file <- function(
     var_defs <- c(var_defs, list(yvar, xvar))
   }
 
-  # CRS defintion --------------------------------------------------------------
+  # CRS definition --------------------------------------------------------------
   crsdef <- ncdf4::ncvar_def(name = "crs", units = "", dim = list(),
     missval = NULL, prec = "integer")
 
