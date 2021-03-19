@@ -60,3 +60,4 @@ Remotes:
     github::DrylandEcology/rSFSW2
 Language: en-US
 RoxygenNote: 7.1.1
+VignetteBuilder: knitr

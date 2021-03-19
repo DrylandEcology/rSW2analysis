@@ -580,7 +580,7 @@ create_empty_netCDF_file <- function(
     var_defs <- c(var_defs, list(yvar, xvar))
   }
 
-  # CRS definition --------------------------------------------------------------
+  # CRS definition -------------------------------------------------------------
   crsdef <- ncdf4::ncvar_def(name = "crs", units = "", dim = list(),
     missval = NULL, prec = "integer")
 

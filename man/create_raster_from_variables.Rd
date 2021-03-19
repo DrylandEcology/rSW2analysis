@@ -2,16 +2,29 @@
 % Please edit documentation in R/functions_raster.R
 \name{create_raster_from_variables}
 \alias{create_raster_from_variables}
-\title{Converts values into a Raster*}
+\title{Converts values associated with geographic locations into a \var{Raster*}}
 \usage{
-create_raster_from_variables(SFSW2_prj_meta, data, filename = "")
+create_raster_from_variables(
+  data,
+  site_locations,
+  grid,
+  site_crs = sf::st_crs(site_locations),
+  filename = ""
+)
 }
 \arguments{
-\item{SFSW2_prj_meta}{An environment}
-
 \item{data}{A vector or two-dimensional object.}
 
+\item{site_locations}{An object that described geographic locations of
+\code{data} that can be sent to \code{\link[rSW2st]{as_points}}}
+
+\item{grid}{A \var{Raster*} object used as template.}
+
+\item{site_crs}{The \code{crs} of \code{site_locations}.}
+
 \item{filename}{A character string. Passed to \code{\link[raster]{brick}}.}
+
+\item{grid_crs}{The \code{crs} of \code{grid}.}
 }
 \value{
 A \code{\link[raster:RasterLayer-class]{raster::RasterLayer}}
@@ -20,5 +33,5 @@ A \code{\link[raster:RasterLayer-class]{raster::RasterLayer}}
   (if \code{data} is two-dimensional).
 }
 \description{
-Converts values into a Raster*
+Converts values associated with geographic locations into a \var{Raster*}
 }

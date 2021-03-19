@@ -1,6 +1,8 @@
 ---
 title: "Demonstration of netCDF functionality in rSW2analysis"
-author: "Caitlin M. Andrews"
+author:
+  - Caitlin M. Andrews
+  - Daniel R. Schlaepfer
 date: "`r Sys.Date()`"
 output:
   rmarkdown::html_vignette:
@@ -18,7 +20,7 @@ vignette: >
 This vignette is an overview of how to use the functions in the rSW2analysis
 package to convert arrays of rSOILWAT2 and SOILWAT2 output data into netCDFs
 that adhere to
-[CF conventions 1.8](http://cfconventions.org/Data/cf-conventions/cf-conventions-1.8/cf-conventions.html)
+[CF conventions 1.8](https://cfconventions.org/Data/cf-conventions/cf-conventions-1.8/cf-conventions.html)
 and [CMIP6 conventions](https://docs.google.com/document/d/1h0r8RZr_f3-8egBMMh7aqLwy3snpD6_MrDz1q8n5XUk/edit#).
 
 Additionally, this document describes the Dryland Ecology Lab's standards and
@@ -38,12 +40,15 @@ represents data for a site or a gridcell. Columns represent one of three things:
 ```{r, create1d, results = "hide"}
 # load rSW2analysis package
 library(rSW2analysis)
+library(ncdf4)
 
-# dummy data for 10 sites, 10 data points (could be 10 vars, times, or depths)
-someData <- rnorm(100, 7, 30)
-data2d <- array(someData, c(10, 10))
-str(data2d)
-is.array(data2d)
+# dummy data for 20 sites, 10 data points (could be 10 vars, times, or depths)
+n_sites <- 20
+n_meas <- 10
+
+set.seed(133)
+someData <- rnorm(n_sites * n_meas, 7, 30)
+data2d <- array(someData, c(n_sites, n_meas))
 ```
 
 Additionally, it is possible to have data at multiple times *and* multiple depths.
@@ -51,11 +56,13 @@ In this case, time should be organized by column, and multiple depths should be 
 sequentially in third dimension, forming a 3d array.
 
 ```{r, create3d, results = "hide"}
-# dummy data for 10 sites, 10 times, 3 depths.
-data3d <- array(0, c(10, 10, 3))
-data3d[, , 1] <- someData
-data3d[, , 2] <- someData
-data3d[, , 3] <- someData
+# dummy data for 20 sites, 10 times, 3 depths.
+n_lyrs <- 3
+
+data3d <- array(0, c(n_sites, n_meas, n_lyrs))
+data3d[, , 1] <- 10 + someData
+data3d[, , 2] <- 20 + someData
+data3d[, , 3] <- 30 + someData
 ```
 
 ## Location Data
@@ -72,14 +79,19 @@ If the locations are gridded, the netCDF will be created with a lat and long dim
 
 ```{r, createLocs, results = "hide"}
 # points on a regular spaced grid in the WGS84 CRS
-locations <- data.frame(X_WGS84 = c(rep(-124.5938, 5), rep(-124.5312, 5)),
-                        Y_WGS84 = rep(c(47.90625, 47.96875, 48.03125, 48.09375,
-                                        48.15625), 2))
+locations <- data.frame(
+  X_WGS84 = rep(c(-124.5938, -124.5312, -124.4686, -124.406), times = 5),
+  Y_WGS84 = rep(c(47.90625, 47.96875, 48.03125, 48.09375, 48.15625), each = 4)
+)
+```
+
+```{r, echo = FALSE, results = "hide"}
+stopifnot(nrow(unique(locations)) == n_sites)
 ```
 
 If the locations are not gridded, locations must be provided in a table.
 The netCDF will be created with an automatically generated *site* dimension,
-and lat and long variables affiliated with each site, similar to [this example](http://cfconventions.org/Data/cf-conventions/cf-conventions-1.8/cf-conventions.html#_orthogonal_multidimensional_array_representation_of_time_series).
+and lat and long variables affiliated with each site, similar to [this example](https://cfconventions.org/Data/cf-conventions/cf-conventions-1.8/cf-conventions.html#_orthogonal_multidimensional_array_representation_of_time_series).
 
 The crs_attribute list provides more information about the CRS.
 
@@ -98,7 +110,7 @@ For example, if you have an array that contains time series data
 (n = 10 measurements) of one variable, then the values in the time attribute data
 needs to be of length 10 the bounds needs to be of length 20.
 
-See http://cfconventions.org/Data/cf-conventions/cf-conventions-1.8/cf-conventions.html#cell-boundaries
+See https://cfconventions.org/Data/cf-conventions/cf-conventions-1.8/cf-conventions.html#cell-boundaries
 for more information.
 
 ### Latitude (Y) and Longitude (X) Dimensions
@@ -188,9 +200,9 @@ var_attributes <- list(
 
 # multiple variables, gridded
 var_attributes2 <- list(
-    name = paste0("VarDD_", 1:10),
-    units = rep("day", 10),
-    grid_mapping = rep("crs: lat lon", 10)
+    name = paste0("VarDD_", seq_len(n_meas)),
+    units = rep("day", n_meas),
+    grid_mapping = rep("crs: lat lon", n_meas)
 )
 
 # single variable,  not gridded
@@ -241,25 +253,59 @@ vertical_attributes <- list(
 
 ### CRS Attributes
 
-The CRS attributes describe the coordinate reference system (CRS).
+The CRS attributes describe the coordinate reference system (CRS),
+see [CF-conventions](https://cfconventions.org/Data/cf-conventions/cf-conventions-1.8/cf-conventions.html#grid-mappings-and-projections).
+
+For other grid mappings, e.g., Albers Equal Area, see
+[CF-conventions](https://cfconventions.org/Data/cf-conventions/cf-conventions-1.8/cf-conventions.html#_albers_equal_area)
+
 
 The only required field in the CRS attribute list is the "crs_wkt" field. Defining
-the CRS using the well known text (WKT) is preferred by [netCDF convention](http://cfconventions.org/cf-conventions/cf-conventions.html#use-of-the-crs-well-known-text-format), and is a recent (10/2020) transition incorporated into rgdal, sp, and sf.
+the CRS using the well known text (WKT) is preferred by [netCDF convention](https://cfconventions.org/cf-conventions/cf-conventions.html#use-of-the-crs-well-known-text-format),
+and is a recent (10/2020) transition incorporated into rgdal, sp, and sf.
 
 Multiple functions exists to retrieve the WKT format from different CRS classes:
 
-* raster package: raster::wkt() #  proj4string -> WKT
-* sf package: sf::st_crs(4326)$wkt #"EPSG:4326" or "WGS84" or a proj4string -> WKT
-* sp package: sp::wkt(sp::CRS(SRS_string = "EPSG:4326"))
+* raster package: `raster::wkt(raster::crs("EPSG:4326"))` #  proj4string -> WKT
+* sf package: `sf::st_crs(4326)$Wkt` #"EPSG:4326" or "WGS84" or a proj4string -> WKT
+* sp package: `sp::wkt(sp::CRS(SRS_string = "EPSG:4326"))`
 
 ```{r, CRSAtt, results = "hide"}
 
-crs_attributes <- list(
-  crs_wkt = sp::wkt(sp::CRS(SRS_string = "EPSG:4326")),
+# CRS attributes for WGS84
+crs_attributes_WGS84 <- list(
+  crs_wkt = sf::st_crs("EPSG:4326")$Wkt,
   grid_mapping_name = "latitude_longitude",
   longitude_of_prime_meridian = 0.0,
   semi_major_axis = 6378137.0,
   inverse_flattening = 298.257223563
+)
+xy_attributes_WGS84 <- list(
+  name = c("lon", "lat"),
+  standard_name = c("longitude", "latitude"),
+  long_name = c("Longitude", "Latitude"),
+  units = c("degrees_east", "degrees_north")
+)
+
+# CRS attributes for USA Contiguous Albers Equal Area Conic USGS version
+crs_attributes_AEA <- list(
+  crs_wkt = sf::st_crs("EPSG:6350")$Wkt,
+  grid_mapping_name = "albers_conical_equal_area",
+  standard_parallel = c(29.5, 45.5),
+  longitude_of_central_meridian = -96.0,
+  latitude_of_projection_origin = 23.0,
+  false_easting = 0.0,
+  false_northing = 0.0,
+  # GRS 1980 ellipsoid
+  longitude_of_prime_meridian = 0,
+  semi_major_axis = 6378137.0,
+  inverse_flattening = 298.257222101
+)
+xy_attributes_AEA <- list(
+  name = c("x", "y"),
+  standard_name = c("projection_x_coordinate", "projection_y_coordinate"),
+  long_name = c("x coordinate of projection", "y coordinate of projection"),
+  units = c("m", "m")
 )
 ```
 
@@ -310,7 +356,7 @@ the lat/long coordinate pairs, and the area that each cell in the grid represent
 r <- raster::raster(
   xmn = -120, xmx = -90,
   ymn = 30, ymx = 50,
-  crs = "+init=epsg:4326",
+  crs = "EPSG:4326",
   resolution = c(0.5, 0.5)
 )
 r[] <- seq_len(prod(dim(r)))
@@ -363,9 +409,7 @@ Then, it is filled with data.
 
 ## Example 1 - Create a 3 dimension netCDF (lat, long, time) from gridded data
 ```{r, 3dGridExample, results = "hide"}
-library(ncdf4)
-## locations
-outFileName <- "dummynetcdf.nc"
+outFileName <- "dummynetcdf1.nc"
 
 # create
 create_empty_netCDF_file(
@@ -377,7 +421,8 @@ create_empty_netCDF_file(
   var_attributes = var_attributes,
   time_attributes  = time_attributes,
   vertical_attributes = NULL,
-  crs_attributes = crs_attributes,
+  crs_attributes = crs_attributes_WGS84,
+  xy_attributes = xy_attributes_WGS84,
   global_attributes = global_attributes,
   isGridded = TRUE,
   locations = locations,
@@ -399,23 +444,23 @@ populate_netcdf_from_array(
 )
 
 # check data
-data2d_2 <- read_netCDF_to_array("dummynetcdf.nc", locations)
+data2d_2 <- read_netCDF_to_array(outFileName, locations)
 all.equal(data2d, data2d_2)
 
 # check coords, times
 tmp <- ncdf4::nc_open(outFileName)
 
-lon <- c(ncvar_get(tmp, varid = "lon"))
-identical(lon, sort(unique(locations$X_WGS84)))
+lon <- as.vector(ncdf4::ncvar_get(tmp, varid = "lon"))
+all.equal(lon, sort(unique(locations$X_WGS84)))
 
-lat <- c(ncvar_get(tmp, varid = "lat"))
-identical(lat, sort(unique(locations$Y_WGS84)))
+lat <- as.vector(ncdf4::ncvar_get(tmp, varid = "lat"))
+all.equal(lat, sort(unique(locations$Y_WGS84)))
 
-timeVals <- c(ncvar_get(tmp, varid = "time"))
-identical(timeVals, time_attributes[["vals"]])
+timeVals <- as.vector(ncdf4::ncvar_get(tmp, varid = "time"))
+all.equal(timeVals, time_attributes[["vals"]])
 
-timeBnds <- c(ncvar_get(tmp, varid = "time_bnds"))
-identical(timeBnds, annual_time_bounds)
+timeBnds <- as.vector(ncdf4::ncvar_get(tmp, varid = "time_bnds"))
+all.equal(timeBnds, annual_time_bounds)
 
 ncdf4::nc_close(tmp)
 unlink(outFileName)
@@ -424,6 +469,7 @@ unlink(outFileName)
 ## Example 2 - Create a 2 dimension netCDF (lat, long) from gridded data
 
 ```{r, 2dExample, results = "hide"}
+outFileName <- "dummynetcdf2.nc"
 
 # create
 create_empty_netCDF_file(
@@ -435,7 +481,8 @@ create_empty_netCDF_file(
   var_attributes = var_attributes2,
   time_attributes  = NULL,
   vertical_attributes = NULL,
-  crs_attributes = crs_attributes,
+  crs_attributes = crs_attributes_WGS84,
+  xy_attributes = xy_attributes_WGS84,
   global_attributes = global_attributes,
   isGridded = TRUE,
   locations = locations,
@@ -456,17 +503,17 @@ populate_netcdf_from_array(
 )
 
 # check data
-data2d_2 <- read_netCDF_to_array("dummynetcdf.nc", locations)
+data2d_2 <- read_netCDF_to_array(outFileName, locations)
 all.equal(data2d, data2d_2)
 
 # check coords
 tmp <- ncdf4::nc_open(outFileName)
 
-lon <- c(ncvar_get(tmp, varid = "lon"))
-identical(lon, sort(unique(locations$X_WGS84)))
+lon <- as.vector(ncdf4::ncvar_get(tmp, varid = "lon"))
+all.equal(lon, sort(unique(locations$X_WGS84)))
 
-lat <- c(ncvar_get(tmp, varid = "lat"))
-identical(lat, sort(unique(locations$Y_WGS84)))
+lat <- as.vector(ncdf4::ncvar_get(tmp, varid = "lat"))
+all.equal(lat, sort(unique(locations$Y_WGS84)))
 
 ncdf4::nc_close(tmp)
 unlink(outFileName)
@@ -476,6 +523,7 @@ unlink(outFileName)
 ## Example 3 - Create a 3 dimension netCDF (lat, long, time) from non-gridded data
 
 ```{r, 3dNoGridExample, results = "hide"}
+outFileName <- "dummynetcdf3.nc"
 
 # Set isGridded to FALSE. A site dimension will be created and have affiliated
 # lat and long coordinates
@@ -490,7 +538,8 @@ create_empty_netCDF_file(
   var_attributes = var_attributes3,
   time_attributes  = time_attributes,
   vertical_attributes = NULL,
-  crs_attributes = crs_attributes,
+  crs_attributes = crs_attributes_WGS84,
+  xy_attributes = xy_attributes_WGS84,
   global_attributes = global_attributes,
   isGridded = FALSE, # <- This is now false!
   locations = locations,
@@ -503,7 +552,7 @@ create_empty_netCDF_file(
 populate_netcdf_from_array(
   file = outFileName,
   data = data2d,
-  var_names <- var_attributes$name,
+  var_names <- var_attributes3$name,
   has_T_timeAxis = TRUE,
   has_Z_verticalAxis = FALSE,
   isGridded = FALSE,  # <- This is now false!
@@ -511,22 +560,22 @@ populate_netcdf_from_array(
 )
 
 # check data
-data2d_2 <- read_netCDF_to_array("dummynetcdf.nc", locations)
+data2d_2 <- read_netCDF_to_array(outFileName, locations)
 all.equal(data2d, data2d_2)
 
 # check coords, times
 tmp <- ncdf4::nc_open(outFileName)
 
-lon <- c(ncvar_get(tmp, varid = "lon"))
+lon <- as.vector(ncdf4::ncvar_get(tmp, varid = "lon"))
 identical(lon, locations$X_WGS84)
 
-lat <- c(ncvar_get(tmp, varid = "lat"))
+lat <- as.vector(ncdf4::ncvar_get(tmp, varid = "lat"))
 identical(lat, locations$Y_WGS84)
 
-timeVals <- c(ncvar_get(tmp, varid = "time"))
+timeVals <- as.vector(ncdf4::ncvar_get(tmp, varid = "time"))
 identical(timeVals, time_attributes[["vals"]])
 
-timeBnds <- c(ncvar_get(tmp, varid = "time_bnds"))
+timeBnds <- as.vector(ncdf4::ncvar_get(tmp, varid = "time_bnds"))
 identical(timeBnds, annual_time_bounds)
 
 ncdf4::nc_close(tmp)
@@ -536,6 +585,7 @@ unlink(outFileName)
 ## Example 4 - Create a 4 dimension netCDF (lat, long, time, depth) from gridded data
 
 ```{r, 4dGridExample, results = "hide"}
+outFileName <- "dummynetcdf4.nc"
 
 create_empty_netCDF_file(
   data = data3d,
@@ -546,7 +596,8 @@ create_empty_netCDF_file(
   var_attributes = var_attributes,
   time_attributes  = time_attributes,
   vertical_attributes = vertical_attributes,
-  crs_attributes = crs_attributes,
+  crs_attributes = crs_attributes_WGS84,
+  xy_attributes = xy_attributes_WGS84,
   global_attributes = global_attributes,
   isGridded = TRUE,
   locations = locations,
@@ -567,30 +618,30 @@ populate_netcdf_from_array(
 )
 
 # check data
-data3d_2 <- read_netCDF_to_array("dummynetcdf.nc", locations)
+data3d_2 <- read_netCDF_to_array(outFileName, locations)
 
 all.equal(data3d, data3d_2)
 
 # check coords, times, depth
 tmp <- ncdf4::nc_open(outFileName)
 
-lon <- c(ncvar_get(tmp, varid = "lon"))
-identical(lon, sort(unique(locations$X_WGS84)))
+lon <- as.vector(ncdf4::ncvar_get(tmp, varid = "lon"))
+all.equal(lon, sort(unique(locations$X_WGS84)))
 
-lat <- c(ncvar_get(tmp, varid = "lat"))
-identical(lat, sort(unique(locations$Y_WGS84)))
+lat <- as.vector(ncdf4::ncvar_get(tmp, varid = "lat"))
+all.equal(lat, sort(unique(locations$Y_WGS84)))
 
-timeVals <- c(ncvar_get(tmp, varid = "time"))
-identical(timeVals, time_attributes[["vals"]])
+timeVals <- as.vector(ncdf4::ncvar_get(tmp, varid = "time"))
+all.equal(timeVals, time_attributes[["vals"]])
 
-timeBnds <- c(ncvar_get(tmp, varid = "time_bnds"))
-identical(timeBnds, annual_time_bounds)
+timeBnds <- as.vector(ncdf4::ncvar_get(tmp, varid = "time_bnds"))
+all.equal(timeBnds, annual_time_bounds)
 
-depthVals <- c(ncvar_get(tmp, varid = "vertical"))
-identical(depthVals, vertical_attributes[["vals"]])
+depthVals <- as.vector(ncdf4::ncvar_get(tmp, varid = "vertical"))
+all.equal(depthVals, vertical_attributes[["vals"]])
 
-depthBnds <- c(ncvar_get(tmp, varid = "vertical_bnds"))
-identical(depthBnds, depth_bounds)
+depthBnds <- as.vector(ncdf4::ncvar_get(tmp, varid = "vertical_bnds"))
+all.equal(depthBnds, depth_bounds)
 
 ncdf4::nc_close(tmp)
 unlink(outFileName)

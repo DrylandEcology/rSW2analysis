@@ -20,7 +20,7 @@
 # CRAN stuff
 ^cran-comments\.md$
 ^NEWS\.md$
-^vignettes/dummynetcdf\.nc$
-^/dummynetcdf\.nc$
-^R/dummynetcdf\.nc$
+^vignettes/dummynetcdf*\.nc$
+^/dummynetcdf*\.nc$
+^R/dummynetcdf*\.nc$
 ^dev_checks\.R$

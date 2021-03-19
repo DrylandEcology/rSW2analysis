@@ -14,7 +14,7 @@ create_empty_netCDF_file(
   time_attributes,
   vertical_attributes,
   global_attributes,
-  crs_attributes = list(crs_wkt = sf::st_crs("EPSG:4326")$wkt, grid_mapping_name =
+  crs_attributes = list(crs_wkt = sf::st_crs("EPSG:4326")$Wkt, grid_mapping_name =
     "latitude_longitude", longitude_of_prime_meridian = 0, semi_major_axis = 6378137,
     inverse_flattening = 298.257223563),
   xy_attributes = list(name = c("lon", "lat"), standard_name = c("longitude",

@@ -125,7 +125,7 @@ calc_cellwise_ensemble <- function(
 
     for (k in seq_len(nfuns)) {
       if (ndim == 4) {
-        data_ens[k, subset, , sc_historical, ] <- data[subset, , sc_historical, ]
+        data_ens[k, subset, , sc_historical, ] <- data[subset, , sc_historical, ] # nolint
       } else if (ndim == 3) {
         data_ens[k, subset, , sc_historical] <- data[subset, , sc_historical]
       } else {
