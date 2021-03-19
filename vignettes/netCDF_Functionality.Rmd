@@ -10,6 +10,8 @@ vignette: >
   %\VignetteIndexEntry{Demonstration of netCDF functionality in rSW2analysis}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
+---
+
 
 # Overview
 
