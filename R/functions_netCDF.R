@@ -184,7 +184,7 @@ create_empty_netCDF_file <- function(
   has_Z_verticalAxis = FALSE, time_bounds, vert_bounds, var_attributes,
   time_attributes, vertical_attributes, global_attributes,
   crs_attributes = list(
-    crs_wkt = sf::st_crs("EPSG:4326")$wkt,
+    crs_wkt = sf::st_crs("EPSG:4326")$Wkt,
     grid_mapping_name = "latitude_longitude",
     longitude_of_prime_meridian = 0.0,
     semi_major_axis = 6378137.0,
