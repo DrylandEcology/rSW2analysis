@@ -755,27 +755,12 @@ create_empty_netCDF_file <- function(
 #' that provided to the create_empty_netCDF_file function.
 #' One of \var{locations} or \var{grid} needs to be provided, but not both.
 #'
-#' @param file A character string. File path to a pre-created, empty netCDF.
-#' @param data A numeric array.
+#' @inheritParams create_empty_netCDF_file
 #' @param var_name A character string equal to the length of the number of
-#'   variables. The length of var_name should either be 1 if there is either a
-#'   time and/or vertical dimension \emph{or} equal to the number of columns
-#'   in the array if there is no time or vertical dimension.
-#' @param has_T_timeAxis A logical value. Indicates that the netCDF file
-#'     has a third, time dimension.
-#' @param has_Z_verticalAxis A logical value. Indicates that the netCDF file
-#'     has a vertical (e.g. soil profile depths) dimension. If
-#'      \var{has_T_timeAxis} is set to \code{FALSE} then the Z axis will be the
-#'      third dimension. If \var{has_T_timeAxis} is set to \code{TRUE} then the
-#'      Z axis will be the fourth dimension.
-#' @param isGridded A logical value. Represents whether the location data is on
-#'   a regular grid or not.
-#' @param grid filename (character). File containing the grid information
-#'   (i.e. resolution, extent) of the data. Supported file types are the native
-#'   raster package format and those that can be read via rgdal.
-#' @param locations A SpatialPoints object or a matrix or data.frame with two
-#'   columns containing long and lat values. Data must be organized by long, lat
-#' @param force_v4 A logical value. Force version 4 of netCDF.
+#'   variables. The length of \code{var_name} should either
+#'   be 1 if there is either a time and/or vertical dimension \emph{or}
+#'   equal to the number of columns in the array
+#'   if there is no time or vertical dimension.
 #'
 #' @return This function is used for the side-effect of filling a file.
 #'
@@ -881,8 +866,7 @@ create_empty_netCDF_file <- function(
 #'      has_T_timeAxis = TRUE,
 #'      has_Z_verticalAxis = FALSE,
 #'      isGridded = TRUE,
-#'      locations = locations,
-#'      force_v4 = TRUE
+#'      locations = locations
 #'    )
 #'
 #'  unlink(outFileName)
@@ -896,7 +880,7 @@ create_empty_netCDF_file <- function(
 populate_netcdf_from_array <- function(file, data, var_names = NULL,
                                        has_T_timeAxis, has_Z_verticalAxis,
                                        isGridded = TRUE, grid = NULL, locations,
-                                       force_v4 = TRUE, verbose = FALSE) {
+                                       verbose = FALSE) {
 
 
   # ---------------------------------------------------------------------

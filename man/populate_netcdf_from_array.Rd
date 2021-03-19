@@ -13,40 +13,40 @@ populate_netcdf_from_array(
   isGridded = TRUE,
   grid = NULL,
   locations,
-  force_v4 = TRUE,
   verbose = FALSE
 )
 }
 \arguments{
-\item{file}{A character string. File path to a pre-created, empty netCDF.}
+\item{file}{A character string. The file path of the netCDF file to be
+created.}
 
 \item{data}{A numeric array.}
 
-\item{has_T_timeAxis}{A logical value. Indicates that the netCDF file
-has a third, time dimension.}
+\item{has_T_timeAxis}{A logical value. Indicates that the netCDF created will
+have a third, time dimension.}
 
-\item{has_Z_verticalAxis}{A logical value. Indicates that the netCDF file
-has a vertical (e.g. soil profile depths) dimension. If
- \var{has_T_timeAxis} is set to \code{FALSE} then the Z axis will be the
- third dimension. If \var{has_T_timeAxis} is set to \code{TRUE} then the
- Z axis will be the fourth dimension.}
+\item{has_Z_verticalAxis}{A logical value. Indicates that the netCDF created
+will have a vertical (e.g. soil profile depths) dimension.
+If \var{has_T_timeAxis} is set to \code{FALSE} then the Z axis will be
+the third dimension. If \var{has_T_timeAxis} is set to \code{TRUE} then
+the Z axis will be the fourth dimension.}
 
 \item{isGridded}{A logical value. Represents whether the location data is on
 a regular grid or not.}
 
 \item{grid}{filename (character). File containing the grid information
-(i.e. resolution, extent) of the data. Supported file types are the native
-raster package format and those that can be read via rgdal.}
+(i.e. resolution, extent, locations) of the data. Supported file types are
+the 'native' raster package format and those that can be read via rgdal.}
 
 \item{locations}{A SpatialPoints object or a matrix or data.frame with two
-columns containing long and lat values. Data must be organized by long, lat}
-
-\item{force_v4}{A logical value. Force version 4 of netCDF.}
+columns containing long and lat values. Data must be organized by (1) long,
+(2) lat.}
 
 \item{var_name}{A character string equal to the length of the number of
-variables. The length of var_name should either be 1 if there is either a
-time and/or vertical dimension \emph{or} equal to the number of columns
-in the array if there is no time or vertical dimension.}
+variables. The length of \code{var_name} should either
+be 1 if there is either a time and/or vertical dimension \emph{or}
+equal to the number of columns in the array
+if there is no time or vertical dimension.}
 }
 \value{
 This function is used for the side-effect of filling a file.
@@ -160,8 +160,7 @@ populate_netcdf_from_array(
      has_T_timeAxis = TRUE,
      has_Z_verticalAxis = FALSE,
      isGridded = TRUE,
-     locations = locations,
-     force_v4 = TRUE
+     locations = locations
    )
 
  unlink(outFileName)
