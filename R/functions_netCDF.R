@@ -40,6 +40,8 @@
 #' @param data A numeric array.
 #' @param has_T_timeAxis A logical value. Indicates that the netCDF created will
 #'     have a third, time dimension.
+#' @param type_timeaxis A character string. The type of the time axis, i.e.,
+#'     a time series or a climatological time axis.
 #' @param has_Z_verticalAxis A logical value. Indicates that the netCDF created
 #'     will have a vertical (e.g. soil profile depths) dimension.
 #'     If \var{has_T_timeAxis} is set to \code{FALSE} then the Z axis will be
@@ -195,6 +197,7 @@ create_empty_netCDF_file <- function(
     standard_name = c("longitude", "latitude"),
     long_name = c("Longitude", "Latitude"),
     units = c("degrees_east", "degrees_north")
+  type_timeaxis = c("timeseries", "climatology"),
   ),
   isGridded = TRUE, grid = NULL, locations,
   file, force_v4 = TRUE, overwrite = FALSE, verbose = FALSE
@@ -255,6 +258,7 @@ create_empty_netCDF_file <- function(
 
   if (has_T_timeAxis == TRUE) {
     tn <- length(time_attributes$vals)
+  type_timeaxis <- match.arg(type_timeaxis)
 
     if (is.null(time_bounds)) {
       stop("Need to define time bounds data for time dimension")
@@ -349,36 +353,48 @@ create_empty_netCDF_file <- function(
   }
 
   # Time dimension setup & info -----------------------------------------------
-  if (has_T_timeAxis && !is.null(time_bounds)) {
-    t_chunksize <- length(time_attributes[["vals"]])
-  }
-
   if (has_T_timeAxis) {
-    if (!missing(time_attributes) || !is.null(time_attributes)) {
+    stopifnot(
+      !missing(time_attributes),
+      !is.null(time_attributes),
+      !is.null(time_bounds)
+    )
 
-      if ("units" %in% names(time_attributes)) {
-        time_units <- time_attributes[["units"]]
-        time_attributes[["units"]] <- NULL
-      } else {
-        stop("Need units attribute in time attribute list")
-      }
+    t_chunksize <- length(time_attributes[["vals"]])
 
-      if ("calendar" %in% names(time_attributes)) {
-        time_cal <- time_attributes[["calendar"]]
-        time_attributes[["calendar"]] <- NULL
-      } else {
-        stop("Need calendar attribute in time attribute list")
-      }
+    if (type_timeaxis == "timeseries") {
+      varid_timebnds <- "time_bnds"
+      att_timebnds <- "bounds"
 
-      if ("vals" %in% names(time_attributes)) {
-        time_vals <- time_attributes[["vals"]]
-        time_attributes[["vals"]] <- NULL
-      } else {
-        stop("Need vals attribute in time attribute list")
-      }
-
-      ns_att_time <- names(time_attributes)
+    } else if (type_timeaxis == "climatology") {
+      # http://cfconventions.org/Data/cf-conventions/cf-conventions-1.8/cf-conventions.html#climatological-statistics
+      varid_timebnds <- "climatology_bounds"
+      att_timebnds <- "climatology"
     }
+
+    if ("units" %in% names(time_attributes)) {
+      time_units <- time_attributes[["units"]]
+      time_attributes[["units"]] <- NULL
+    } else {
+      stop("Need units attribute in time attribute list")
+    }
+
+    if ("calendar" %in% names(time_attributes)) {
+      time_cal <- time_attributes[["calendar"]]
+      time_attributes[["calendar"]] <- NULL
+    } else {
+      stop("Need calendar attribute in time attribute list")
+    }
+
+    if ("vals" %in% names(time_attributes)) {
+      time_vals <- time_attributes[["vals"]]
+      time_attributes[["vals"]] <- NULL
+    } else {
+      stop("Need vals attribute in time attribute list")
+    }
+
+    ns_att_time <- names(time_attributes)
+
   } else {
     time_vals <- 0
   }
@@ -608,9 +624,14 @@ create_empty_netCDF_file <- function(
   }
 
   if (has_T_timeAxis) {
-      tbnddef <- ncdf4::ncvar_def(name = "time_bnds", units = "",
-                                dim = list(bnddim, tdim), missval = NULL,
-                                chunksizes = c(2L, 1L), prec = "double")
+    tbnddef <- ncdf4::ncvar_def(
+      name = varid_timebnds,
+      units = "",
+      dim = list(bnddim, tdim),
+      missval = NULL,
+      chunksizes = c(2L, 1L),
+      prec = "double"
+    )
   }
 
   if (has_Z_verticalAxis) {
@@ -668,10 +689,15 @@ create_empty_netCDF_file <- function(
                          start = c(1, 1), count = c(2L, z_chunksize)))
   }
 
-  if (has_T_timeAxis) { # beginning and end of each TP
-        try(ncdf4::ncvar_put(nc, varid = "time_bnds",
-                             vals = time_bounds,
-                             start = c(1, 1), count = c(2, t_chunksize)))
+  if (has_T_timeAxis) {
+    # beginning and end of each TP
+    try(ncdf4::ncvar_put(
+      nc,
+      varid = varid_timebnds,
+      vals = time_bounds,
+      start = c(1, 1),
+      count = c(2, t_chunksize)
+    ))
   }
 
   #--- add attributes ----------------------------------------------------------
@@ -708,11 +734,15 @@ create_empty_netCDF_file <- function(
 
   if (has_T_timeAxis) {
     ncdf4::ncatt_put(nc, "time", "axis", "T")
-    ncdf4::ncatt_put(nc, "time", "bounds", "time_bnds")
+    ncdf4::ncatt_put(nc, "time", att_timebnds, varid_timebnds)
 
     for (natt in ns_att_time) {
-      ncdf4::ncatt_put(nc, varid = "time", attname = natt,
-                       attval = time_attributes[[natt]])
+      ncdf4::ncatt_put(
+        nc,
+        varid = "time",
+        attname = natt,
+        attval = time_attributes[[natt]]
+      )
     }
   }
 
