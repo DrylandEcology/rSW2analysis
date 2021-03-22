@@ -63,7 +63,7 @@
 #'   global attributes of the netCDF.
 #' @param crs_attributes A list of named character string defining the CRS
 #'   of the netCDF.
-#' @param isGridded A logical value. Represents whether the location data is on
+#' @param is_gridded A logical value. Represents whether the location data is on
 #'   a regular grid or not.
 #' @param grid filename (character). File containing the grid information
 #'   (i.e. resolution, extent, locations) of the data. Supported file types are
@@ -166,7 +166,7 @@
 #'      vertical_attributes = NULL,
 #'      global_attributes = global_attributes,
 #'      crs_attributes = crs_attributes,
-#'      isGridded = TRUE,
+#'      is_gridded = TRUE,
 #'      locations = locations,
 #'      file = outFileName,
 #'      force_v4 = TRUE,
@@ -185,6 +185,9 @@ create_empty_netCDF_file <- function(
   has_T_timeAxis = FALSE,
   has_Z_verticalAxis = FALSE, time_bounds, vert_bounds, var_attributes,
   time_attributes, vertical_attributes, global_attributes,
+  locations,
+  grid = NULL,
+  is_gridded = TRUE,
   crs_attributes = list(
     crs_wkt = sf::st_crs("EPSG:4326")$Wkt,
     grid_mapping_name = "latitude_longitude",
@@ -199,14 +202,14 @@ create_empty_netCDF_file <- function(
     units = c("degrees_east", "degrees_north")
   type_timeaxis = c("timeseries", "climatology"),
   ),
-  isGridded = TRUE, grid = NULL, locations,
-  file, force_v4 = TRUE, overwrite = FALSE, verbose = FALSE
+  file,
+  force_v4 = TRUE,
+  overwrite = FALSE,
+  verbose = FALSE
 ) {
-
-  # ---------------------------------------------------------------------
   # Checks --------------------------------------------------------------
-  # ---------------------------------------------------------------------
   stopifnot(requireNamespace("ncdf4"))
+
   if (force_v4) {
     # avoid "_FillValue" error in older versions of `raster` package
     stopifnot(utils::packageVersion("raster") >= "2.9.1")
@@ -356,29 +359,16 @@ create_empty_netCDF_file <- function(
       stopifnot(nrow(tmp_coord) == prod(tmp1[, "cells.dim"]))
       xvals <- sort(unique(tmp_coord[, 1]))
       yvals <- sort(unique(tmp_coord[, 2]))
-
-    } else {
-      loc <- rSW2st::as_points(locations, to_class = "sf", crs = crs)
-      nloc <- nrow(loc)
-      tmp_coord <- sf::st_coordinates(loc) # coordinates of point locations
-      xvals <- tmp_coord[, 1]
-      yvals <- tmp_coord[, 2]
-    }
-  }
-
-  # crs attributes setup & info ------------------------------------------------
-  if (!missing(crs_attributes)) {
-
-    if ("crs_wkt" %in% names(crs_attributes)) {
-      crs_wkt <- crs_attributes[["crs_wkt"]]
-      crs_attributes[["crs_wkt"]] <- NULL
-    } else {
-      stop("Need 'crs_wkt' in crs_attributes")
     }
 
-    ns_att_crs <- names(crs_attributes)
-
+  } else {
+    loc <- rSW2st::as_points(locations, to_class = "sf", crs = crs_wkt)
+    nloc <- nrow(loc)
+    tmp_coord <- sf::st_coordinates(loc) # coordinates of point locations
+    xvals <- tmp_coord[, 1]
+    yvals <- tmp_coord[, 2]
   }
+
 
   # Time dimension setup & info -----------------------------------------------
   if (has_T_timeAxis) {
@@ -488,7 +478,7 @@ create_empty_netCDF_file <- function(
     stop("Need unit attribute in variable attribute list")
   }
 
-  if (!"grid_mapping" %in% names(var_attributes)) {
+  if (!("grid_mapping" %in% names(var_attributes))) {
     # This function creates only one grid_mapping and
     # the grid_mapping variable name is hard-coded to be "crs"
     var_attributes[["grid_mapping"]] <- paste(
@@ -508,6 +498,20 @@ create_empty_netCDF_file <- function(
     }
   }
 
+  # http://cfconventions.org/Data/cf-conventions/cf-conventions-1.8/cf-conventions.html#point-data
+  if (!is_gridded) {
+    if (!("coordinates" %in% names(var_attributes))) {
+      tmp <- paste(xy_attributes[["name"]][2], xy_attributes[["name"]][1])
+      if (has_T_timeAxis) tmp <- paste("time", tmp)
+      if (has_Z_verticalAxis) tmp <- paste(tmp, "vertical")
+      var_attributes[["coordinates"]] <- tmp
+    }
+
+    if (!("featureType" %in% names(global_attributes))) {
+      global_attributes[["featureType"]] <- "point"
+    }
+  }
+
   ns_att_vars <- names(var_attributes)
 
 
@@ -517,7 +521,7 @@ create_empty_netCDF_file <- function(
   # ----------------------------------------------------------------------------
 
   # Starts and chunksizes ------------------------------------------------------
-  if (isGridded) {
+  if (is_gridded) {
     var_chunksizes <- c(length(xvals), length(yvals))
     var_start <- c(1, 1)
 
@@ -544,7 +548,7 @@ create_empty_netCDF_file <- function(
                                            create_dimvar = FALSE)
 
   # x and y dimension
-  if (isGridded) {
+  if (is_gridded) {
     xdim <- ncdf4::ncdim_def(
       name = xy_attributes[["name"]][1],
       longname = xy_attributes[["long_name"]][1],
@@ -583,7 +587,7 @@ create_empty_netCDF_file <- function(
   }
 
   # define dimensionality of netCDF variables ----------------------------------
-  var_dims <- if (isGridded) list(xdim, ydim) else list(idim)
+  var_dims <- if (is_gridded) list(xdim, ydim) else list(idim)
 
   if (has_Z_verticalAxis) {
     var_dims <- c(var_dims, list(zdim))
@@ -601,7 +605,7 @@ create_empty_netCDF_file <- function(
       prec = ncdf4_datatype))
 
   # add x and y as variables if not gridded
-  if (!isGridded) {
+  if (!is_gridded) {
     xvar <- ncdf4::ncvar_def(
       name = xy_attributes[["name"]][1],
       longname = xy_attributes[["long_name"]][1],
@@ -629,7 +633,7 @@ create_empty_netCDF_file <- function(
     missval = NULL, prec = "integer")
 
   # define dimension bounds ----------------------------------------------------
-  if (isGridded) {
+  if (is_gridded) {
     bnds_name <- paste0(xy_attributes[["name"]][1:2], "_bnds")
 
     xbnddef <- ncdf4::ncvar_def(
@@ -668,7 +672,7 @@ create_empty_netCDF_file <- function(
                                     chunksizes = c(2L, 1L), prec = "double")
   }
 
-  nc_dimvars <- if (isGridded) list(xbnddef, ybnddef) else list()
+  nc_dimvars <- if (is_gridded) list(xbnddef, ybnddef) else list()
 
   if (has_Z_verticalAxis) {
     nc_dimvars <- c(nc_dimvars, list(vertbnddef))
@@ -690,7 +694,7 @@ create_empty_netCDF_file <- function(
   on.exit(ncdf4::nc_close(nc))
 
  #--- write values of dimension bounds -----------------------------------------
-  if (isGridded) {
+  if (is_gridded) {
     try(ncdf4::ncvar_put(nc, varid = bnds_name[1],
                         vals = rbind(xvals - grid_halfres[1],
                                      xvals + grid_halfres[1]),
@@ -743,7 +747,7 @@ create_empty_netCDF_file <- function(
   }
 
   # add dimension attributes --------------------------------
-  if (isGridded) {
+  if (is_gridded) {
    ncdf4::ncatt_put(nc, xy_attributes[["name"]][1], "axis", "X")
    ncdf4::ncatt_put(nc, xy_attributes[["name"]][1], "bounds", bnds_name[1])
    ncdf4::ncatt_put(nc, xy_attributes[["name"]][2], "axis", "Y")
@@ -932,7 +936,7 @@ create_empty_netCDF_file <- function(
 #'      vertical_attributes = NULL,
 #'      global_attributes = global_attributes,
 #'      crs_attributes = crs_attributes,
-#'      isGridded = TRUE,
+#'      is_gridded = TRUE,
 #'      locations = locations,
 #'      file = outFileName,
 #'      force_v4 = TRUE,
@@ -946,7 +950,7 @@ create_empty_netCDF_file <- function(
 #'      var_names = var_attributes$name,
 #'      has_T_timeAxis = TRUE,
 #'      has_Z_verticalAxis = FALSE,
-#'      isGridded = TRUE,
+#'      is_gridded = TRUE,
 #'      locations = locations
 #'    )
 #'
@@ -960,7 +964,7 @@ create_empty_netCDF_file <- function(
 
 populate_netcdf_from_array <- function(file, data, var_names = NULL,
                                        has_T_timeAxis, has_Z_verticalAxis,
-                                       isGridded = TRUE, grid = NULL, locations,
+                                       is_gridded = TRUE, grid = NULL, locations,
                                        verbose = FALSE) {
 
 
@@ -1026,7 +1030,7 @@ populate_netcdf_from_array <- function(file, data, var_names = NULL,
   }
 
   # if gridded, get grid ids for inserting values into netCDF
-  if (isGridded) {
+  if (is_gridded) {
     loc <- rSW2st::as_points(locations, to_class = "sp", crs = crs)
 
     if (is.null(grid)) {       # make grid
@@ -1052,7 +1056,7 @@ populate_netcdf_from_array <- function(file, data, var_names = NULL,
   }
 
 
-  ndims <- if (isGridded) 2 else 1
+  ndims <- if (is_gridded) 2 else 1
   nc_names <- attributes(nc$var)$names
 
 
@@ -1086,7 +1090,7 @@ populate_netcdf_from_array <- function(file, data, var_names = NULL,
 
         for (t in seq_len(nn)) {
           # col by col - always time in this case
-          vals <- if (isGridded) {
+          vals <- if (is_gridded) {
             temp <- grid_template
             temp[val_grid_ids] <- data[, t, z]
             vals <- matrix(temp, ncol = count_dims[2])
@@ -1108,13 +1112,13 @@ populate_netcdf_from_array <- function(file, data, var_names = NULL,
 
     } else if (isTRUE(xor(has_T_timeAxis, has_Z_verticalAxis))) {
       #--- Situation (ii) one variable and time OR vertical axis
-      if (isGridded) {
+      if (is_gridded) {
         stopifnot(nc_var_dims[3] == nn)
       }
 
       # write values, col by col -- n values can rep dif. time, or verticals
       for (n in seq_len(nn)) {
-        vals <- if (isGridded) {
+        vals <- if (is_gridded) {
           temp <- grid_template
           temp[val_grid_ids] <- data[, n]
           matrix(temp, ncol = count_dims[2])
@@ -1134,7 +1138,7 @@ populate_netcdf_from_array <- function(file, data, var_names = NULL,
 
     } else {
       #--- Situation (iii) one or multiple variables and no time/vertical axis
-      vals <- if (isGridded) {
+      vals <- if (is_gridded) {
         temp <- grid_template
         temp[val_grid_ids] <- data[, k]
         matrix(temp, ncol = count_dims[2])
@@ -1218,8 +1222,8 @@ read_netCDF_to_array <- function(x, locations) {
   # figure out dimensionality
   nc_dims <-  attributes(nc$dim)$names #dims of netCDF
 
-  if ("site" %in% nc_dims) isGridded <- FALSE
-  if ("lat" %in% nc_dims) isGridded <- TRUE
+  if ("site" %in% nc_dims) is_gridded <- FALSE
+  if ("lat" %in% nc_dims) is_gridded <- TRUE
 
   has_T_timeAxis <-  "time" %in% nc_dims
   has_Z_verticalAxis <-  "vertical" %in% nc_dims
@@ -1229,7 +1233,7 @@ read_netCDF_to_array <- function(x, locations) {
   nc_var_names <- grep("bnds|crs|lat|lon", nc_var_names, invert = TRUE,
                        value = TRUE)
 
-  if (isGridded) {
+  if (is_gridded) {
 
     crs <- ncdf4::ncatt_get(nc, varid = "crs")[["crs_wkt"]]
     loc <- rSW2st::as_points(locations, to_class = "sp", crs = crs)
@@ -1294,7 +1298,7 @@ read_netCDF_to_array <- function(x, locations) {
 
         for (i in seq(dimtz)) {
 
-          if (isGridded) v <- c(nc_var[, , i, t]) else v <- c(nc_var[, i, t])
+          if (is_gridded) v <- c(nc_var[, , i, t]) else v <- c(nc_var[, i, t])
           newArray[, t, i] <- v[val_ids]
 
         }
@@ -1306,7 +1310,7 @@ read_netCDF_to_array <- function(x, locations) {
 
       for (i in seq(dimtz)) {
 
-        if (isGridded) v <- c(nc_var[, , i]) else v <- c(nc_var[, i])
+        if (is_gridded) v <- c(nc_var[, , i]) else v <- c(nc_var[, i])
         newArray[, i] <- v[val_ids]
 
       }
