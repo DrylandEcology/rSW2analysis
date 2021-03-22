@@ -212,40 +212,68 @@ create_empty_netCDF_file <- function(
     stopifnot(utils::packageVersion("raster") >= "2.9.1")
   }
 
+  #------ xy-space ------
   if (is.null(grid) && missing(locations)) {
-    stop("Error: Neither a grid or locations data present. Must supply one at
-         least one of these arguments to the function.")
+    stop("Must supply at least one of grid or locations.")
   }
 
-  # check that CRS is present
-  crs <- crs_attributes[["crs_wkt"]]
-  if (!missing(locations) && is.null(crs)) {
-    stop("Error: If you are giving locations and not a grid, need to define the
-         CRS in the crs_attribute[['crs_wkt']] argument")
-  }
-  # check that CRS is valid
-  tmp <- try(sf::st_crs(crs), silent = TRUE)
-  if (!inherits(tmp, "crs") || tmp == sf::NA_crs_) {
-    stop("`crs_attributes[[\"crs_wkt\"]]` does not represent a valid CRS.")
-  }
-  # check that CRS definition matches CRS of locations.
-  if (inherits(locations, "Spatial")) {
-    crsL <- sp::wkt(raster::crs(locations))
-  }
+  # if is gridded and a grid present, then use grid for xy values
+  # else use locations for xy values
+  if (is_gridded && !is.null(grid)) {
+    if (!inherits(grid, "Raster")) {
+      grid <- try(raster::raster(grid))
 
-  if (inherits(locations, "sf")) {
-    crsL <- sf::st_crs(locations)
-  }
-
-  if (exists("crsL")) {
-    if (sf::st_crs(crsL) != sf::st_crs(crs)) {
-      stop(paste0("Error: The CRS given in crs_attributes[[crs_wkt]] needs to
-                  match the CRS of the locations objects. Currently,
-                  crs_attributes[[crs_wkt]] is ", crs, "and the CRS of the
-                  locations arguments is", crsL))
+      if (inherits(grid, "try-error")) {
+        grid <- NULL
+      }
     }
   }
 
+  #--- crs attributes setup & info
+  if ("crs_wkt" %in% names(crs_attributes)) {
+    crs_wkt <- crs_attributes[["crs_wkt"]]
+    crs_attributes[["crs_wkt"]] <- NULL
+
+    # check that CRS is valid
+    tmp <- try(sf::st_crs(crs_wkt), silent = TRUE)
+    if (!inherits(tmp, "crs") || tmp == sf::NA_crs_) {
+      stop("`crs_attributes[[\"crs_wkt\"]]` does not represent a valid CRS.")
+    }
+
+  } else {
+    stop("Need 'crs_wkt' in crs_attributes")
+  }
+
+  ns_att_crs <- names(crs_attributes)
+
+  # check that CRS definition matches CRS of grid or locations.
+  if (is_gridded && !is.null(grid)) {
+    crsL <- sf::st_crs(raster::crs(grid))
+
+  } else {
+    if (inherits(locations, "Spatial")) {
+      crsL <- sf::st_crs(raster::crs(locations))
+
+    } else if (inherits(locations, "sf")) {
+      crsL <- sf::st_crs(locations)
+
+    } else {
+      locations <- rSW2st::as_points(locations, to_class = "sf", crs = crs_wkt)
+      crsL <- sf::st_crs(locations)
+    }
+  }
+
+  if (crsL != crs_wkt) {
+    stop(
+      "Error: The CRS given in `crs_attributes[[\"crs_wkt\"]]` needs to ",
+      "match the CRS of the grid/locations object. Currently, ",
+      "`crs_attributes[[\"crs_wkt\"]]` is ", shQuote(crs_wkt$Wkt),
+      " and the CRS of the grid/locations argument is ", shQuote(crsL$Wkt)
+    )
+  }
+
+
+  #------ netCDF filename ------
   if (file.exists(file)) {
     if (overwrite) {
       unlink(file)
