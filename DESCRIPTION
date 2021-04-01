@@ -32,7 +32,6 @@ Suggests:
     digest,
     ff,
     ffbase,
-    geosphere,
     gstat,
     Hmisc,
     KernSmooth,

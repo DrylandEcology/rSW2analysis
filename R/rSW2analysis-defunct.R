@@ -12,12 +12,29 @@ NULL
 calculate_cell_area <- function(...) {
   .Defunct(
     new = "calculate_cell_area",
-    package = "rSW2funs",
+    package = "rSW2st",
     msg = paste(
       "`rSW2analysis::calculate_cell_area()`",
       "is defunct;",
       "please use",
       "`rSW2st::calculate_cell_area()`",
+      "instead."
+    )
+  )
+}
+
+
+#' @rdname rSW2analysis-defunct
+#' @export
+calculate_nominal_resolution <- function(...) {
+  .Defunct(
+    new = "calculate_nominal_resolution",
+    package = "rSW2st",
+    msg = paste(
+      "`rSW2analysis::calculate_nominal_resolution()`",
+      "is defunct;",
+      "please use",
+      "`rSW2st::calculate_nominal_resolution()`",
       "instead."
     )
   )
