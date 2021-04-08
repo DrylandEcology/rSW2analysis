@@ -39,3 +39,21 @@ calculate_nominal_resolution <- function(...) {
     )
   )
 }
+
+
+
+#' @rdname rSW2analysis-defunct
+#' @export
+create_raster_from_variables <- function(...) {
+  .Defunct(
+    new = "create_raster_from_variables",
+    package = "rSW2st",
+    msg = paste(
+      "`rSW2analysis::create_raster_from_variables()`",
+      "is defunct;",
+      "please use",
+      "`rSW2st::create_raster_from_variables()`",
+      "instead."
+    )
+  )
+}
