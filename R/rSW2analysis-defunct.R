@@ -57,3 +57,21 @@ create_raster_from_variables <- function(...) {
     )
   )
 }
+
+
+
+#' @rdname rSW2analysis-defunct
+#' @export
+get_isoline_polygon <- function(...) {
+  .Defunct(
+    new = "isoline_from_raster",
+    package = "rSW2st",
+    msg = paste(
+      "`rSW2analysis::get_isoline_polygon()`",
+      "is defunct;",
+      "please use",
+      "`rSW2st::isoline_from_raster()`",
+      "instead."
+    )
+  )
+}
