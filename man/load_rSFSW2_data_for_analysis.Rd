@@ -2,8 +2,8 @@
 % Please edit documentation in R/access_rSFSW2_output.R
 \name{load_rSFSW2_data_for_analysis}
 \alias{load_rSFSW2_data_for_analysis}
-\title{Prepare and load simulation output from \pkg{rSFSW2} into an array either
-from a \var{sqlite3} database or from \var{netCDF} files.}
+\title{Prepare and load \var{SOILWAT2} simulation output as an array
+from a \var{sqlite3} database produced by \pkg{rSFSW2}.}
 \usage{
 load_rSFSW2_data_for_analysis(
   meta,
@@ -18,12 +18,8 @@ load_rSFSW2_data_for_analysis(
   subprojects = NULL,
   subset = NULL,
   write_to_netcdf = FALSE,
-  ftag_gatt,
-  ftag_gatt2,
-  var_names,
-  var_units,
-  timeaggs,
-  verbose = FALSE
+  verbose = FALSE,
+  ...
 )
 }
 \arguments{
@@ -44,12 +40,14 @@ The same structure as returned from
   \code{scenarios}, and \code{experiments}.
 }
 \description{
-Prepare and load simulation output from \pkg{rSFSW2} into an array either
-from a \var{sqlite3} database or from \var{netCDF} files.
+Prepare and load \var{SOILWAT2} simulation output as an array
+from a \var{sqlite3} database produced by \pkg{rSFSW2}.
 }
+\section{Notes}{
+ \code{write_to_netcdf} is no longer supported.
+}
+
 \seealso{
 \code{\link{extract_dbOut_to_array}} for extraction from
-  \var{dbOut} database, \code{\link{create_empty_netCDF_file}} and
-  \code{\link{populate_netcdf_from_array}}
-  for writing/extracting from \var{netCDF} files
+  \var{dbOut} database.
 }

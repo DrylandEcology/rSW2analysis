@@ -239,8 +239,8 @@ extract_dbOut_to_array <- function(meta, fname_dbOut = NULL,
 }
 
 
-#' Prepare and load simulation output from \pkg{rSFSW2} into an array either
-#' from a \var{sqlite3} database or from \var{netCDF} files.
+#' Prepare and load \var{SOILWAT2} simulation output as an array
+#' from a \var{sqlite3} database produced by \pkg{rSFSW2}.
 #'
 #' @param experiments A vector of character strings. Values of the
 #'   \var{'Experimental_Label'} field. Use if experimental
@@ -251,10 +251,10 @@ extract_dbOut_to_array <- function(meta, fname_dbOut = NULL,
 #'   with values for each \code{subprojects}. Note: \code{experiments} and
 #'   \code{subprojects} are mutually exclusive.
 #'
+#' @section Notes: \code{write_to_netcdf} is no longer supported.
+#'
 #' @seealso \code{\link{extract_dbOut_to_array}} for extraction from
-#'   \var{dbOut} database, \code{\link{create_empty_netCDF_file}} and
-#'   \code{\link{populate_netcdf_from_array}}
-#'   for writing/extracting from \var{netCDF} files
+#'   \var{dbOut} database.
 #'
 #' @return The same structure as returned from
 #'   \code{\link{extract_dbOut_to_array}}, i.e., a four-dimensional numerical
@@ -262,11 +262,16 @@ extract_dbOut_to_array <- function(meta, fname_dbOut = NULL,
 #'   \code{scenarios}, and \code{experiments}.
 #'
 #' @export
-load_rSFSW2_data_for_analysis <- function(meta, path, path_tmp,
+load_rSFSW2_data_for_analysis <- function(
+  meta, path, path_tmp,
   fname_dbOuts = NULL, variables, MeanOrSD = c("Mean", "SD"), sim_scenarios,
   sc_historical, experiments = NULL, subprojects = NULL, subset = NULL,
-  write_to_netcdf = FALSE, ftag_gatt, ftag_gatt2, var_names, var_units,
-  timeaggs, verbose = FALSE) {
+  write_to_netcdf = FALSE, verbose = FALSE, ...
+) {
+
+  if (write_to_netcdf) {
+    stop("`write_to_netcdf` is no longer supported.")
+  }
 
   # Check inputs
   MeanOrSD <- match.arg(MeanOrSD)
@@ -283,12 +288,13 @@ load_rSFSW2_data_for_analysis <- function(meta, path, path_tmp,
   stopifnot(xor(has_subprojects, has_experiments))
 
   exps_4thdim <- if (has_subprojects) {
-      subprojects
-    } else if (has_experiments) {
-      experiments
-    } else {
-      "Default"
-    }
+    subprojects
+  } else if (has_experiments) {
+    experiments
+  } else {
+    "Default"
+  }
+
 
   if (is.null(subset)) {
     subset <- rep(TRUE, meta[["sim_size"]][["runsN_sites"]])
@@ -296,166 +302,52 @@ load_rSFSW2_data_for_analysis <- function(meta, path, path_tmp,
 
 
   # Output container
-  res <- array(NA,
-        dim = c(meta[["sim_size"]][["runsN_sites"]],
-          length(variables), length(sim_scenarios), length(exps_4thdim)),
-        dimnames = list(NULL, variables, sim_scenarios, exps_4thdim))
+  res <- array(
+    NA,
+    dim = c(
+      meta[["sim_size"]][["runsN_sites"]],
+      length(variables),
+      length(sim_scenarios),
+      length(exps_4thdim)
+    ),
+    dimnames = list(NULL, variables, sim_scenarios, exps_4thdim)
+  )
 
 
-  # Check whether a previous call with write_to_netcdf = TRUE created netCDFs
-  fname_datall <- list.files(path = path,
-    pattern = "(^All_LyrC_SOILWAT2-)[[:print:]]+(nc$)", full.names = TRUE)
+  #--- Read from SQLite3 database and convert to array
+  # Check inputs
+  if (is.null(fname_dbOuts)) {
+    fname_dbOuts <- meta[["fnames_out"]][["dbOutput"]]
+    names(fname_dbOuts) <- subprojects
+  }
 
-
-  if (length(fname_datall) == length(sim_scenarios) * length(exps_4thdim)) {
-    #--- Read from netCDF files and convert to array
-
-    rdim <- dim(meta[["sim_space"]][["sim_raster"]])
-    loc <- sp::coordinates(meta[["sim_space"]][["run_sites"]])
-    id_map <- cbind(
-      row = raster::colFromX(meta[["sim_space"]][["sim_raster"]], loc[, 1]),
-      col = raster::rowFromY(meta[["sim_space"]][["sim_raster"]], loc[, 2])
-    )
-
-    for (sc in sim_scenarios) for (exp in exps_4thdim) {
-      getM <- cur_to_hist(find_reqMs(sc))
-      temp_pattern <- if (sc == sc_historical) {
-          getM
-        } else {
-          paste0(getM, "_", find_reqCSs(sc))
-        }
-      temp_pattern <- paste0(temp_pattern, "_", exp)
-
-      fname <- fname_datall[grep(temp_pattern, basename(fname_datall))]
-
-      nc <- RNetCDF::open.nc(fname)
-      dtemp <- RNetCDF::read.nc(nc)
-      RNetCDF::close.nc(nc)
-
-      stopifnot(
-        length(dtemp[["lat"]]) == rdim[1],
-        length(dtemp[["lon"]]) == rdim[2])
-
-      for (iv in seq_along(variables)) {
-        res[, variables[iv], sc, exp] <- dtemp[[var_names[iv]]][id_map]
-      }
-
-      # Check that data are correctly ordered
-      if ("site_id" %in% variables) {
-        stopifnot(identical(
-          as.integer(res[, "site_id", sc, exp]),
-          meta[["sim_size"]][["runIDs_sites"]]))
-      }
+  if (has_subprojects) {
+    # Check that file names of dbOutput and subprojects have correct length
+    if (length(fname_dbOuts) == 1 && length(subprojects) > 1) {
+      fname_dbOuts <- rep_len(fname_dbOuts, length(subprojects))
     }
 
-  } else {
-    #--- Read from SQLite3 database and convert to array
-
-    # Check inputs
-    if (is.null(fname_dbOuts)) {
-      fname_dbOuts <- meta[["fnames_out"]][["dbOutput"]]
-      names(fname_dbOuts) <- subprojects
-    }
-
-    if (has_subprojects) {
-      # Check that file names of dbOutput and subprojects have correct length
-      if (length(fname_dbOuts) == 1 && length(subprojects) > 1) {
-        fname_dbOuts <- rep_len(fname_dbOuts, length(subprojects))
-      }
-
-      stopifnot(length(fname_dbOuts) == length(subprojects))
-    }
+    stopifnot(length(fname_dbOuts) == length(subprojects))
+  }
 
 
-    # Extract data from simulation database `dbOutput`
-    for (exp in exps_4thdim) {
-      temp <- extract_dbOut_to_array(meta,
-        fname_dbOut = if (has_subprojects) fname_dbOuts[exp] else fname_dbOuts,
-        variables = variables,
-        MeanOrSD = MeanOrSD,
-        scenarios = sim_scenarios,
-        experiments = if (has_subprojects || has_experiments) exp,
-        file = file.path(path_tmp, "temp_dbOut", exp),
-        verbose = verbose)
+  # Extract data from simulation database `dbOutput`
+  for (exp in exps_4thdim) {
+    temp <- extract_dbOut_to_array(meta,
+      fname_dbOut = if (has_subprojects) fname_dbOuts[exp] else fname_dbOuts,
+      variables = variables,
+      MeanOrSD = MeanOrSD,
+      scenarios = sim_scenarios,
+      experiments = if (has_subprojects || has_experiments) exp,
+      file = file.path(path_tmp, "temp_dbOut", exp),
+      verbose = verbose)
 
-      # Subset to requested subset of sites
-      icol_siteid <- which("site_id" == dimnames(res)[[2]])
-      temp[!subset, -icol_siteid, , ] <- NA
+    # Subset to requested subset of sites
+    icol_siteid <- which("site_id" == dimnames(res)[[2]])
+    temp[!subset, -icol_siteid, , ] <- NA
 
-      # Copy to output container
-      res[, variables, , exp] <- temp
-
-
-      # Prepare simulation data for sharing
-      if (write_to_netcdf) {
-        for (sc in sim_scenarios) {
-          ftag_gatt2_temp <- ftag_gatt2
-          ftag_gatt2_temp[["experiment_id"]] <- cur_to_hist(find_reqMs(sc))
-          if (sc != sc_historical) {
-            ftag_gatt2_temp[["parent_source_id"]] <- find_reqCSs(sc)
-          }
-
-          time_bounds <- if (sc == sc_historical) {
-            c(meta[["sim_time"]][["startyr"]],
-              meta[["sim_time"]][["endyr"]])
-          } else {
-            fut_yrs <- meta[["sim_time"]][["future_yrs"]][find_reqDeltaYR(sc), ]
-            c(fut_yrs[["DSfut_startyr"]], fut_yrs[["DSfut_endyr"]])
-          }
-
-          fname_nc <- file.path(path,
-            paste0("All_", # all variables together
-              "LyrC_", # Land-realm; year-climatology
-              "SOILWAT2-",
-              if (sc == sc_historical) {
-                cur_to_hist(sc)
-              } else {
-                paste0(ftag_gatt2_temp[["experiment_id"]], "_",
-                  ftag_gatt2_temp[["parent_source_id"]])
-              },
-              "_",
-              if (has_subprojects || has_experiments) {
-                paste0(exp, "_")
-              },
-              "gn_", # grid-native
-              paste(time_bounds, collapse = "-"),
-              ".nc"))
-
-          if (!file.exists(fname_nc)) {
-            # Write raster to netCDF file
-            create_empty_netCDF_file(
-              data = res[, , sc, exp],
-
-              time_bounds = time_bounds,
-
-              var_attributes = list(
-                name = var_names,
-                original_name = variables,
-                units = var_units,
-                cell_methods = paste("time:", timeaggs)
-              ),
-
-              global_attributes = c(ftag_gatt, ftag_gatt2_temp,
-                list(variant_info = paste("forcing:", exp)),
-                cell_measures = "data variables provided at cell centers"
-              ),
-
-              isGridded = TRUE,
-              grid = meta[["sim_space"]][["sim_raster"]],
-              file = fname_nc
-            )
-
-            populate_netcdf_from_array(
-              file = fname_nc,
-              data = res[, , sc, exp],
-              var_names = var_names,
-              isGridded = TRUE,
-              grid = meta[["sim_space"]][["sim_raster"]],
-            )
-          }
-        }
-      }
-    }
+    # Copy to output container
+    res[, variables, , exp] <- temp
   }
 
   res
