@@ -6,6 +6,7 @@
 \alias{calculate_nominal_resolution}
 \alias{create_raster_from_variables}
 \alias{get_isoline_polygon}
+\alias{variogram_range}
 \title{Defunct functions in package \pkg{rSW2analysis}}
 \usage{
 calculate_cell_area(...)
@@ -15,6 +16,8 @@ calculate_nominal_resolution(...)
 create_raster_from_variables(...)
 
 get_isoline_polygon(...)
+
+variogram_range(...)
 }
 \description{
 Executing a defunct function will fail and tell you which function
