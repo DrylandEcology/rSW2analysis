@@ -22,7 +22,7 @@ exceptions are explained in the details.}
 }
 \value{
 The raster object generated from \code{x} by a call to
-  \code{\link{create_raster_from_variables}} is returned invisibly.
+  \code{\link[rSW2st]{create_raster_from_variables}} is returned invisibly.
   The function is called for its side effect of plotting to the
   current device.
 }

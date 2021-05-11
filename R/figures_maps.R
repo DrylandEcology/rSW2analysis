@@ -336,7 +336,7 @@ add_panel_map <- function(x, meta, subset, ...) {
 #' }
 #'
 #' @return The raster object generated from \code{x} by a call to
-#'   \code{\link{create_raster_from_variables}} is returned invisibly.
+#'   \code{\link[rSW2st]{create_raster_from_variables}} is returned invisibly.
 #'   The function is called for its side effect of plotting to the
 #'   current device.
 #'
@@ -392,7 +392,7 @@ map_from_variable <- function(x, meta, subset, ..., beautify = TRUE) {
 
   if (is.numeric(x)) {
     # Create raster
-    rdata <- create_raster_from_variables(
+    rdata <- rSW2st::create_raster_from_variables(
       data = x,
       site_locations = meta[["sim_space"]][["run_sites"]],
       grid = meta[["sim_space"]][["sim_raster"]]
@@ -447,7 +447,7 @@ map_from_variable <- function(x, meta, subset, ..., beautify = TRUE) {
       # Create raster
       tmp <- rep(NA, length(x))
       tmp[x_isnotna] <- seq_len(sum(x_isnotna))
-      rdata <- create_raster_from_variables(
+      rdata <- rSW2st::create_raster_from_variables(
         data = tmp,
         site_locations = meta[["sim_space"]][["run_sites"]],
         grid = meta[["sim_space"]][["sim_raster"]]
