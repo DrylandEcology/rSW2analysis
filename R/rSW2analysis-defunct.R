@@ -75,3 +75,93 @@ get_isoline_polygon <- function(...) {
     )
   )
 }
+
+
+
+
+#' @rdname rSW2analysis-defunct
+#' @export
+variogram_range <- function(...) {
+  .Defunct(
+    new = "variogram_range",
+    package = "rSW2st",
+    msg = paste(
+      "`rSW2analysis::variogram_range()`",
+      "is defunct;",
+      "please use",
+      "`rSW2st::variogram_range()`",
+      "instead."
+    )
+  )
+}
+
+
+
+
+
+#' @rdname rSW2analysis-defunct
+#' @export
+create_empty_netCDF_file <- function(...) {
+  .Defunct(
+    new = "create_netCDF",
+    package = "rSW2st",
+    msg = paste(
+      "`rSW2analysis::create_empty_netCDF_file()`",
+      "is defunct;",
+      "please use",
+      "`rSW2st::create_netCDF()`",
+      "instead."
+    )
+  )
+}
+
+#' @rdname rSW2analysis-defunct
+#' @export
+populate_netcdf_from_array <- function(...) {
+  .Defunct(
+    new = "populate_netCDF",
+    package = "rSW2st",
+    msg = paste(
+      "`rSW2analysis::populate_netcdf_from_array()`",
+      "is defunct;",
+      "please use",
+      "`rSW2st::populate_netCDF()` or directly `rSW2st::create_netCDF()`",
+      "instead."
+    )
+  )
+}
+
+
+#' @rdname rSW2analysis-defunct
+#' @export
+read_netCDF_to_array <- function(...) {
+  .Defunct(
+    new = "read_netCDF",
+    package = "rSW2st",
+    msg = paste(
+      "`rSW2analysis::read_netCDF_to_array()`",
+      "is defunct;",
+      "please use",
+      "`rSW2st::read_netCDF()` or `rSW2st::read_netCDF_as_array()`",
+      "instead."
+    )
+  )
+}
+
+
+
+#' @rdname rSW2analysis-defunct
+#' @export
+read_netCDF_to_raster <- function(...) {
+  .Defunct(
+    new = "read_netCDF",
+    package = "rSW2st",
+    msg = paste(
+      "`rSW2analysis::read_netCDF_to_raster()`",
+      "is defunct;",
+      "please use",
+      "`rSW2st::read_netCDF()` or `rSW2st::read_netCDF_as_raster()`",
+      "instead."
+    )
+  )
+}

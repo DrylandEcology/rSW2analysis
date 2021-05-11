@@ -7,6 +7,10 @@
 \alias{create_raster_from_variables}
 \alias{get_isoline_polygon}
 \alias{variogram_range}
+\alias{create_empty_netCDF_file}
+\alias{populate_netcdf_from_array}
+\alias{read_netCDF_to_array}
+\alias{read_netCDF_to_raster}
 \title{Defunct functions in package \pkg{rSW2analysis}}
 \usage{
 calculate_cell_area(...)
@@ -18,6 +22,14 @@ create_raster_from_variables(...)
 get_isoline_polygon(...)
 
 variogram_range(...)
+
+create_empty_netCDF_file(...)
+
+populate_netcdf_from_array(...)
+
+read_netCDF_to_array(...)
+
+read_netCDF_to_raster(...)
 }
 \description{
 Executing a defunct function will fail and tell you which function

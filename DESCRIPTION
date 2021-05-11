@@ -48,13 +48,10 @@ Suggests:
     viridisLite,
     lintr,
     MuMIn,
-    colorspace,
-    knitr,
-    rmarkdown
+    colorspace
 Remotes:
     github::DrylandEcology/rSW2utils,
     github::DrylandEcology/rSW2st,
     github::DrylandEcology/rSFSW2
 Language: en-US
 RoxygenNote: 7.1.1
-VignetteBuilder: knitr
