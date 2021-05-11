@@ -1,6 +1,7 @@
 
 #' @export
-plot_matrix_of_panels <- function(n_panels,
+plot_matrix_of_panels <- function(
+  n_panels,
   data_matrix, meta = NULL, subset = NULL,
   xlim_matrix = NULL, ylim_matrix = NULL, zlim_matrix = NULL,
   label_title_matrix = NULL, label_axis_matrix = NULL,
@@ -15,7 +16,10 @@ plot_matrix_of_panels <- function(n_panels,
   map_legend_pos = c("left", "right"),
   map_extent = NULL,
   fextend = 1, fexp_legend = 0.75, fexp_axis = 0.75,
-  path, ftag = "", pborders = NULL) {
+  path, ftag = "",
+  pborders = NULL,
+  device = c("png", "pdf")
+) {
 
   dir.create(path, recursive = TRUE, showWarnings = FALSE)
 
@@ -25,6 +29,7 @@ plot_matrix_of_panels <- function(n_panels,
   label_title_str_matrix <- label_title_matrix
   is_plotmath_matrix <- add_legend <- array(FALSE, dim = n_panels)
   is_map <- is_smoothScatter <- array(NA, dim = n_panels)
+  device <- match.arg(device)
 
   if (is.null(label_axis_matrix)) {
     label_axis_matrix <- array(list(), dim = n_panels)
@@ -247,14 +252,23 @@ plot_matrix_of_panels <- function(n_panels,
   }
 
   # Figure device
-  file <- file.path(path, paste0("Fig_", ftag, ".png"))
-  grDevices::png(
-    units = "in",
-    res = 150,
-    height = fexp * sum(layout_heights),
-    width = fexp * sum(layout_widths),
-    file = file
-  )
+  fname <- file.path(path, paste0("Fig_", ftag, ".", device))
+  if (device == "png") {
+    grDevices::png(
+      filename = fname,
+      units = "in",
+      res = 150,
+      height = fexp * sum(layout_heights),
+      width = fexp * sum(layout_widths)
+    )
+
+  } else if (device == "pdf") {
+    grDevices::pdf(
+      file = fname,
+      height = fexp * sum(layout_heights),
+      width = fexp * sum(layout_widths)
+    )
+  }
 
   graphics::layout(lmat, heights = layout_heights, widths = layout_widths)
 
