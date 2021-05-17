@@ -1,6 +1,6 @@
 Package: rSW2analysis
 Title: Analysis Tools for Dryland Ecology Simulation Frameworks
-Version: 0.0.0.9000
+Version: 1.0.0
 Authors@R:
   c(person("Daniel", "Schlaepfer", email = "daniel.schlaepfer@yale.edu",
     comment = c(ORCID = "0000-0001-9973-2065"), role = c("aut", "cre")
