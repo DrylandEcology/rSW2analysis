@@ -257,8 +257,11 @@ add_legend <- function(zlim, zextreme, col_desc, grid,
           adj <- c(1, NA)
           temp1 <- if (ext@xmax > 0) -1 else +1
           temp2 <- if (cex < 0.5) 1.5 else 1.05
-          lx <- ext@xmax + temp1 * max(graphics::strwidth(ltxt, units = "user",
-            cex = cex * temp2))
+          lx <- ext@xmax + temp1 * max(graphics::strwidth(
+            paste0(" ", ltxt),
+            units = "user",
+            cex = cex * temp2
+          ))
         } else {
           adj <- c(-0.05, NA)
           lx <- ext@xmax
