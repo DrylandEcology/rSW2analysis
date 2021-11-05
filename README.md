@@ -25,10 +25,10 @@
 [pull request]: https://github.com/DrylandEcology/rSW2analysis/pulls
 [guidelines]: https://github.com/DrylandEcology/workflow_guidelines
 [semantic versioning]: https://semver.org/
-[testthat]: https://github.com/hadley/testthat
+[testthat]: https://github.com/r-lib/testthat
 [roxygen2 formatting]: https://cran.r-project.org/web/packages/roxygen2/vignettes/formatting.html
-[r-pkgs man]: http://r-pkgs.had.co.nz/man.html
-[r-pkgs tests]: http://r-pkgs.had.co.nz/tests.html
+[r-pkgs man]: https://r-pkgs.org/man.html
+[r-pkgs tests]: https://r-pkgs.org/tests.html
 
 
 <br>
